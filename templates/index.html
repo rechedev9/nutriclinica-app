@@ -1018,6 +1018,39 @@ function resaltar(txt, q) {
 const COLORES = ['c0','c1','c2','c3','c4','c5','c6','c7'];
 function colorFor(n) { let h=0; for(let i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))&0xffff; return COLORES[h%COLORES.length]; }
 
+function calcEdad(fecha_nac) {
+  if (!fecha_nac) return null;
+  const hoy = new Date(), nac = new Date(fecha_nac);
+  let e = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) e--;
+  return e;
+}
+
+// Durnin-Womersley (suma 4 pliegues) + ecuación de Siri → % grasa
+function calcGrasaDW(plBic, plTri, plSub, plSup, edad, sexo) {
+  if (plBic == null || plTri == null || plSub == null || plSup == null) return null;
+  if (edad == null || !sexo || sexo === 'Otro') return null;
+  const suma = plBic + plTri + plSub + plSup;
+  if (suma <= 0) return null;
+  const lg = Math.log10(suma), h = sexo === 'Hombre';
+  let D;
+  if (h) {
+    if      (edad < 20) D = 1.1620 - 0.0630 * lg;
+    else if (edad < 30) D = 1.1631 - 0.0632 * lg;
+    else if (edad < 40) D = 1.1422 - 0.0544 * lg;
+    else if (edad < 50) D = 1.1620 - 0.0700 * lg;
+    else                D = 1.1715 - 0.0779 * lg;
+  } else {
+    if      (edad < 20) D = 1.1549 - 0.0678 * lg;
+    else if (edad < 30) D = 1.1599 - 0.0717 * lg;
+    else if (edad < 40) D = 1.1423 - 0.0632 * lg;
+    else if (edad < 50) D = 1.1333 - 0.0612 * lg;
+    else                D = 1.1339 - 0.0645 * lg;
+  }
+  return Math.round((4.95 / D - 4.50) * 1000) / 10;
+}
+
 // ── Dashboard Análisis ────────────────────────────────────────────────────────
 
 const _charts = {};
@@ -1069,31 +1102,65 @@ function limpiarAnalisis() {
 function _renderKpis(revs, p) {
   const el = document.getElementById('analisisKpis');
   if (!el) return;
+
   const conPeso = revs.filter(r => r.peso != null);
   const pesoAct = conPeso.length ? conPeso[conPeso.length - 1].peso : null;
   const pesoIni = p.peso || (conPeso.length ? conPeso[0].peso : null);
   const delta   = (pesoAct != null && pesoIni != null) ? Math.round((pesoAct - pesoIni) * 10) / 10 : null;
-  const imc     = calcIMC(pesoAct, p.talla);
+  const imc     = calcIMC(pesoAct ?? p.peso, p.talla);
 
-  function kpi(label, val, unit, delta, deltaInverted) {
+  // Composición corporal: última revisión del período que tenga los 4 pliegues necesarios
+  const revConPliegues = [...revs].reverse().find(r =>
+    r.pl_bicipital != null && r.pl_tricipital != null &&
+    r.pl_subescapular != null && r.pl_supracrestal != null
+  );
+  const edad = calcEdad(p.fecha_nac);
+  let pctGrasa = null, pesoGraso = null, pesoMagro = null;
+  if (revConPliegues) {
+    const pesoBase = revConPliegues.peso ?? pesoAct ?? p.peso;
+    pctGrasa = calcGrasaDW(
+      revConPliegues.pl_bicipital, revConPliegues.pl_tricipital,
+      revConPliegues.pl_subescapular, revConPliegues.pl_supracrestal,
+      edad, p.sexo
+    );
+    if (pctGrasa != null && pesoBase != null) {
+      pesoGraso = Math.round(pesoBase * pctGrasa / 100 * 10) / 10;
+      pesoMagro = Math.round((pesoBase - pesoGraso) * 10) / 10;
+    }
+  }
+
+  const sinDatos = !revConPliegues
+    ? `<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Requiere 4 pliegues + sexo + edad</div>`
+    : (!p.sexo || p.sexo === 'Otro' || !p.fecha_nac)
+    ? `<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Requiere sexo y fecha de nacimiento</div>`
+    : '';
+
+  function kpi(label, val, unit, dVal) {
     let dHtml = '';
-    if (delta !== null) {
-      const mejor = deltaInverted ? delta > 0 : delta < 0;
-      const cls = mejor ? 'mejora' : 'empeora';
-      dHtml = `<div class="kpi-delta ${cls}">${delta > 0 ? '+' : ''}${delta} ${unit}</div>`;
+    if (dVal !== null && dVal !== undefined) {
+      const cls = dVal < 0 ? 'mejora' : 'empeora';
+      dHtml = `<div class="kpi-delta ${cls}">${dVal > 0 ? '+' : ''}${dVal} ${unit}</div>`;
     }
     return `<div class="kpi-card"><div class="kpi-label">${label}</div>
       <div class="kpi-value">${val != null ? val : '—'}<span class="kpi-unit">${val != null && unit ? ' ' + unit : ''}</span></div>${dHtml}</div>`;
   }
 
   el.innerHTML =
-    kpi('Peso actual', pesoAct, 'kg', delta, false) +
-    `<div class="kpi-card"><div class="kpi-label">IMC</div>
+    `<div class="kpi-card">
+      <div class="kpi-label">IMC</div>
       <div class="kpi-value">${imc ? imc.val : '—'}</div>
       ${imc ? `<span class="imc-badge ${imc.cls}" style="margin-top:6px;display:inline-block;font-size:11px">${imc.etiq}</span>` : ''}
     </div>` +
-    kpi('Talla', p.talla, 'cm', null, false) +
-    kpi('Revisiones', revs.length, '', null, false);
+    `<div class="kpi-card">
+      <div class="kpi-label">% Masa Grasa</div>
+      <div class="kpi-value">${pctGrasa != null ? pctGrasa : '—'}<span class="kpi-unit">${pctGrasa != null ? ' %' : ''}</span></div>
+      ${pctGrasa == null ? sinDatos : ''}
+    </div>` +
+    kpi('Peso Graso', pesoGraso, 'kg') +
+    kpi('Peso Magro', pesoMagro, 'kg') +
+    kpi('Peso actual', pesoAct, 'kg', delta) +
+    kpi('Talla', p.talla, 'cm') +
+    kpi('Revisiones', revs.length, '');
 }
 
 function _renderCharts(revs, p) {
