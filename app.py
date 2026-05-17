@@ -42,8 +42,15 @@ def init_db():
         intolerancias    TEXT,
         patologias       TEXT,
         notas            TEXT,
+        peso             REAL,
+        talla            REAL,
         creado           TEXT DEFAULT (datetime('now','localtime'))
     )''')
+    for col in ('peso', 'talla'):
+        try:
+            conn.execute(f'ALTER TABLE pacientes ADD COLUMN {col} REAL')
+        except Exception:
+            pass
     conn.execute('''CREATE TABLE IF NOT EXISTS revisiones (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         paciente_id     INTEGER NOT NULL,
@@ -101,14 +108,7 @@ def get_pacientes():
     for p in rows:
         cnt     = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (p['id'],)).fetchone()[0]
         rev_cnt = conn.execute('SELECT COUNT(*) FROM revisiones WHERE paciente_id=?', (p['id'],)).fetchone()[0]
-        last_rev = conn.execute(
-            'SELECT peso, talla FROM revisiones WHERE paciente_id=? ORDER BY fecha DESC LIMIT 1', (p['id'],)
-        ).fetchone()
-        result.append({
-            **dict(p), 'num_fotos': cnt, 'num_revisiones': rev_cnt,
-            'last_peso':  last_rev['peso']  if last_rev else None,
-            'last_talla': last_rev['talla'] if last_rev else None,
-        })
+        result.append({**dict(p), 'num_fotos': cnt, 'num_revisiones': rev_cnt})
     conn.close()
     return jsonify(result)
 
@@ -120,19 +120,18 @@ def create_paciente():
     cur = conn.execute(
         '''INSERT INTO pacientes
            (nombre, fecha_nac, sexo, dni, telefono, email,
-            objetivo, actividad_fisica, intolerancias, patologias, notas)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
+            objetivo, actividad_fisica, intolerancias, patologias, notas, peso, talla)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
         (d['nombre'].strip(), d.get('fecha_nac') or None, d.get('sexo') or None,
          d.get('dni') or None, d.get('telefono') or None, d.get('email') or None,
          d.get('objetivo') or None, d.get('actividad_fisica') or None,
          d.get('intolerancias') or None, d.get('patologias') or None,
-         d.get('notas') or None)
+         d.get('notas') or None, d.get('peso') or None, d.get('talla') or None)
     )
     conn.commit()
     p = conn.execute('SELECT * FROM pacientes WHERE id=?', (cur.lastrowid,)).fetchone()
     conn.close()
-    return jsonify({**dict(p), 'num_fotos': 0, 'num_revisiones': 0,
-                    'last_peso': None, 'last_talla': None}), 201
+    return jsonify({**dict(p), 'num_fotos': 0, 'num_revisiones': 0}), 201
 
 
 @app.route('/api/pacientes/<int:pid>', methods=['PUT'])
@@ -141,27 +140,20 @@ def update_paciente(pid):
     conn = get_db()
     conn.execute(
         '''UPDATE pacientes SET nombre=?, fecha_nac=?, sexo=?, dni=?, telefono=?, email=?,
-           objetivo=?, actividad_fisica=?, intolerancias=?, patologias=?, notas=?
+           objetivo=?, actividad_fisica=?, intolerancias=?, patologias=?, notas=?, peso=?, talla=?
            WHERE id=?''',
         (d['nombre'].strip(), d.get('fecha_nac') or None, d.get('sexo') or None,
          d.get('dni') or None, d.get('telefono') or None, d.get('email') or None,
          d.get('objetivo') or None, d.get('actividad_fisica') or None,
          d.get('intolerancias') or None, d.get('patologias') or None,
-         d.get('notas') or None, pid)
+         d.get('notas') or None, d.get('peso') or None, d.get('talla') or None, pid)
     )
     conn.commit()
-    p        = conn.execute('SELECT * FROM pacientes WHERE id=?', (pid,)).fetchone()
-    cnt      = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (pid,)).fetchone()[0]
-    rev_cnt  = conn.execute('SELECT COUNT(*) FROM revisiones WHERE paciente_id=?', (pid,)).fetchone()[0]
-    last_rev = conn.execute(
-        'SELECT peso, talla FROM revisiones WHERE paciente_id=? ORDER BY fecha DESC LIMIT 1', (pid,)
-    ).fetchone()
+    p       = conn.execute('SELECT * FROM pacientes WHERE id=?', (pid,)).fetchone()
+    cnt     = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (pid,)).fetchone()[0]
+    rev_cnt = conn.execute('SELECT COUNT(*) FROM revisiones WHERE paciente_id=?', (pid,)).fetchone()[0]
     conn.close()
-    return jsonify({
-        **dict(p), 'num_fotos': cnt, 'num_revisiones': rev_cnt,
-        'last_peso':  last_rev['peso']  if last_rev else None,
-        'last_talla': last_rev['talla'] if last_rev else None,
-    })
+    return jsonify({**dict(p), 'num_fotos': cnt, 'num_revisiones': rev_cnt})
 
 
 @app.route('/api/pacientes/<int:pid>', methods=['DELETE'])
