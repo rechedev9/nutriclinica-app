@@ -64,11 +64,7 @@
     .btn-danger:hover { background: #fee2e2; }
     .btn-header { color: white; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.12); }
     .btn-header:hover { background: rgba(255,255,255,.22); }
-
-    .info-bar { padding: 14px 24px; display: flex; gap: 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .info-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 11px 16px; flex: 1; }
-    .info-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
-    .info-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
 
     .photos-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
     .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 26px; text-align: center; cursor: pointer; transition: all .2s; background: white; margin-bottom: 20px; }
@@ -89,6 +85,7 @@
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); animation: fadeIn .15s; }
     @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
     .modal { background: white; border-radius: 14px; padding: 28px; width: 500px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: slideUp .2s; }
+    .modal-wide { width: 720px; }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
     .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; position: sticky; top: -28px; background: white; padding: 0 0 14px; z-index: 1; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; position: sticky; bottom: -28px; background: white; padding: 14px 0 0; }
@@ -97,8 +94,9 @@
     .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; font-family: inherit; background: white; }
     .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); }
     .form-group textarea { resize: vertical; min-height: 60px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
     .form-section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); padding-bottom: 7px; margin: 20px 0 14px; }
 
     .pv-tabs { display: flex; border-bottom: 1px solid var(--border); background: white; padding: 0 24px; flex-shrink: 0; }
@@ -118,10 +116,32 @@
     .ficha-nodata { color: var(--text-muted); font-style: italic; }
     .ficha-block { margin-top: 14px; }
     .imc-badge { display: inline-block; font-weight: 700; font-size: 13px; padding: 3px 10px; border-radius: 20px; }
-    .imc-bajo    { background: #eff6ff; color: #1d4ed8; }
-    .imc-normal  { background: var(--primary-light); color: var(--primary-dark); }
+    .imc-bajo      { background: #eff6ff; color: #1d4ed8; }
+    .imc-normal    { background: var(--primary-light); color: var(--primary-dark); }
     .imc-sobrepeso { background: #fefce8; color: #a16207; }
     .imc-obesidad  { background: #fef2f2; color: #dc2626; }
+
+    /* ── Revisiones ─────────────────────────────────────────────────── */
+    .revisiones-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .rev-list { display: flex; flex-direction: column; gap: 10px; }
+    .rev-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .rev-header { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background .15s; }
+    .rev-header:hover { background: var(--surface-2); }
+    .rev-fecha { font-size: 15px; font-weight: 700; }
+    .rev-resumen { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .rev-detail { border-top: 1px solid var(--border); padding: 16px 18px; background: var(--surface-2); }
+    .rev-subsection { margin-bottom: 16px; }
+    .rev-subsection:last-child { margin-bottom: 0; }
+    .rev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
+    .rev-chevron { color: var(--text-muted); transition: transform .2s; flex-shrink: 0; }
+    .rev-chevron.open { transform: rotate(180deg); }
+    .no-revisiones { text-align: center; padding: 48px 20px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+    .no-revisiones svg { display: block; margin: 0 auto 12px; opacity: .2; }
+
+    .info-bar { padding: 14px 24px; display: flex; gap: 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .info-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 11px 16px; flex: 1; }
+    .info-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+    .info-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 200; animation: fadeIn .15s; }
     .lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain; }
@@ -231,42 +251,6 @@
       <input type="email" id="pEmail" placeholder="correo@ejemplo.com">
     </div>
 
-    <div class="form-section-label">Antropometría</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Peso (kg)</label>
-        <input type="number" id="pPeso" placeholder="70.5" step="0.1" min="0">
-      </div>
-      <div class="form-group">
-        <label>Altura (cm)</label>
-        <input type="number" id="pAltura" placeholder="170" step="0.1" min="0">
-      </div>
-    </div>
-    <div class="form-row-3">
-      <div class="form-group">
-        <label>P. Cintura (cm)</label>
-        <input type="number" id="pCintura" placeholder="80" step="0.1" min="0">
-      </div>
-      <div class="form-group">
-        <label>P. Cadera (cm)</label>
-        <input type="number" id="pCadera" placeholder="95" step="0.1" min="0">
-      </div>
-      <div class="form-group">
-        <label>P. Brazo (cm)</label>
-        <input type="number" id="pBrazo" placeholder="30" step="0.1" min="0">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>% Grasa corporal</label>
-        <input type="number" id="pGrasa" placeholder="20" step="0.1" min="0" max="100">
-      </div>
-      <div class="form-group">
-        <label>% Masa muscular</label>
-        <input type="number" id="pMusculo" placeholder="40" step="0.1" min="0" max="100">
-      </div>
-    </div>
-
     <div class="form-section-label">Datos clínicos</div>
     <div class="form-row">
       <div class="form-group">
@@ -313,6 +297,61 @@
   </div>
 </div>
 
+<!-- MODAL REVISIÓN -->
+<div id="modalRevision" style="display:none" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modalRevision')">
+  <div class="modal modal-wide">
+    <div class="modal-title" id="modalRevisionTitulo">Nueva revisión</div>
+
+    <div class="form-group">
+      <label>Fecha de revisión</label>
+      <input type="date" id="rFecha">
+    </div>
+
+    <div class="form-section-label">Medidas básicas</div>
+    <div class="form-row-3">
+      <div class="form-group"><label>Peso (kg)</label><input type="number" id="rPeso" placeholder="72.5" step="0.1" min="0"></div>
+      <div class="form-group"><label>Talla (cm)</label><input type="number" id="rTalla" placeholder="175" step="0.1" min="0"></div>
+      <div class="form-group"><label>Envergadura (cm)</label><input type="number" id="rEnvergadura" placeholder="178" step="0.1" min="0"></div>
+    </div>
+
+    <div class="form-section-label">Pliegues cutáneos (cm)</div>
+    <div class="form-row-4">
+      <div class="form-group"><label>Bicipital</label><input type="number" id="rPlBicipital" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Tricipital</label><input type="number" id="rPlTricipital" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Subescapular</label><input type="number" id="rPlSubescapular" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Supraespinal</label><input type="number" id="rPlSupraespinal" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Supracrestal</label><input type="number" id="rPlSupracrestal" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Abdominal</label><input type="number" id="rPlAbdominal" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Muslo int.</label><input type="number" id="rPlMusloInt" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Pierna med.</label><input type="number" id="rPlPiernaMed" placeholder="—" step="0.1" min="0"></div>
+    </div>
+
+    <div class="form-section-label">Perímetros (cm)</div>
+    <div class="form-row-4">
+      <div class="form-group"><label>Antebrazo</label><input type="number" id="rPerAntebrazo" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Brazo relaj.</label><input type="number" id="rPerBrazoRel" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Brazo cont.</label><input type="number" id="rPerBrazoCont" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Hombros</label><input type="number" id="rPerHombros" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Pecho</label><input type="number" id="rPerPecho" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Cintura</label><input type="number" id="rPerCintura" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Caderas</label><input type="number" id="rPerCaderas" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Muslo</label><input type="number" id="rPerMuslo" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Muslo cont.</label><input type="number" id="rPerMusloCont" placeholder="—" step="0.1" min="0"></div>
+      <div class="form-group"><label>Gemelo</label><input type="number" id="rPerGemelo" placeholder="—" step="0.1" min="0"></div>
+    </div>
+
+    <div class="form-section-label">Notas de la revisión</div>
+    <div class="form-group">
+      <textarea id="rNotas" placeholder="Observaciones de esta visita…" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="cerrarModal('modalRevision')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarRevision()">Guardar revisión</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL NOTA FOTO -->
 <div id="modalNota" style="display:none" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modalNota')">
   <div class="modal">
@@ -332,8 +371,10 @@
 
 <script>
 let pacientes          = [];
+let revisiones         = [];
 let currentId          = null;
 let editandoId         = null;
+let editandoRevId      = null;
 let archivosPendientes = [];
 let currentTab         = 'ficha';
 
@@ -365,14 +406,16 @@ function renderLista(q = '') {
   }
   el.innerHTML = lista.map(p => {
     const ini = iniciales(p.nombre), color = colorFor(p.nombre), act = p.id === currentId ? 'active' : '';
-    const meta = p.peso && p.altura ? `${p.peso} kg · ${p.altura} cm` : (p.fecha_nac ? 'Nac. ' + fmtFecha(p.fecha_nac) : 'Sin datos');
+    const meta = p.last_peso && p.last_talla
+      ? `${p.last_peso} kg · ${p.last_talla} cm`
+      : (p.fecha_nac ? 'Nac. ' + fmtFecha(p.fecha_nac) : 'Sin datos');
     return `<div class="patient-item ${act}" onclick="abrirPaciente(${p.id})">
       <div class="avatar ${color}">${ini}</div>
       <div class="patient-info">
         <div class="patient-name">${resaltar(p.nombre, q)}</div>
         <div class="patient-meta">${meta}</div>
       </div>
-      <span class="badge">${p.num_fotos}</span>
+      <span class="badge">${p.num_revisiones || 0}</span>
     </div>`;
   }).join('');
 }
@@ -380,21 +423,29 @@ function renderLista(q = '') {
 async function abrirPaciente(id) {
   currentId = id; currentTab = 'ficha';
   renderLista(document.getElementById('searchInput').value);
-  const p     = pacientes.find(x => x.id === id);
-  const fotos = await api('GET', `/api/pacientes/${id}/fotos`);
-  renderPacienteView(p, fotos);
+  const p = pacientes.find(x => x.id === id);
+  const [fotos, revs] = await Promise.all([
+    api('GET', `/api/pacientes/${id}/fotos`),
+    api('GET', `/api/pacientes/${id}/revisiones`)
+  ]);
+  revisiones = revs;
+  renderPacienteView(p, fotos, revs);
 }
 
-function renderPacienteView(p, fotos, tab = currentTab) {
+function renderPacienteView(p, fotos, revs, tab = currentTab) {
   const ini = iniciales(p.nombre), color = colorFor(p.nombre);
-  const imc = calcIMC(p.peso, p.altura);
+  const ultimaRev = revs && revs.length ? revs[0] : null;
+  const imc = calcIMC(
+    ultimaRev?.peso  ?? p.last_peso,
+    ultimaRev?.talla ?? p.last_talla
+  );
   document.getElementById('main').innerHTML = `
     <div class="patient-view">
       <div class="pv-header">
         <div class="pv-avatar ${color}">${ini}</div>
         <div class="pv-info">
           <div class="pv-name">${p.nombre}</div>
-          <div class="pv-sub">${p.fecha_nac ? 'Nac. ' + fmtFecha(p.fecha_nac) : ''}${p.sexo ? (p.fecha_nac ? ' · ' : '') + p.sexo : ''}${imc ? ' · IMC ' + imc.val : ''}</div>
+          <div class="pv-sub">${p.fecha_nac ? 'Nac. ' + fmtFecha(p.fecha_nac) : ''}${p.sexo ? (p.fecha_nac ? ' · ' : '') + p.sexo : ''}${imc ? ' · IMC ' + imc.val + ' (' + imc.etiq + ')' : ''}</div>
         </div>
         <div class="pv-actions">
           <button class="btn btn-outline" onclick="editarPaciente(${p.id})">
@@ -412,20 +463,24 @@ function renderPacienteView(p, fotos, tab = currentTab) {
         </div>
       </div>
       <div class="pv-tabs">
-        <div class="pv-tab" id="tab-btn-ficha" onclick="switchTab('ficha')">Ficha clínica</div>
-        <div class="pv-tab" id="tab-btn-fotos" onclick="switchTab('fotos')">
+        <div class="pv-tab" id="tab-btn-ficha"      onclick="switchTab('ficha')">Ficha clínica</div>
+        <div class="pv-tab" id="tab-btn-revisiones" onclick="switchTab('revisiones')">
+          Revisiones <span class="badge">${revs ? revs.length : 0}</span>
+        </div>
+        <div class="pv-tab" id="tab-btn-fotos"      onclick="switchTab('fotos')">
           Fotos <span class="badge">${fotos.length}</span>
         </div>
       </div>
-      <div id="tab-ficha" class="tab-pane">${renderFichaContent(p)}</div>
-      <div id="tab-fotos" class="tab-pane">${renderFotosContent(fotos)}</div>
+      <div id="tab-ficha"      class="tab-pane">${renderFichaContent(p)}</div>
+      <div id="tab-revisiones" class="tab-pane">${renderRevisionesContent(revs || [])}</div>
+      <div id="tab-fotos"      class="tab-pane">${renderFotosContent(fotos)}</div>
     </div>`;
   activarTab(tab);
 }
 
-function calcIMC(peso, altura) {
-  if (!peso || !altura) return null;
-  const val = Math.round((peso / ((altura / 100) ** 2)) * 10) / 10;
+function calcIMC(peso, talla) {
+  if (!peso || !talla) return null;
+  const val = Math.round((peso / ((talla / 100) ** 2)) * 10) / 10;
   let cls = 'imc-normal', etiq = 'Normal';
   if (val < 18.5) { cls = 'imc-bajo'; etiq = 'Bajo peso'; }
   else if (val < 25) { cls = 'imc-normal'; etiq = 'Normal'; }
@@ -435,15 +490,9 @@ function calcIMC(peso, altura) {
 }
 
 function renderFichaContent(p) {
-  function campo(label, val, unidad = '') {
-    const txt = val ? `${val}${unidad}` : null;
-    return `<div><div class="ficha-label">${label}</div><div class="ficha-value">${txt || '<span class="ficha-nodata">—</span>'}</div></div>`;
+  function campo(label, val) {
+    return `<div><div class="ficha-label">${label}</div><div class="ficha-value">${val || '<span class="ficha-nodata">—</span>'}</div></div>`;
   }
-  const imc = calcIMC(p.peso, p.altura);
-  const imcHtml = imc
-    ? `<span class="imc-badge ${imc.cls}">${imc.val} — ${imc.etiq}</span>`
-    : '<span class="ficha-nodata">—</span>';
-
   return `<div class="ficha-area">
     <div class="ficha-section">
       <div class="ficha-section-title">Datos personales</div>
@@ -453,19 +502,6 @@ function renderFichaContent(p) {
         ${campo('Fecha de nacimiento', p.fecha_nac ? fmtFecha(p.fecha_nac) : null)}
         ${campo('Teléfono', p.telefono)}
         ${campo('Email', p.email)}
-      </div>
-    </div>
-    <div class="ficha-section">
-      <div class="ficha-section-title">Antropometría</div>
-      <div class="ficha-grid">
-        ${campo('Peso', p.peso, ' kg')}
-        ${campo('Altura', p.altura, ' cm')}
-        <div><div class="ficha-label">IMC</div><div class="ficha-value">${imcHtml}</div></div>
-        ${campo('P. Cintura', p.p_cintura, ' cm')}
-        ${campo('P. Cadera', p.p_cadera, ' cm')}
-        ${campo('P. Brazo', p.p_brazo, ' cm')}
-        ${campo('% Grasa', p.pct_grasa, '%')}
-        ${campo('% Músculo', p.pct_musculo, '%')}
       </div>
     </div>
     <div class="ficha-section">
@@ -481,6 +517,103 @@ function renderFichaContent(p) {
       <div class="ficha-section-title">Notas / observaciones</div>
       <div style="font-size:14px;color:var(--text);white-space:pre-wrap;line-height:1.6">${p.notas}</div>
     </div>` : ''}
+  </div>`;
+}
+
+function renderRevisionesContent(revs) {
+  function campo(label, val, unidad = '') {
+    const txt = val != null ? `${val}${unidad}` : null;
+    return `<div><div class="ficha-label">${label}</div><div class="ficha-value">${txt || '<span class="ficha-nodata">—</span>'}</div></div>`;
+  }
+
+  const cards = revs.length ? revs.map(r => {
+    const imc = calcIMC(r.peso, r.talla);
+    const partes = [r.peso ? `${r.peso} kg` : null, r.talla ? `${r.talla} cm` : null].filter(Boolean);
+    const resumen = partes.length ? partes.join(' · ') : 'Sin medidas básicas';
+    const imcHtml = imc ? ` &nbsp;<span class="imc-badge ${imc.cls}">${imc.val} ${imc.etiq}</span>` : '';
+
+    return `<div class="rev-card">
+      <div class="rev-header" onclick="toggleRevDetail(${r.id})">
+        <div>
+          <div class="rev-fecha">${fmtFecha((r.fecha || '').split('T')[0])}</div>
+          <div class="rev-resumen">${resumen}${imcHtml}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarRevision(${r.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarRevision(${r.id})">Eliminar</button>
+          <svg id="rev-ch-${r.id}" class="rev-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+      <div class="rev-detail" id="rev-d-${r.id}" style="display:none">
+        <div class="rev-subsection">
+          <div class="ficha-section-title">Medidas básicas</div>
+          <div class="rev-grid">
+            ${campo('Peso', r.peso, ' kg')}
+            ${campo('Talla', r.talla, ' cm')}
+            ${campo('Envergadura', r.envergadura, ' cm')}
+            ${imc
+              ? `<div><div class="ficha-label">IMC</div><div class="ficha-value"><span class="imc-badge ${imc.cls}">${imc.val} — ${imc.etiq}</span></div></div>`
+              : campo('IMC', null)}
+          </div>
+        </div>
+        <div class="rev-subsection">
+          <div class="ficha-section-title">Pliegues cutáneos (cm)</div>
+          <div class="rev-grid">
+            ${campo('Bicipital', r.pl_bicipital)}
+            ${campo('Tricipital', r.pl_tricipital)}
+            ${campo('Subescapular', r.pl_subescapular)}
+            ${campo('Supraespinal', r.pl_supraespinal)}
+            ${campo('Supracrestal', r.pl_supracrestal)}
+            ${campo('Abdominal', r.pl_abdominal)}
+            ${campo('Muslo int.', r.pl_muslo_int)}
+            ${campo('Pierna med.', r.pl_pierna_med)}
+          </div>
+        </div>
+        <div class="rev-subsection">
+          <div class="ficha-section-title">Perímetros (cm)</div>
+          <div class="rev-grid">
+            ${campo('Antebrazo', r.per_antebrazo)}
+            ${campo('Brazo relaj.', r.per_brazo_rel)}
+            ${campo('Brazo cont.', r.per_brazo_cont)}
+            ${campo('Hombros', r.per_hombros)}
+            ${campo('Pecho', r.per_pecho)}
+            ${campo('Cintura', r.per_cintura)}
+            ${campo('Caderas', r.per_caderas)}
+            ${campo('Muslo', r.per_muslo)}
+            ${campo('Muslo cont.', r.per_muslo_cont)}
+            ${campo('Gemelo', r.per_gemelo)}
+          </div>
+        </div>
+        ${r.notas ? `<div class="rev-subsection">
+          <div class="ficha-section-title">Notas</div>
+          <div style="font-size:14px;color:var(--text);white-space:pre-wrap;line-height:1.6;margin-top:8px">${r.notas}</div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : `<div class="no-revisiones">
+    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <p>No hay revisiones todavía.<br>Pulsa <strong>Nueva revisión</strong> para registrar la primera visita.</p>
+  </div>`;
+
+  return `<div class="revisiones-area">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700">
+        Historial de revisiones
+        <span style="font-size:14px;color:var(--text-muted);font-weight:400">(${revs.length})</span>
+      </div>
+      <button class="btn btn-primary" onclick="showModalRevision()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Nueva revisión
+      </button>
+    </div>
+    <div class="rev-list">${cards}</div>
   </div>`;
 }
 
@@ -508,7 +641,7 @@ function renderFotosContent(fotos) {
   return `
     <div class="info-bar">
       <div class="info-card"><div class="info-label">Total fotos</div><div class="info-value">${fotos.length}</div></div>
-      <div class="info-card"><div class="info-label">Primera visita</div><div class="info-value">${primeraFoto}</div></div>
+      <div class="info-card"><div class="info-label">Primera foto</div><div class="info-value">${primeraFoto}</div></div>
       <div class="info-card"><div class="info-label">Última foto</div><div class="info-value">${ultimaFoto}</div></div>
     </div>
     <div class="photos-area">
@@ -536,12 +669,14 @@ function activarTab(tab) {
   document.getElementById('tab-' + tab)?.classList.add('active');
 }
 
+// ── Pacientes CRUD ────────────────────────────────────────────────────────────
+
 function showModalPaciente() {
   editandoId = null;
   document.getElementById('modalPacienteTitulo').textContent = 'Nuevo paciente';
-  ['pNombre','pFecha','pSexo','pDni','pTelefono','pEmail','pPeso','pAltura',
-   'pCintura','pCadera','pBrazo','pGrasa','pMusculo','pObjetivo','pActividad',
-   'pIntolerancias','pPatologias','pNotas'].forEach(id => document.getElementById(id).value = '');
+  ['pNombre','pFecha','pSexo','pDni','pTelefono','pEmail',
+   'pObjetivo','pActividad','pIntolerancias','pPatologias','pNotas']
+    .forEach(id => document.getElementById(id).value = '');
   abrirModal('modalPaciente');
   setTimeout(() => document.getElementById('pNombre').focus(), 60);
 }
@@ -556,13 +691,6 @@ async function editarPaciente(id) {
   document.getElementById('pDni').value           = p.dni              || '';
   document.getElementById('pTelefono').value      = p.telefono         || '';
   document.getElementById('pEmail').value         = p.email            || '';
-  document.getElementById('pPeso').value          = p.peso             || '';
-  document.getElementById('pAltura').value        = p.altura           || '';
-  document.getElementById('pCintura').value       = p.p_cintura        || '';
-  document.getElementById('pCadera').value        = p.p_cadera         || '';
-  document.getElementById('pBrazo').value         = p.p_brazo          || '';
-  document.getElementById('pGrasa').value         = p.pct_grasa        || '';
-  document.getElementById('pMusculo').value       = p.pct_musculo      || '';
   document.getElementById('pObjetivo').value      = p.objetivo         || '';
   document.getElementById('pActividad').value     = p.actividad_fisica || '';
   document.getElementById('pIntolerancias').value = p.intolerancias    || '';
@@ -575,26 +703,18 @@ async function editarPaciente(id) {
 async function guardarPaciente() {
   const nombre = document.getElementById('pNombre').value.trim();
   if (!nombre) { document.getElementById('pNombre').focus(); return; }
-  const num = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? null : v; };
   const data = {
     nombre,
-    fecha_nac:       document.getElementById('pFecha').value           || null,
-    sexo:            document.getElementById('pSexo').value            || null,
-    dni:             document.getElementById('pDni').value.trim()      || null,
-    telefono:        document.getElementById('pTelefono').value.trim() || null,
-    email:           document.getElementById('pEmail').value.trim()    || null,
-    peso:            num('pPeso'),
-    altura:          num('pAltura'),
-    p_cintura:       num('pCintura'),
-    p_cadera:        num('pCadera'),
-    p_brazo:         num('pBrazo'),
-    pct_grasa:       num('pGrasa'),
-    pct_musculo:     num('pMusculo'),
-    objetivo:        document.getElementById('pObjetivo').value        || null,
-    actividad_fisica:document.getElementById('pActividad').value       || null,
-    intolerancias:   document.getElementById('pIntolerancias').value.trim() || null,
-    patologias:      document.getElementById('pPatologias').value.trim()    || null,
-    notas:           document.getElementById('pNotas').value.trim()         || null,
+    fecha_nac:        document.getElementById('pFecha').value           || null,
+    sexo:             document.getElementById('pSexo').value            || null,
+    dni:              document.getElementById('pDni').value.trim()      || null,
+    telefono:         document.getElementById('pTelefono').value.trim() || null,
+    email:            document.getElementById('pEmail').value.trim()    || null,
+    objetivo:         document.getElementById('pObjetivo').value        || null,
+    actividad_fisica: document.getElementById('pActividad').value       || null,
+    intolerancias:    document.getElementById('pIntolerancias').value.trim() || null,
+    patologias:       document.getElementById('pPatologias').value.trim()    || null,
+    notas:            document.getElementById('pNotas').value.trim()         || null,
   };
   try {
     if (editandoId) {
@@ -602,12 +722,13 @@ async function guardarPaciente() {
       pacientes = pacientes.map(p => p.id === editandoId ? updated : p);
       cerrarModal('modalPaciente');
       const fotos = await api('GET', `/api/pacientes/${editandoId}/fotos`);
-      renderPacienteView(updated, fotos);
+      renderPacienteView(updated, fotos, revisiones);
     } else {
       const created = await api('POST', '/api/pacientes', data);
       pacientes.push(created);
       cerrarModal('modalPaciente');
       currentId = created.id;
+      revisiones = [];
       abrirPaciente(created.id);
     }
     renderLista(document.getElementById('searchInput').value);
@@ -616,9 +737,10 @@ async function guardarPaciente() {
 
 async function eliminarPaciente(id) {
   const p = pacientes.find(x => x.id === id);
-  if (!confirm(`¿Eliminar a "${p.nombre}" y todas sus fotos?\nEsta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar a "${p.nombre}" y todas sus revisiones y fotos?\nEsta acción no se puede deshacer.`)) return;
   await api('DELETE', `/api/pacientes/${id}`);
   pacientes = pacientes.filter(x => x.id !== id);
+  revisiones = [];
   currentId = null;
   renderLista('');
   document.getElementById('main').innerHTML = `
@@ -630,6 +752,123 @@ async function eliminarPaciente(id) {
       <h2>Selecciona un paciente</h2><p>O crea uno nuevo para empezar</p>
     </div>`;
 }
+
+// ── Revisiones CRUD ───────────────────────────────────────────────────────────
+
+const REV_IDS = [
+  'rPeso','rTalla','rEnvergadura',
+  'rPlBicipital','rPlTricipital','rPlSubescapular','rPlSupraespinal',
+  'rPlSupracrestal','rPlAbdominal','rPlMusloInt','rPlPiernaMed',
+  'rPerAntebrazo','rPerBrazoRel','rPerBrazoCont','rPerHombros',
+  'rPerPecho','rPerCintura','rPerCaderas','rPerMuslo','rPerMusloCont',
+  'rPerGemelo','rNotas'
+];
+
+function showModalRevision() {
+  editandoRevId = null;
+  document.getElementById('modalRevisionTitulo').textContent = 'Nueva revisión';
+  document.getElementById('rFecha').value = new Date().toISOString().split('T')[0];
+  REV_IDS.forEach(id => document.getElementById(id).value = '');
+  abrirModal('modalRevision');
+}
+
+function editarRevision(rid) {
+  const r = revisiones.find(x => x.id === rid);
+  editandoRevId = rid;
+  document.getElementById('modalRevisionTitulo').textContent = 'Editar revisión';
+  document.getElementById('rFecha').value          = (r.fecha || '').split('T')[0] || new Date().toISOString().split('T')[0];
+  document.getElementById('rPeso').value           = r.peso            ?? '';
+  document.getElementById('rTalla').value          = r.talla           ?? '';
+  document.getElementById('rEnvergadura').value    = r.envergadura     ?? '';
+  document.getElementById('rPlBicipital').value    = r.pl_bicipital    ?? '';
+  document.getElementById('rPlTricipital').value   = r.pl_tricipital   ?? '';
+  document.getElementById('rPlSubescapular').value = r.pl_subescapular ?? '';
+  document.getElementById('rPlSupraespinal').value = r.pl_supraespinal ?? '';
+  document.getElementById('rPlSupracrestal').value = r.pl_supracrestal ?? '';
+  document.getElementById('rPlAbdominal').value    = r.pl_abdominal    ?? '';
+  document.getElementById('rPlMusloInt').value     = r.pl_muslo_int    ?? '';
+  document.getElementById('rPlPiernaMed').value    = r.pl_pierna_med   ?? '';
+  document.getElementById('rPerAntebrazo').value   = r.per_antebrazo   ?? '';
+  document.getElementById('rPerBrazoRel').value    = r.per_brazo_rel   ?? '';
+  document.getElementById('rPerBrazoCont').value   = r.per_brazo_cont  ?? '';
+  document.getElementById('rPerHombros').value     = r.per_hombros     ?? '';
+  document.getElementById('rPerPecho').value       = r.per_pecho       ?? '';
+  document.getElementById('rPerCintura').value     = r.per_cintura     ?? '';
+  document.getElementById('rPerCaderas').value     = r.per_caderas     ?? '';
+  document.getElementById('rPerMuslo').value       = r.per_muslo       ?? '';
+  document.getElementById('rPerMusloCont').value   = r.per_muslo_cont  ?? '';
+  document.getElementById('rPerGemelo').value      = r.per_gemelo      ?? '';
+  document.getElementById('rNotas').value          = r.notas           || '';
+  abrirModal('modalRevision');
+}
+
+function getRevData() {
+  const num = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? null : v; };
+  return {
+    fecha:           document.getElementById('rFecha').value || new Date().toISOString().split('T')[0],
+    peso:            num('rPeso'),   talla: num('rTalla'),   envergadura: num('rEnvergadura'),
+    pl_bicipital:    num('rPlBicipital'),    pl_tricipital:   num('rPlTricipital'),
+    pl_subescapular: num('rPlSubescapular'), pl_supraespinal: num('rPlSupraespinal'),
+    pl_supracrestal: num('rPlSupracrestal'), pl_abdominal:    num('rPlAbdominal'),
+    pl_muslo_int:    num('rPlMusloInt'),     pl_pierna_med:   num('rPlPiernaMed'),
+    per_antebrazo:   num('rPerAntebrazo'),   per_brazo_rel:   num('rPerBrazoRel'),
+    per_brazo_cont:  num('rPerBrazoCont'),   per_hombros:     num('rPerHombros'),
+    per_pecho:       num('rPerPecho'),       per_cintura:     num('rPerCintura'),
+    per_caderas:     num('rPerCaderas'),     per_muslo:       num('rPerMuslo'),
+    per_muslo_cont:  num('rPerMusloCont'),   per_gemelo:      num('rPerGemelo'),
+    notas:           document.getElementById('rNotas').value.trim() || null,
+  };
+}
+
+async function guardarRevision() {
+  const data = getRevData();
+  try {
+    if (editandoRevId) {
+      const updated = await api('PUT', `/api/revisiones/${editandoRevId}`, data);
+      revisiones = revisiones.map(r => r.id === editandoRevId ? updated : r);
+    } else {
+      const created = await api('POST', `/api/pacientes/${currentId}/revisiones`, data);
+      revisiones.unshift(created);
+      revisiones.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    }
+    cerrarModal('modalRevision');
+    actualizarPacienteMetaRevision();
+    const p = pacientes.find(x => x.id === currentId);
+    const fotos = await api('GET', `/api/pacientes/${currentId}/fotos`);
+    renderPacienteView(p, fotos, revisiones, 'revisiones');
+  } catch (err) { alert('Error al guardar revisión: ' + err.message); }
+}
+
+async function eliminarRevision(rid) {
+  if (!confirm('¿Eliminar esta revisión?\nEsta acción no se puede deshacer.')) return;
+  await api('DELETE', `/api/revisiones/${rid}`);
+  revisiones = revisiones.filter(r => r.id !== rid);
+  actualizarPacienteMetaRevision();
+  const p = pacientes.find(x => x.id === currentId);
+  const fotos = await api('GET', `/api/pacientes/${currentId}/fotos`);
+  renderPacienteView(p, fotos, revisiones, 'revisiones');
+}
+
+function actualizarPacienteMetaRevision() {
+  const idx = pacientes.findIndex(p => p.id === currentId);
+  if (idx < 0) return;
+  pacientes[idx].num_revisiones = revisiones.length;
+  const latest = revisiones.find(r => r.peso || r.talla);
+  pacientes[idx].last_peso  = latest?.peso  ?? null;
+  pacientes[idx].last_talla = latest?.talla ?? null;
+  renderLista(document.getElementById('searchInput').value);
+}
+
+function toggleRevDetail(rid) {
+  const detail  = document.getElementById('rev-d-' + rid);
+  const chevron = document.getElementById('rev-ch-' + rid);
+  if (!detail) return;
+  const open = detail.style.display !== 'none';
+  detail.style.display = open ? 'none' : 'block';
+  chevron?.classList.toggle('open', !open);
+}
+
+// ── Fotos ─────────────────────────────────────────────────────────────────────
 
 function handleDrop(e) {
   e.preventDefault();
@@ -661,7 +900,7 @@ async function confirmarSubida() {
   const idx = pacientes.findIndex(p => p.id === currentId);
   if (idx >= 0) pacientes[idx].num_fotos = updated.length;
   renderLista(document.getElementById('searchInput').value);
-  renderPacienteView(pacientes.find(x => x.id === currentId), updated, 'fotos');
+  renderPacienteView(pacientes.find(x => x.id === currentId), updated, revisiones, 'fotos');
 }
 
 async function abrirLightbox(fotoId) {
@@ -686,8 +925,10 @@ async function eliminarFoto(fotoId) {
   const idx = pacientes.findIndex(p => p.id === currentId);
   if (idx >= 0) pacientes[idx].num_fotos = fotos.length;
   renderLista(document.getElementById('searchInput').value);
-  renderPacienteView(pacientes.find(x => x.id === currentId), fotos, 'fotos');
+  renderPacienteView(pacientes.find(x => x.id === currentId), fotos, revisiones, 'fotos');
 }
+
+// ── Utilidades ────────────────────────────────────────────────────────────────
 
 function abrirModal(id)  { document.getElementById(id).style.display = 'flex'; }
 function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -701,8 +942,15 @@ document.addEventListener('keydown', e => {
 document.getElementById('pNombre').addEventListener('keydown', e => { if (e.key === 'Enter') guardarPaciente(); });
 
 function iniciales(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
-function fmtFecha(d) { if (!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
-function fmtFechaCorta(iso) { return new Date(iso).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtFecha(d) {
+  if (!d) return '';
+  const s = d.split('T')[0];
+  const [y,m,dd] = s.split('-');
+  return `${dd}/${m}/${y}`;
+}
+function fmtFechaCorta(iso) {
+  return new Date(iso).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+}
 function fmtDatetime(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +

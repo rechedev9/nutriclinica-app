@@ -36,19 +36,40 @@ def init_db():
         dni              TEXT,
         telefono         TEXT,
         email            TEXT,
-        peso             REAL,
-        altura           REAL,
-        p_cintura        REAL,
-        p_cadera         REAL,
-        p_brazo          REAL,
-        pct_grasa        REAL,
-        pct_musculo      REAL,
         objetivo         TEXT,
         actividad_fisica TEXT,
         intolerancias    TEXT,
         patologias       TEXT,
         notas            TEXT,
         creado           TEXT DEFAULT (datetime('now','localtime'))
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS revisiones (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id     INTEGER NOT NULL,
+        fecha           TEXT DEFAULT (date('now','localtime')),
+        peso            REAL,
+        talla           REAL,
+        envergadura     REAL,
+        pl_bicipital    REAL,
+        pl_tricipital   REAL,
+        pl_subescapular REAL,
+        pl_supraespinal REAL,
+        pl_supracrestal REAL,
+        pl_abdominal    REAL,
+        pl_muslo_int    REAL,
+        pl_pierna_med   REAL,
+        per_antebrazo   REAL,
+        per_brazo_rel   REAL,
+        per_brazo_cont  REAL,
+        per_hombros     REAL,
+        per_pecho       REAL,
+        per_cintura     REAL,
+        per_caderas     REAL,
+        per_muslo       REAL,
+        per_muslo_cont  REAL,
+        per_gemelo      REAL,
+        notas           TEXT,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id)
     )''')
     conn.execute('''CREATE TABLE IF NOT EXISTS fotos (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,8 +98,16 @@ def get_pacientes():
     rows = conn.execute('SELECT * FROM pacientes ORDER BY nombre COLLATE NOCASE').fetchall()
     result = []
     for p in rows:
-        cnt = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (p['id'],)).fetchone()[0]
-        result.append({**dict(p), 'num_fotos': cnt})
+        cnt     = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (p['id'],)).fetchone()[0]
+        rev_cnt = conn.execute('SELECT COUNT(*) FROM revisiones WHERE paciente_id=?', (p['id'],)).fetchone()[0]
+        last_rev = conn.execute(
+            'SELECT peso, talla FROM revisiones WHERE paciente_id=? ORDER BY fecha DESC LIMIT 1', (p['id'],)
+        ).fetchone()
+        result.append({
+            **dict(p), 'num_fotos': cnt, 'num_revisiones': rev_cnt,
+            'last_peso':  last_rev['peso']  if last_rev else None,
+            'last_talla': last_rev['talla'] if last_rev else None,
+        })
     conn.close()
     return jsonify(result)
 
@@ -90,15 +119,10 @@ def create_paciente():
     cur = conn.execute(
         '''INSERT INTO pacientes
            (nombre, fecha_nac, sexo, dni, telefono, email,
-            peso, altura, p_cintura, p_cadera, p_brazo,
-            pct_grasa, pct_musculo, objetivo, actividad_fisica,
-            intolerancias, patologias, notas)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            objetivo, actividad_fisica, intolerancias, patologias, notas)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
         (d['nombre'].strip(), d.get('fecha_nac') or None, d.get('sexo') or None,
          d.get('dni') or None, d.get('telefono') or None, d.get('email') or None,
-         d.get('peso') or None, d.get('altura') or None,
-         d.get('p_cintura') or None, d.get('p_cadera') or None, d.get('p_brazo') or None,
-         d.get('pct_grasa') or None, d.get('pct_musculo') or None,
          d.get('objetivo') or None, d.get('actividad_fisica') or None,
          d.get('intolerancias') or None, d.get('patologias') or None,
          d.get('notas') or None)
@@ -106,7 +130,8 @@ def create_paciente():
     conn.commit()
     p = conn.execute('SELECT * FROM pacientes WHERE id=?', (cur.lastrowid,)).fetchone()
     conn.close()
-    return jsonify({**dict(p), 'num_fotos': 0}), 201
+    return jsonify({**dict(p), 'num_fotos': 0, 'num_revisiones': 0,
+                    'last_peso': None, 'last_talla': None}), 201
 
 
 @app.route('/api/pacientes/<int:pid>', methods=['PUT'])
@@ -115,24 +140,27 @@ def update_paciente(pid):
     conn = get_db()
     conn.execute(
         '''UPDATE pacientes SET nombre=?, fecha_nac=?, sexo=?, dni=?, telefono=?, email=?,
-           peso=?, altura=?, p_cintura=?, p_cadera=?, p_brazo=?,
-           pct_grasa=?, pct_musculo=?, objetivo=?, actividad_fisica=?,
-           intolerancias=?, patologias=?, notas=?
+           objetivo=?, actividad_fisica=?, intolerancias=?, patologias=?, notas=?
            WHERE id=?''',
         (d['nombre'].strip(), d.get('fecha_nac') or None, d.get('sexo') or None,
          d.get('dni') or None, d.get('telefono') or None, d.get('email') or None,
-         d.get('peso') or None, d.get('altura') or None,
-         d.get('p_cintura') or None, d.get('p_cadera') or None, d.get('p_brazo') or None,
-         d.get('pct_grasa') or None, d.get('pct_musculo') or None,
          d.get('objetivo') or None, d.get('actividad_fisica') or None,
          d.get('intolerancias') or None, d.get('patologias') or None,
          d.get('notas') or None, pid)
     )
     conn.commit()
-    p = conn.execute('SELECT * FROM pacientes WHERE id=?', (pid,)).fetchone()
-    cnt = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (pid,)).fetchone()[0]
+    p        = conn.execute('SELECT * FROM pacientes WHERE id=?', (pid,)).fetchone()
+    cnt      = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (pid,)).fetchone()[0]
+    rev_cnt  = conn.execute('SELECT COUNT(*) FROM revisiones WHERE paciente_id=?', (pid,)).fetchone()[0]
+    last_rev = conn.execute(
+        'SELECT peso, talla FROM revisiones WHERE paciente_id=? ORDER BY fecha DESC LIMIT 1', (pid,)
+    ).fetchone()
     conn.close()
-    return jsonify({**dict(p), 'num_fotos': cnt})
+    return jsonify({
+        **dict(p), 'num_fotos': cnt, 'num_revisiones': rev_cnt,
+        'last_peso':  last_rev['peso']  if last_rev else None,
+        'last_talla': last_rev['talla'] if last_rev else None,
+    })
 
 
 @app.route('/api/pacientes/<int:pid>', methods=['DELETE'])
@@ -144,7 +172,74 @@ def delete_paciente(pid):
         if os.path.exists(carpeta):
             shutil.rmtree(carpeta)
     conn.execute('DELETE FROM fotos WHERE paciente_id=?', (pid,))
+    conn.execute('DELETE FROM revisiones WHERE paciente_id=?', (pid,))
     conn.execute('DELETE FROM pacientes WHERE id=?', (pid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+# ─── REVISIONES ───────────────────────────────────────────────────────────────
+
+REV_FIELDS = [
+    'fecha', 'peso', 'talla', 'envergadura',
+    'pl_bicipital', 'pl_tricipital', 'pl_subescapular', 'pl_supraespinal',
+    'pl_supracrestal', 'pl_abdominal', 'pl_muslo_int', 'pl_pierna_med',
+    'per_antebrazo', 'per_brazo_rel', 'per_brazo_cont', 'per_hombros',
+    'per_pecho', 'per_cintura', 'per_caderas', 'per_muslo', 'per_muslo_cont',
+    'per_gemelo', 'notas'
+]
+
+def _rev_val(d, f):
+    v = d.get(f)
+    return v if v is not None and v != '' else None
+
+def _rev_vals(d):
+    return [_rev_val(d, f) for f in REV_FIELDS]
+
+
+@app.route('/api/pacientes/<int:pid>/revisiones', methods=['GET'])
+def get_revisiones(pid):
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT * FROM revisiones WHERE paciente_id=? ORDER BY fecha DESC', (pid,)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/pacientes/<int:pid>/revisiones', methods=['POST'])
+def create_revision(pid):
+    d    = request.json
+    cols = ', '.join(REV_FIELDS)
+    ph   = ', '.join(['?'] * len(REV_FIELDS))
+    conn = get_db()
+    cur  = conn.execute(
+        f'INSERT INTO revisiones (paciente_id, {cols}) VALUES (?, {ph})',
+        [pid] + _rev_vals(d)
+    )
+    conn.commit()
+    r = conn.execute('SELECT * FROM revisiones WHERE id=?', (cur.lastrowid,)).fetchone()
+    conn.close()
+    return jsonify(dict(r)), 201
+
+
+@app.route('/api/revisiones/<int:rid>', methods=['PUT'])
+def update_revision(rid):
+    d    = request.json
+    sets = ', '.join(f'{f}=?' for f in REV_FIELDS)
+    conn = get_db()
+    conn.execute(f'UPDATE revisiones SET {sets} WHERE id=?', _rev_vals(d) + [rid])
+    conn.commit()
+    r = conn.execute('SELECT * FROM revisiones WHERE id=?', (rid,)).fetchone()
+    conn.close()
+    return jsonify(dict(r))
+
+
+@app.route('/api/revisiones/<int:rid>', methods=['DELETE'])
+def delete_revision(rid):
+    conn = get_db()
+    conn.execute('DELETE FROM revisiones WHERE id=?', (rid,))
     conn.commit()
     conn.close()
     return jsonify({'ok': True})
@@ -155,7 +250,9 @@ def delete_paciente(pid):
 @app.route('/api/pacientes/<int:pid>/fotos', methods=['GET'])
 def get_fotos(pid):
     conn = get_db()
-    fotos = conn.execute('SELECT * FROM fotos WHERE paciente_id=? ORDER BY fecha DESC', (pid,)).fetchall()
+    fotos = conn.execute(
+        'SELECT * FROM fotos WHERE paciente_id=? ORDER BY fecha DESC', (pid,)
+    ).fetchall()
     conn.close()
     return jsonify([dict(f) for f in fotos])
 
@@ -166,14 +263,14 @@ def upload_foto(pid):
     nota = request.form.get('nota', '').strip()
     if not file:
         return jsonify({'error': 'Sin archivo'}), 400
-    conn = get_db()
-    p         = conn.execute('SELECT nombre FROM pacientes WHERE id=?', (pid,)).fetchone()
-    carpeta   = nombre_a_carpeta(p['nombre'])
-    prefijo   = nombre_a_prefijo(p['nombre'])
-    ext       = os.path.splitext(file.filename)[1].lower() or '.jpg'
+    conn     = get_db()
+    p        = conn.execute('SELECT nombre FROM pacientes WHERE id=?', (pid,)).fetchone()
+    carpeta  = nombre_a_carpeta(p['nombre'])
+    prefijo  = nombre_a_prefijo(p['nombre'])
+    ext      = os.path.splitext(file.filename)[1].lower() or '.jpg'
     fecha_str = datetime.now().strftime('%Y%m%d_%H%M%S')
-    fname     = f"{prefijo}_{fecha_str}_{uuid.uuid4().hex[:6]}{ext}"
-    filename  = f"{carpeta}/{fname}"
+    fname    = f"{prefijo}_{fecha_str}_{uuid.uuid4().hex[:6]}{ext}"
+    filename = f"{carpeta}/{fname}"
     os.makedirs(os.path.join(FOTOS_DIR, carpeta), exist_ok=True)
     file.save(os.path.join(FOTOS_DIR, carpeta, fname))
     cur = conn.execute(
@@ -213,52 +310,74 @@ def exportar_excel():
     pacientes = conn.execute('SELECT * FROM pacientes ORDER BY nombre COLLATE NOCASE').fetchall()
 
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = 'Pacientes'
 
     verde  = PatternFill(start_color='16A34A', end_color='16A34A', fill_type='solid')
     blanco = Font(bold=True, color='FFFFFF', size=11)
     centro = Alignment(horizontal='center', vertical='center')
 
-    cabeceras = [
-        'ID', 'Nombre', 'Fecha nac.', 'Sexo', 'DNI', 'Teléfono', 'Email',
-        'Peso (kg)', 'Altura (cm)', 'IMC', 'P. Cintura', 'P. Cadera', 'P. Brazo',
-        '% Grasa', '% Músculo', 'Objetivo', 'Actividad física',
-        'Intolerancias', 'Patologías', 'Notas', 'Nº fotos', 'Fecha alta'
-    ]
-    anchos = [6, 28, 14, 10, 14, 14, 28, 10, 10, 8, 10, 10, 10, 10, 10, 22, 18, 28, 28, 35, 8, 18]
+    def cabecera(ws, cabs, anchos):
+        for i, (cab, ancho) in enumerate(zip(cabs, anchos), 1):
+            cell = ws.cell(row=1, column=i, value=cab)
+            cell.fill = verde; cell.font = blanco; cell.alignment = centro
+            ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = ancho
+        ws.row_dimensions[1].height = 22
 
-    for i, (cab, ancho) in enumerate(zip(cabeceras, anchos), 1):
-        cell = ws.cell(row=1, column=i, value=cab)
-        cell.fill      = verde
-        cell.font      = blanco
-        cell.alignment = centro
-        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = ancho
-    ws.row_dimensions[1].height = 22
-
-    for r, p in enumerate(pacientes, 2):
-        cnt    = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (p['id'],)).fetchone()[0]
-        peso   = p['peso']
-        altura = p['altura']
-        imc    = round(peso / ((altura / 100) ** 2), 1) if peso and altura else ''
-        valores = [
+    # ── Hoja 1: Pacientes ──────────────────────────────────────────────────
+    ws1 = wb.active
+    ws1.title = 'Pacientes'
+    cabecera(ws1,
+        ['ID', 'Nombre', 'Fecha nac.', 'Sexo', 'DNI', 'Teléfono', 'Email',
+         'Objetivo', 'Actividad física', 'Intolerancias', 'Patologías',
+         'Notas', 'Nº revisiones', 'Nº fotos', 'Fecha alta'],
+        [6, 28, 14, 10, 14, 14, 28, 22, 20, 30, 30, 35, 12, 8, 18]
+    )
+    for p in pacientes:
+        cnt     = conn.execute('SELECT COUNT(*) FROM fotos WHERE paciente_id=?', (p['id'],)).fetchone()[0]
+        rev_cnt = conn.execute('SELECT COUNT(*) FROM revisiones WHERE paciente_id=?', (p['id'],)).fetchone()[0]
+        ws1.append([
             p['id'], p['nombre'], p['fecha_nac'] or '', p['sexo'] or '',
             p['dni'] or '', p['telefono'] or '', p['email'] or '',
-            peso or '', altura or '', imc,
-            p['p_cintura'] or '', p['p_cadera'] or '', p['p_brazo'] or '',
-            p['pct_grasa'] or '', p['pct_musculo'] or '',
             p['objetivo'] or '', p['actividad_fisica'] or '',
             p['intolerancias'] or '', p['patologias'] or '',
-            p['notas'] or '', cnt, p['creado'] or ''
-        ]
-        for c, val in enumerate(valores, 1):
-            ws.cell(row=r, column=c, value=val)
+            p['notas'] or '', rev_cnt, cnt, p['creado'] or ''
+        ])
+
+    # ── Hoja 2: Revisiones ─────────────────────────────────────────────────
+    ws2 = wb.create_sheet('Revisiones')
+    cabecera(ws2,
+        ['ID Rev.', 'Paciente', 'Fecha revisión',
+         'Peso (kg)', 'Talla (cm)', 'Envergadura (cm)',
+         'Pl. Bicipital', 'Pl. Tricipital', 'Pl. Subescapular', 'Pl. Supraespinal',
+         'Pl. Supracrestal', 'Pl. Abdominal', 'Pl. Muslo int.', 'Pl. Pierna med.',
+         'Per. Antebrazo', 'Per. Brazo rel.', 'Per. Brazo cont.', 'Per. Hombros',
+         'Per. Pecho', 'Per. Cintura', 'Per. Caderas', 'Per. Muslo',
+         'Per. Muslo cont.', 'Per. Gemelo', 'Notas'],
+        [8, 28, 16, 10, 10, 14,
+         13, 13, 16, 16, 16, 14, 14, 15,
+         14, 14, 15, 13, 11, 12, 12, 11, 14, 12, 35]
+    )
+    revisiones = conn.execute(
+        '''SELECT r.*, p.nombre FROM revisiones r
+           JOIN pacientes p ON p.id = r.paciente_id
+           ORDER BY p.nombre COLLATE NOCASE, r.fecha DESC'''
+    ).fetchall()
+    for r in revisiones:
+        def v(f): return r[f] if r[f] is not None else ''
+        ws2.append([
+            v('id'), v('nombre'), v('fecha'),
+            v('peso'), v('talla'), v('envergadura'),
+            v('pl_bicipital'), v('pl_tricipital'), v('pl_subescapular'), v('pl_supraespinal'),
+            v('pl_supracrestal'), v('pl_abdominal'), v('pl_muslo_int'), v('pl_pierna_med'),
+            v('per_antebrazo'), v('per_brazo_rel'), v('per_brazo_cont'), v('per_hombros'),
+            v('per_pecho'), v('per_cintura'), v('per_caderas'), v('per_muslo'),
+            v('per_muslo_cont'), v('per_gemelo'), v('notas')
+        ])
 
     conn.close()
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    nombre = f"pacientes_nutricion_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    nombre = f"nutricion_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     return send_file(buf,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True, download_name=nombre)
