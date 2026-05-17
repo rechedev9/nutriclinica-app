@@ -53,6 +53,9 @@
     .pv-info { flex: 1; }
     .pv-name { font-size: 20px; font-weight: 700; }
     .pv-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .pv-stats { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+    .pv-stat  { font-size:12px; color:var(--text-muted); background:#f1f5f9; padding:3px 9px; border-radius:6px; }
+    .pv-stat b { color:var(--text); font-weight:700; }
     .pv-actions { display: flex; gap: 8px; }
 
     .btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; transition: all .2s; text-decoration: none; }
@@ -135,29 +138,17 @@
     .rev-dd-item.act { background:#0f172a; color:white; font-weight:700; }
     .rev-dd-sep { height:1px; background:var(--border); margin:4px 6px; }
     /* Hero KPI cards */
-    .hero-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
-    .hero-card { border-radius: 14px; padding: 14px 16px 10px; background: white; border: 1px solid #edf0f5; box-shadow: 0 2px 16px rgba(0,0,0,.06); display: flex; flex-direction: column; }
-    .hc-imc,.hc-grasa,.hc-pgraso,.hc-pmagro { background: white; }
-    .hero-top  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
-    .hero-sup  { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.07em; padding-top:2px; }
-    .hero-num  { font-size:28px; font-weight:800; line-height:1; color:var(--text); }
-    .hero-u    { font-size:13px; font-weight:500; color:var(--text-muted); }
-    .hero-spark{ margin:8px 0 0; min-height:40px; overflow:hidden; }
-    .hero-foot { display:flex; justify-content:space-between; align-items:center; padding-top:8px; margin-top:auto; border-top:1px solid #f4f6f9; }
-    .hero-delta{ font-size:11px; font-weight:700; }
-    .hero-icon { flex-shrink:0; }
-    /* Top row: perfil + KPIs */
-    .analisis-top { display:flex; gap:14px; align-items:flex-start; }
-    .perfil-card { width:220px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px 18px 18px; text-align:center; }
-    .perfil-av { width:82px; height:82px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; color:white; flex-shrink:0; }
-    .perfil-name { font-size:17px; font-weight:800; color:var(--text); line-height:1.2; margin-top:4px; }
-    .perfil-sub  { font-size:12px; color:var(--text-muted); font-weight:500; }
-    .perfil-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#e2e8f0; border-radius:10px; overflow:hidden; width:100%; margin-top:4px; }
-    .perfil-stat { background:#f8fafc; padding:10px 4px; }
-    .perfil-stat-val { font-size:16px; font-weight:800; color:var(--text); line-height:1; }
-    .perfil-stat-u   { font-size:10px; font-weight:600; color:var(--text-muted); }
-    .perfil-stat-lbl { font-size:9px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
-    .analisis-top .hero-grid { flex:1; align-content:start; }
+    .hero-grid     { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .hero-card     { border-radius:14px; padding:20px; background:white; border:1px solid #eef1f6; box-shadow:0 2px 8px rgba(0,0,0,.05); display:flex; flex-direction:column; gap:14px; }
+    .hero-icon-box { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hero-label    { font-size:13px; font-weight:500; color:var(--text-muted); }
+    .hero-card-bot { display:flex; align-items:flex-end; justify-content:space-between; gap:8px; margin-top:auto; }
+    .hero-num      { font-size:32px; font-weight:800; line-height:1; color:var(--text); }
+    .hero-u        { font-size:15px; font-weight:500; color:var(--text-muted); margin-left:3px; }
+    .hero-delta    { font-size:12px; font-weight:700; padding:3px 7px; border-radius:6px; white-space:nowrap; }
+    .hero-delta.ok  { color:#16a34a; background:#f0fdf4; }
+    .hero-delta.bad { color:#dc2626; background:#fef2f2; }
+    .hero-delta.neu { color:var(--text-muted); background:#f1f5f9; }
     /* Mid row: composición + progreso */
     .dash-mid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .dash-card { background:white; border-radius:14px; padding:20px 22px; box-shadow:var(--shadow); border:1px solid var(--border); }
@@ -497,14 +488,23 @@ async function abrirPaciente(id) {
 
 function renderPacienteView(p, fotos, revs, tab = currentTab) {
   const ini = iniciales(p.nombre), color = colorFor(p.nombre);
-  const imc = calcIMC(p.peso, p.talla);
+  const imc  = calcIMC(p.peso, p.talla);
+  const edad = calcEdad(p.fecha_nac);
+  const statsArr = [
+    p.peso  != null ? `<span class="pv-stat"><b>${p.peso}</b> kg</span>` : '',
+    p.talla != null ? `<span class="pv-stat"><b>${p.talla}</b> cm</span>` : '',
+    edad    != null ? `<span class="pv-stat"><b>${edad}</b> años</span>` : '',
+    p.sexo          ? `<span class="pv-stat">${p.sexo}</span>` : '',
+    imc             ? `<span class="pv-stat">IMC <b>${imc.val}</b> · ${imc.etiq}</span>` : '',
+  ].filter(Boolean).join('');
   document.getElementById('main').innerHTML = `
     <div class="patient-view">
       <div class="pv-header">
         <div class="pv-avatar ${color}">${ini}</div>
         <div class="pv-info">
           <div class="pv-name">${p.nombre}</div>
-          <div class="pv-sub">${p.fecha_nac ? 'Nac. ' + fmtFecha(p.fecha_nac) : ''}${p.sexo ? (p.fecha_nac ? ' · ' : '') + p.sexo : ''}${imc ? ' · IMC ' + imc.val + ' (' + imc.etiq + ')' : ''}</div>
+          <div class="pv-sub">${p.fecha_nac ? 'Nac. ' + fmtFecha(p.fecha_nac) : ''}</div>
+          ${statsArr ? `<div class="pv-stats">${statsArr}</div>` : ''}
         </div>
         <div class="pv-actions">
           <button class="btn btn-outline" onclick="editarPaciente(${p.id})">
@@ -1368,112 +1368,72 @@ function _renderHero(revs, p) {
 
   const imcPriVal = (imc && imcPri && conPeso.length > 1) ? imcPri.val : null;
 
-  // ── Iconos tarjetas ───────────────────────────────────────────────────
-  const icnIMC = `<svg class="hero-icon" width="42" height="42" viewBox="0 0 42 42" fill="none">
-    <rect width="42" height="42" rx="11" fill="#dbeafe"/>
-    <circle cx="21" cy="12.5" r="4" fill="#3b82f6"/>
-    <path d="M12 30c0-5.5 4-9 9-9s9 3.5 9 9H12z" fill="#93c5fd" fill-opacity=".5"/>
-    <path d="M12 30c0-5.5 4-9 9-9s9 3.5 9 9" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
-    <line x1="10" y1="33" x2="32" y2="33" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
-    <line x1="15" y1="30" x2="15" y2="33" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="21" y1="29" x2="21" y2="33" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="27" y1="30" x2="27" y2="33" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
-  </svg>`;
-
-  const icnGrasa = `<svg class="hero-icon" width="42" height="42" viewBox="0 0 42 42" fill="none">
-    <rect width="42" height="42" rx="11" fill="#ffedd5"/>
-    <defs>
-      <linearGradient id="flame-g" x1="21" y1="8" x2="21" y2="34" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#fbbf24"/>
-        <stop offset="100%" stop-color="#f97316"/>
-      </linearGradient>
-    </defs>
-    <path d="M21 8c0 0 9 8.5 9 15.5 0 5.2-4 9.5-9 9.5s-9-4.3-9-9.5c0-3 1.2-5.5 3-7-.2 2.5.7 4 1.8 5 .4-4 2.5-7 4.2-9.5-.4 3 1 5.5 0 9z" fill="url(#flame-g)"/>
-    <ellipse cx="18" cy="27.5" rx="1.8" ry="2.8" fill="white" fill-opacity=".3" transform="rotate(-15 18 27.5)"/>
-  </svg>`;
-
-  const icnPGraso = `<svg class="hero-icon" width="42" height="42" viewBox="0 0 42 42" fill="none">
-    <rect width="42" height="42" rx="11" fill="#ede9fe"/>
-    <defs>
-      <linearGradient id="drop-g" x1="21" y1="9" x2="21" y2="35" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#a78bfa"/>
-        <stop offset="100%" stop-color="#7c3aed"/>
-      </linearGradient>
-    </defs>
-    <path d="M21 9L12.5 23c0 4.7 3.8 9 8.5 9s8.5-4.3 8.5-9L21 9z" fill="url(#drop-g)"/>
-    <path d="M15.5 26.5c0 2.8 1.8 5 4 5.8" stroke="white" stroke-width="1.7" stroke-linecap="round" fill="none" opacity=".5"/>
-  </svg>`;
-
-  const icnPMagro = `<svg class="hero-icon" width="42" height="42" viewBox="0 0 42 42" fill="none">
-    <rect width="42" height="42" rx="11" fill="#dcfce7"/>
-    <rect x="7" y="18.5" width="6" height="5" rx="2.5" fill="#22c55e"/>
-    <rect x="29" y="18.5" width="6" height="5" rx="2.5" fill="#22c55e"/>
-    <rect x="10.5" y="16" width="3" height="10" rx="1.5" fill="#16a34a"/>
-    <rect x="28.5" y="16" width="3" height="10" rx="1.5" fill="#16a34a"/>
-    <rect x="13.5" y="20" width="15" height="2" rx="1" fill="#22c55e"/>
-    <rect x="13.5" y="20" width="15" height="2" rx="1" fill="#22c55e"/>
-  </svg>`;
-
   heroEl.innerHTML = `
     <div class="hero-card hc-imc">
-      <div class="hero-top">
-        <span class="hero-sup">Índice de masa corporal</span>
-        ${icnIMC}
-      </div>
-      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:6px">
-        <span class="hero-num">${imc?.val ?? '—'}</span>
-      </div>
-      ${imc ? `<span class="imc-badge ${imc.cls}">${imc.etiq}</span>` : ''}
+      <span class="hero-sup">IMC</span>
       <div class="hero-spark">${svgSparkline(imcSpk, '#3b82f6')}</div>
       <div class="hero-foot">
-        <span style="font-size:11px;color:var(--text-muted)">vs. inicio</span>
-        ${dHtml(imc?.val, imcPriVal)}
+        <div>
+          <div class="hero-lbl">Índice de masa corporal</div>
+          <div class="hero-sub">${imc ? imc.etiq : 'Sin datos de peso'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:flex;align-items:baseline;justify-content:flex-end">
+            <span class="hero-num">${imc?.val ?? '—'}</span>
+          </div>
+          ${dHtml(imc?.val, imcPriVal)}
+        </div>
       </div>
     </div>
     <div class="hero-card hc-grasa">
-      <div class="hero-top">
-        <span class="hero-sup">Masa grasa</span>
-        ${icnGrasa}
-      </div>
-      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:6px">
-        <span class="hero-num">${pctGrasa ?? '—'}</span>
-        <span class="hero-u">${pctGrasa != null ? '%' : ''}</span>
-      </div>
-      ${pctGrasa == null ? `<span style="font-size:11px;color:var(--text-muted)">Requiere 4 pliegues + sexo</span>` : ''}
+      <span class="hero-sup">Masa Grasa</span>
       <div class="hero-spark">${svgSparkline(grasaSpk, '#f97316')}</div>
       <div class="hero-foot">
-        <span style="font-size:11px;color:var(--text-muted)">vs. inicio</span>
-        ${dHtml(pctGrasa, pctPri)}
+        <div>
+          <div class="hero-lbl">% Grasa corporal</div>
+          <div class="hero-sub">${pctGrasa == null ? 'Requiere 4 pliegues' : 'Durnin-Womersley'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:flex;align-items:baseline;justify-content:flex-end">
+            <span class="hero-num">${pctGrasa ?? '—'}</span>
+            ${pctGrasa != null ? '<span class="hero-u">%</span>' : ''}
+          </div>
+          ${dHtml(pctGrasa, pctPri)}
+        </div>
       </div>
     </div>
     <div class="hero-card hc-pgraso">
-      <div class="hero-top">
-        <span class="hero-sup">Peso graso</span>
-        ${icnPGraso}
-      </div>
-      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:6px">
-        <span class="hero-num">${pesoGraso ?? '—'}</span>
-        <span class="hero-u">${pesoGraso != null ? 'kg' : ''}</span>
-      </div>
+      <span class="hero-sup">Peso Graso</span>
       <div class="hero-spark">${svgSparkline(grasoPSpk, '#8b5cf6')}</div>
       <div class="hero-foot">
-        <span style="font-size:11px;color:var(--text-muted)">vs. inicio</span>
-        ${dHtml(pesoGraso, grasoPri)}
+        <div>
+          <div class="hero-lbl">Masa grasa</div>
+          <div class="hero-sub">${pesoGraso != null ? pctGrasa + '% del peso total' : 'Sin datos de pliegues'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:flex;align-items:baseline;justify-content:flex-end">
+            <span class="hero-num">${pesoGraso ?? '—'}</span>
+            ${pesoGraso != null ? '<span class="hero-u">kg</span>' : ''}
+          </div>
+          ${dHtml(pesoGraso, grasoPri)}
+        </div>
       </div>
     </div>
     <div class="hero-card hc-pmagro">
-      <div class="hero-top">
-        <span class="hero-sup">Peso magro</span>
-        ${icnPMagro}
-      </div>
-      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:6px">
-        <span class="hero-num">${pesoMagro ?? '—'}</span>
-        <span class="hero-u">${pesoMagro != null ? 'kg' : ''}</span>
-      </div>
+      <span class="hero-sup">Peso Magro</span>
       <div class="hero-spark">${svgSparkline(magroSpk, '#22c55e')}</div>
       <div class="hero-foot">
-        <span style="font-size:11px;color:var(--text-muted)">vs. inicio</span>
-        ${dHtml(pesoMagro, magroPri, true)}
+        <div>
+          <div class="hero-lbl">Masa libre de grasa</div>
+          <div class="hero-sub">${pesoMagro != null ? (100 - pctGrasa) + '% del peso total' : 'Sin datos de pliegues'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:flex;align-items:baseline;justify-content:flex-end">
+            <span class="hero-num">${pesoMagro ?? '—'}</span>
+            ${pesoMagro != null ? '<span class="hero-u">kg</span>' : ''}
+          </div>
+          ${dHtml(pesoMagro, magroPri, true)}
+        </div>
       </div>
     </div>`;
 
