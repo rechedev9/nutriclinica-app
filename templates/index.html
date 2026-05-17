@@ -310,11 +310,11 @@
     <div class="form-section-label">Medidas básicas</div>
     <div class="form-row-3">
       <div class="form-group"><label>Peso (kg)</label><input type="number" id="rPeso" placeholder="72.5" step="0.1" min="0"></div>
-      <div class="form-group"><label>Talla (cm)</label><input type="number" id="rTalla" placeholder="175" step="0.1" min="0"></div>
+      <div class="form-group"><label>Talla (cm)</label><input type="number" id="rTalla" placeholder="175" step="0.1" min="100" max="250"></div>
       <div class="form-group"><label>Envergadura (cm)</label><input type="number" id="rEnvergadura" placeholder="178" step="0.1" min="0"></div>
     </div>
 
-    <div class="form-section-label">Pliegues cutáneos (cm)</div>
+    <div class="form-section-label">Pliegues cutáneos (MM)</div>
     <div class="form-row-4">
       <div class="form-group"><label>Bicipital</label><input type="number" id="rPlBicipital" placeholder="—" step="0.1" min="0"></div>
       <div class="form-group"><label>Tricipital</label><input type="number" id="rPlTricipital" placeholder="—" step="0.1" min="0"></div>
@@ -326,7 +326,7 @@
       <div class="form-group"><label>Pierna med.</label><input type="number" id="rPlPiernaMed" placeholder="—" step="0.1" min="0"></div>
     </div>
 
-    <div class="form-section-label">Perímetros (cm)</div>
+    <div class="form-section-label">Centímetros (CM)</div>
     <div class="form-row-4">
       <div class="form-group"><label>Antebrazo</label><input type="number" id="rPerAntebrazo" placeholder="—" step="0.1" min="0"></div>
       <div class="form-group"><label>Brazo relaj.</label><input type="number" id="rPerBrazoRel" placeholder="—" step="0.1" min="0"></div>
@@ -559,7 +559,7 @@ function renderRevisionesContent(revs) {
           </div>
         </div>
         <div class="rev-subsection">
-          <div class="ficha-section-title">Pliegues cutáneos (cm)</div>
+          <div class="ficha-section-title">Pliegues cutáneos (MM)</div>
           <div class="rev-grid">
             ${campo('Bicipital', r.pl_bicipital)}
             ${campo('Tricipital', r.pl_tricipital)}
@@ -572,7 +572,7 @@ function renderRevisionesContent(revs) {
           </div>
         </div>
         <div class="rev-subsection">
-          <div class="ficha-section-title">Perímetros (cm)</div>
+          <div class="ficha-section-title">Centímetros (CM)</div>
           <div class="rev-grid">
             ${campo('Antebrazo', r.per_antebrazo)}
             ${campo('Brazo relaj.', r.per_brazo_rel)}
@@ -822,6 +822,11 @@ function getRevData() {
 
 async function guardarRevision() {
   const data = getRevData();
+  if (data.talla !== null && (data.talla < 100 || data.talla > 250)) {
+    alert('La talla debe introducirse en centímetros (ej: 186 cm).\nEl valor ' + data.talla + ' no es válido.');
+    document.getElementById('rTalla').focus();
+    return;
+  }
   try {
     if (editandoRevId) {
       const updated = await api('PUT', `/api/revisiones/${editandoRevId}`, data);

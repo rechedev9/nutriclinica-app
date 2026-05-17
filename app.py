@@ -13,6 +13,7 @@ def nombre_a_carpeta(nombre):
     return ''.join(w.capitalize() for w in n.split())
 
 app      = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(BASE_DIR, 'bbdd', 'pacientes.db')
 FOTOS_DIR = os.path.join(BASE_DIR, 'fotos')
