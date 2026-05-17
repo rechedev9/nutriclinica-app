@@ -121,6 +121,22 @@
     .imc-sobrepeso { background: #fefce8; color: #a16207; }
     .imc-obesidad  { background: #fef2f2; color: #dc2626; }
 
+    /* ── Análisis / Dashboard ────────────────────────────────────────── */
+    .analisis-area { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+    .analisis-filter-bar { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; flex-wrap: wrap; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .kpi-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); }
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .kpi-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.1; }
+    .kpi-unit { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+    .kpi-delta { font-size: 12px; margin-top: 6px; font-weight: 600; }
+    .kpi-delta.mejora { color: #16a34a; } .kpi-delta.empeora { color: #dc2626; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .charts-grid.full { grid-template-columns: 1fr; }
+    .chart-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+    .chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; }
+    .no-analisis { text-align:center; padding:60px 20px; color:var(--text-muted); font-size:14px; }
+
     /* ── Revisiones ─────────────────────────────────────────────────── */
     .revisiones-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
     .rev-list { display: flex; flex-direction: column; gap: 10px; }
@@ -462,10 +478,12 @@ function renderPacienteView(p, fotos, revs, tab = currentTab) {
         <div class="pv-tab" id="tab-btn-fotos"      onclick="switchTab('fotos')">
           Fotos <span class="badge">${fotos.length}</span>
         </div>
+        <div class="pv-tab" id="tab-btn-analisis" onclick="switchTab('analisis')">Análisis</div>
       </div>
       <div id="tab-ficha"      class="tab-pane">${renderFichaContent(p)}</div>
       <div id="tab-revisiones" class="tab-pane">${renderRevisionesContent(revs || [], p)}</div>
       <div id="tab-fotos"      class="tab-pane">${renderFotosContent(fotos)}</div>
+      <div id="tab-analisis"   class="tab-pane">${renderAnalisisContent(revs || [], p)}</div>
     </div>`;
   activarTab(tab);
 }
@@ -700,6 +718,7 @@ function activarTab(tab) {
   document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-btn-' + tab)?.classList.add('active');
   document.getElementById('tab-' + tab)?.classList.add('active');
+  if (tab === 'analisis') setTimeout(() => actualizarAnalisis(), 50);
 }
 
 // ── Pacientes CRUD ────────────────────────────────────────────────────────────
@@ -998,6 +1017,145 @@ function resaltar(txt, q) {
 }
 const COLORES = ['c0','c1','c2','c3','c4','c5','c6','c7'];
 function colorFor(n) { let h=0; for(let i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))&0xffff; return COLORES[h%COLORES.length]; }
+
+// ── Dashboard Análisis ────────────────────────────────────────────────────────
+
+const _charts = {};
+
+function renderAnalisisContent(revs, p) {
+  return `<div class="analisis-area" id="analisisArea">
+    <div class="analisis-filter-bar">
+      <span style="font-size:13px;color:var(--text-muted);font-weight:600">Período:</span>
+      <input type="date" id="analisisDesde" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;color:var(--text)" onchange="actualizarAnalisis()">
+      <span style="font-size:13px;color:var(--text-muted)">—</span>
+      <input type="date" id="analisisHasta" style="font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;color:var(--text)" onchange="actualizarAnalisis()">
+      <button class="btn btn-outline btn-sm" onclick="limpiarAnalisis()">Limpiar</button>
+    </div>
+    <div class="kpi-grid" id="analisisKpis"></div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Evolución del peso</div><canvas id="chartPeso"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Perímetros principales (cm)</div><canvas id="chartPerimetros"></canvas></div>
+    </div>
+    <div class="charts-grid full">
+      <div class="chart-card"><div class="chart-title">Pliegues cutáneos — última revisión (mm)</div><canvas id="chartPliegues"></canvas></div>
+    </div>
+  </div>`;
+}
+
+function getRevsFiltradas() {
+  const desde = document.getElementById('analisisDesde')?.value || '';
+  const hasta = document.getElementById('analisisHasta')?.value || '';
+  return revisiones.filter(r => {
+    const f = (r.fecha || '').split('T')[0];
+    return (!desde || f >= desde) && (!hasta || f <= hasta);
+  }).slice().reverse();
+}
+
+function actualizarAnalisis() {
+  const p = pacientes.find(x => x.id === currentId);
+  if (!p) return;
+  const revs = getRevsFiltradas();
+  _renderKpis(revs, p);
+  _renderCharts(revs, p);
+}
+
+function limpiarAnalisis() {
+  const d = document.getElementById('analisisDesde');
+  const h = document.getElementById('analisisHasta');
+  if (d) d.value = ''; if (h) h.value = '';
+  actualizarAnalisis();
+}
+
+function _renderKpis(revs, p) {
+  const el = document.getElementById('analisisKpis');
+  if (!el) return;
+  const conPeso = revs.filter(r => r.peso != null);
+  const pesoAct = conPeso.length ? conPeso[conPeso.length - 1].peso : null;
+  const pesoIni = p.peso || (conPeso.length ? conPeso[0].peso : null);
+  const delta   = (pesoAct != null && pesoIni != null) ? Math.round((pesoAct - pesoIni) * 10) / 10 : null;
+  const imc     = calcIMC(pesoAct, p.talla);
+
+  function kpi(label, val, unit, delta, deltaInverted) {
+    let dHtml = '';
+    if (delta !== null) {
+      const mejor = deltaInverted ? delta > 0 : delta < 0;
+      const cls = mejor ? 'mejora' : 'empeora';
+      dHtml = `<div class="kpi-delta ${cls}">${delta > 0 ? '+' : ''}${delta} ${unit}</div>`;
+    }
+    return `<div class="kpi-card"><div class="kpi-label">${label}</div>
+      <div class="kpi-value">${val != null ? val : '—'}<span class="kpi-unit">${val != null && unit ? ' ' + unit : ''}</span></div>${dHtml}</div>`;
+  }
+
+  el.innerHTML =
+    kpi('Peso actual', pesoAct, 'kg', delta, false) +
+    `<div class="kpi-card"><div class="kpi-label">IMC</div>
+      <div class="kpi-value">${imc ? imc.val : '—'}</div>
+      ${imc ? `<span class="imc-badge ${imc.cls}" style="margin-top:6px;display:inline-block;font-size:11px">${imc.etiq}</span>` : ''}
+    </div>` +
+    kpi('Talla', p.talla, 'cm', null, false) +
+    kpi('Revisiones', revs.length, '', null, false);
+}
+
+function _renderCharts(revs, p) {
+  Object.values(_charts).forEach(c => { try { c.destroy(); } catch(e){} });
+
+  const labels = revs.map(r => fmtFecha((r.fecha || '').split('T')[0]));
+  const verde  = '#16a34a';
+  const chartOpts = (yLabel) => ({
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: false, title: { display: !!yLabel, text: yLabel } } }
+  });
+
+  // — Peso —
+  const c1 = document.getElementById('chartPeso');
+  if (c1) _charts.peso = new Chart(c1, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Peso (kg)', data: revs.map(r => r.peso),
+      borderColor: verde, backgroundColor: 'rgba(22,163,74,0.08)', fill: true,
+      tension: 0.35, pointBackgroundColor: verde, pointRadius: 4, spanGaps: true }] },
+    options: { ...chartOpts('kg'), plugins: { legend: { display: false } } }
+  });
+
+  // — Perímetros —
+  const series = [
+    { label: 'Cintura',  key: 'per_cintura',  color: '#3b82f6' },
+    { label: 'Caderas',  key: 'per_caderas',  color: '#f59e0b' },
+    { label: 'Muslo',    key: 'per_muslo',    color: '#ef4444' },
+    { label: 'Pecho',    key: 'per_pecho',    color: '#8b5cf6' },
+  ];
+  const c2 = document.getElementById('chartPerimetros');
+  if (c2) _charts.peri = new Chart(c2, {
+    type: 'line',
+    data: { labels, datasets: series.map(s => ({
+      label: s.label, data: revs.map(r => r[s.key]),
+      borderColor: s.color, tension: 0.35, pointRadius: 3, spanGaps: true,
+      borderWidth: 2, fill: false
+    }))},
+    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: { y: { beginAtZero: false } } }
+  });
+
+  // — Pliegues (última revisión) —
+  const ultima = revs.length ? revs[revs.length - 1] : null;
+  const c3 = document.getElementById('chartPliegues');
+  if (c3 && ultima) {
+    const pl = [
+      ['Bicipital', ultima.pl_bicipital], ['Tricipital', ultima.pl_tricipital],
+      ['Subescapular', ultima.pl_subescapular], ['Supraespinal', ultima.pl_supraespinal],
+      ['Supracrestal', ultima.pl_supracrestal], ['Abdominal', ultima.pl_abdominal],
+      ['Muslo int.', ultima.pl_muslo_int], ['Pierna med.', ultima.pl_pierna_med],
+    ].filter(([, v]) => v != null);
+    if (pl.length) _charts.pliegues = new Chart(c3, {
+      type: 'bar',
+      data: { labels: pl.map(([l]) => l), datasets: [{ data: pl.map(([, v]) => v),
+        backgroundColor: 'rgba(22,163,74,0.7)', borderColor: verde, borderWidth: 1, borderRadius: 5 }] },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'mm' } } } }
+    });
+  }
+}
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </body>
 </html>
