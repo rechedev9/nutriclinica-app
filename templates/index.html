@@ -136,12 +136,21 @@
     .hero-foot { display:flex; justify-content:space-between; align-items:center; padding-top:8px; margin-top:auto; border-top:1px solid #f4f6f9; }
     .hero-delta{ font-size:11px; font-weight:700; }
     .hero-icon { flex-shrink:0; }
-    /* Mid row: composición + evolución */
-    .dash-mid  { display:grid; grid-template-columns:175px 1fr 1fr; gap:14px; align-items:start; }
+    /* Top row: perfil + KPIs */
+    .analisis-top { display:flex; gap:14px; align-items:flex-start; }
+    .perfil-card { width:220px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px 18px 18px; text-align:center; }
+    .perfil-av { width:82px; height:82px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; color:white; flex-shrink:0; }
+    .perfil-name { font-size:17px; font-weight:800; color:var(--text); line-height:1.2; margin-top:4px; }
+    .perfil-sub  { font-size:12px; color:var(--text-muted); font-weight:500; }
+    .perfil-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#e2e8f0; border-radius:10px; overflow:hidden; width:100%; margin-top:4px; }
+    .perfil-stat { background:#f8fafc; padding:10px 4px; }
+    .perfil-stat-val { font-size:16px; font-weight:800; color:var(--text); line-height:1; }
+    .perfil-stat-u   { font-size:10px; font-weight:600; color:var(--text-muted); }
+    .perfil-stat-lbl { font-size:9px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
+    .analisis-top .hero-grid { flex:1; align-content:start; }
+    /* Mid row: composición + progreso */
+    .dash-mid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .dash-card { background:white; border-radius:14px; padding:20px 22px; box-shadow:var(--shadow); border:1px solid var(--border); }
-    .body-fig-card { padding:14px 10px 10px; display:flex; flex-direction:column; align-items:center; }
-    .body-fig-card svg { width:100%; height:auto; display:block; }
-    .body-fig-label { margin-top:8px; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.07em; text-align:center; }
     .dash-card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:14px; display:flex; align-items:center; }
     /* Barra composición */
     .comp-bar  { height:26px; border-radius:13px; overflow:hidden; display:flex; margin:12px 0 10px; box-shadow:inset 0 2px 4px rgba(0,0,0,.08); }
@@ -1100,9 +1109,11 @@ function renderAnalisisContent(revs, p) {
       <input type="date" id="analisisHasta" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="actualizarAnalisis()">
       <button class="btn btn-outline btn-sm" onclick="limpiarAnalisis()">Limpiar</button>
     </div>
-    <div class="hero-grid" id="dashHero"></div>
+    <div class="analisis-top">
+      <div class="dash-card perfil-card" id="dashPerfil"></div>
+      <div class="hero-grid" id="dashHero"></div>
+    </div>
     <div class="dash-mid">
-      <div class="dash-card body-fig-card" id="dashBody"></div>
       <div class="dash-card" id="dashComp"></div>
       <div class="dash-card" id="dashProg"></div>
     </div>
@@ -1159,175 +1170,13 @@ function limpiarAnalisis() {
   actualizarAnalisis();
 }
 
-function svgBody(sexo) {
-  const isMale = sexo === 'Hombre';
-  const sc  = '#3b4a58';   // contorno principal
-  const sf  = '#f4f6f8';   // relleno claro
-  const dl  = '#5a6e7e';   // líneas de detalle anatómico
-
-  if (isMale) {
-    /* ── HOMBRE: hombros anchos, cintura estrecha, caderas moderadas ── */
-    return `<svg viewBox="0 0 120 322" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
-      <ellipse cx="60" cy="22" rx="18" ry="20" fill="${sf}" stroke="${sc}" stroke-width="1.5"/>
-      <path d="M42 20 Q38 21 38 25 Q38 29 42 30" fill="${sf}" stroke="${sc}" stroke-width="1.1"/>
-      <path d="M78 20 Q82 21 82 25 Q82 29 78 30" fill="${sf}" stroke="${sc}" stroke-width="1.1"/>
-      <path d="M44 34 Q44 41 52 43 Q60 45 68 43 Q76 41 76 34" fill="none" stroke="${sc}" stroke-width="1"/>
-      <path d="M53 41 C52 47 52 53 52 58 L68 58 C68 53 68 47 67 41" fill="${sf}" stroke="${sc}" stroke-width="1.5"/>
-      <line x1="55" y1="44" x2="36" y2="55" stroke="${dl}" stroke-width="1.1" opacity="0.7"/>
-      <line x1="65" y1="44" x2="84" y2="55" stroke="${dl}" stroke-width="1.1" opacity="0.7"/>
-
-      <!-- torso: hombros amplios → pecho ancho → cintura → cadera -->
-      <path d="M52 58 L24 70 C18 79 16 93 19 108 C22 121 28 131 31 143
-               C32 151 33 159 34 167 C32 175 30 181 30 186
-               C39 193 50 196 60 196 C70 196 81 193 90 186
-               C90 181 88 175 86 167 C87 159 88 151 89 143
-               C92 131 98 121 101 108 C104 93 102 79 96 70 L68 58 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M54 61 Q38 66 25 73" fill="none" stroke="${dl}" stroke-width="1.2" stroke-linecap="round"/>
-      <path d="M66 61 Q82 66 95 73" fill="none" stroke="${dl}" stroke-width="1.2" stroke-linecap="round"/>
-      <path d="M21 93 Q40 105 57 92" fill="none" stroke="${dl}" stroke-width="1.1" opacity="0.75"/>
-      <path d="M99 93 Q80 105 63 92" fill="none" stroke="${dl}" stroke-width="1.1" opacity="0.75"/>
-      <line x1="60" y1="61" x2="60" y2="184" stroke="${dl}" stroke-width="0.8" stroke-dasharray="3 4" opacity="0.4"/>
-      <path d="M43 118 Q60 123 77 118" fill="none" stroke="${dl}" stroke-width="1" opacity="0.55"/>
-      <path d="M42 134 Q60 139 78 134" fill="none" stroke="${dl}" stroke-width="1" opacity="0.55"/>
-      <path d="M43 150 Q60 155 77 150" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-      <path d="M29 143 Q31 163 32 183" fill="none" stroke="${dl}" stroke-width="1" opacity="0.45"/>
-      <path d="M91 143 Q89 163 88 183" fill="none" stroke="${dl}" stroke-width="1" opacity="0.45"/>
-      <circle cx="60" cy="162" r="2.2" stroke="${dl}" stroke-width="1.1" fill="none" opacity="0.55"/>
-
-      <!-- brazo izquierdo: separado del torso, x 6–22 -->
-      <path d="M8 74 C6 93 5 113 6 133 C7 151 9 167 10 181
-               C11 191 13 199 15 207 L19 212 L25 215 L27 208
-               C26 198 25 186 24 174 C23 158 22 142 22 126
-               C22 106 22 88 21 74 C17 68 11 68 8 74 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M8 100 Q15 111 21 100" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-      <path d="M20 74 Q14 82 10 93" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-
-      <!-- brazo derecho: x 98–114 -->
-      <path d="M112 74 C114 93 115 113 114 133 C113 151 111 167 110 181
-               C109 191 107 199 105 207 L101 212 L95 215 L93 208
-               C94 198 95 186 96 174 C97 158 98 142 98 126
-               C98 106 98 88 99 74 C103 68 109 68 112 74 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M112 100 Q105 111 99 100" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-      <path d="M100 74 Q106 82 110 93" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-
-      <!-- pierna derecha -->
-      <path d="M62 196 C64 199 69 202 75 200 C81 213 83 230 82 246
-               C82 258 81 270 80 281 C79 290 79 298 79 304
-               L85 306 C88 311 87 318 81 320 L67 322
-               C63 318 63 311 65 307 L66 304
-               C66 298 66 290 66 281 C65 270 64 258 63 246
-               C62 230 61 213 60 200 C60 196 62 196 62 196 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <ellipse cx="74" cy="257" rx="7" ry="5" fill="none" stroke="${dl}" stroke-width="1.1" opacity="0.65"/>
-      <path d="M81 218 Q79 236 76 250" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-      <path d="M80 276 Q82 285 80 294" fill="none" stroke="${dl}" stroke-width="0.9" opacity="0.45"/>
-
-      <!-- pierna izquierda -->
-      <path d="M58 196 C56 199 51 202 45 200 C39 213 37 230 38 246
-               C38 258 39 270 40 281 C41 290 41 298 41 304
-               L35 306 C32 311 33 318 39 320 L53 322
-               C57 318 57 311 55 307 L54 304
-               C54 298 54 290 54 281 C55 270 56 258 57 246
-               C58 230 59 213 60 200 C60 196 58 196 58 196 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <ellipse cx="46" cy="257" rx="7" ry="5" fill="none" stroke="${dl}" stroke-width="1.1" opacity="0.65"/>
-      <path d="M39 218 Q41 236 44 250" fill="none" stroke="${dl}" stroke-width="1" opacity="0.5"/>
-      <path d="M40 276 Q38 285 40 294" fill="none" stroke="${dl}" stroke-width="0.9" opacity="0.45"/>
-
-      <path d="M58 196 Q60 203 62 196" fill="none" stroke="${sc}" stroke-width="1.5"/>
-    </svg>`;
-  } else {
-    /* ── MUJER: hombros estrechos, senos, cintura marcada, caderas anchas ── */
-    return `<svg viewBox="0 0 120 322" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
-      <ellipse cx="60" cy="21" rx="17" ry="19" fill="${sf}" stroke="${sc}" stroke-width="1.5"/>
-      <!-- pelo recogido -->
-      <path d="M43 13 Q42 4 52 2 Q60 0 68 2 Q78 4 77 13" fill="${sf}" stroke="${sc}" stroke-width="1.4"/>
-      <path d="M77 13 C86 18 88 28 82 36" fill="none" stroke="${sc}" stroke-width="1.3"/>
-      <path d="M68 3 C76 -1 82 4 79 13 C84 18 86 25 82 34" fill="none" stroke="${sc}" stroke-width="1.2"/>
-      <path d="M43 20 Q39 21 39 25 Q39 29 43 30" fill="${sf}" stroke="${sc}" stroke-width="1.1"/>
-      <path d="M77 20 Q81 21 81 25 Q81 29 77 30" fill="${sf}" stroke="${sc}" stroke-width="1.1"/>
-      <path d="M44 32 Q44 40 52 42 Q60 44 68 42 Q76 40 76 32" fill="none" stroke="${sc}" stroke-width="1"/>
-      <path d="M54 40 C53 47 53 53 53 58 L67 58 C67 53 67 47 66 40" fill="${sf}" stroke="${sc}" stroke-width="1.5"/>
-      <line x1="57" y1="43" x2="56" y2="56" stroke="${dl}" stroke-width="0.9" opacity="0.6"/>
-      <line x1="63" y1="43" x2="64" y2="56" stroke="${dl}" stroke-width="0.9" opacity="0.6"/>
-
-      <!-- torso femenino: hombros < cadera, senos, cintura pronunciada -->
-      <path d="M53 58 L28 68 C22 77 20 89 23 102
-               C26 115 33 123 35 134 C37 142 38 150 37 158
-               C35 166 30 174 26 182
-               C35 192 47 197 60 198 C73 197 85 192 94 182
-               C90 174 85 166 83 158 C82 150 83 142 85 134
-               C87 123 94 115 97 102 C100 89 98 77 92 68 L67 58 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M55 61 Q40 65 32 70" fill="none" stroke="${dl}" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M65 61 Q80 65 88 70" fill="none" stroke="${dl}" stroke-width="1.1" stroke-linecap="round"/>
-      <!-- curvas senos -->
-      <path d="M23 88 Q14 106 25 119" fill="none" stroke="${dl}" stroke-width="1.3" opacity="0.8"/>
-      <path d="M97 88 Q106 106 95 119" fill="none" stroke="${dl}" stroke-width="1.3" opacity="0.8"/>
-      <path d="M25 119 Q42 128 57 119" fill="none" stroke="${dl}" stroke-width="1" opacity="0.65"/>
-      <path d="M95 119 Q78 128 63 119" fill="none" stroke="${dl}" stroke-width="1" opacity="0.65"/>
-      <line x1="60" y1="90" x2="60" y2="122" stroke="${dl}" stroke-width="0.9" opacity="0.5"/>
-      <path d="M33 136 Q35 157 30 180" fill="none" stroke="${dl}" stroke-width="0.9" opacity="0.5"/>
-      <path d="M87 136 Q85 157 90 180" fill="none" stroke="${dl}" stroke-width="0.9" opacity="0.5"/>
-      <line x1="60" y1="61" x2="60" y2="191" stroke="${dl}" stroke-width="0.7" stroke-dasharray="2 4" opacity="0.3"/>
-      <circle cx="60" cy="158" r="2" stroke="${dl}" stroke-width="1.1" fill="none" opacity="0.55"/>
-
-      <!-- brazo izquierdo femenino: más delgado, x 8–24 -->
-      <path d="M10 70 C8 89 7 109 8 129 C9 147 11 163 12 177
-               C13 187 14 195 16 203 L20 208 L25 211 L27 204
-               C26 194 25 182 24 170 C23 154 22 138 22 122
-               C22 104 22 86 21 70 C17 65 13 65 10 70 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-
-      <!-- brazo derecho femenino -->
-      <path d="M110 70 C112 89 113 109 112 129 C111 147 109 163 108 177
-               C107 187 106 195 104 203 L100 208 L95 211 L93 204
-               C94 194 95 182 96 170 C97 154 98 138 98 122
-               C98 104 98 86 99 70 C103 65 107 65 110 70 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-
-      <!-- pierna derecha femenina: muslos más anchos -->
-      <path d="M62 198 C64 201 70 205 77 203 C84 217 86 234 85 250
-               C85 262 84 274 83 285 C82 293 82 301 82 307
-               L88 309 C91 314 90 321 84 322 L69 322
-               C65 318 65 312 67 308 L68 307
-               C68 301 68 293 68 285 C67 274 66 262 65 250
-               C64 234 63 217 60 203 C60 199 62 198 62 198 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <ellipse cx="77" cy="261" rx="7" ry="5" fill="none" stroke="${dl}" stroke-width="1.1" opacity="0.65"/>
-
-      <!-- pierna izquierda femenina -->
-      <path d="M58 198 C56 201 50 205 43 203 C36 217 34 234 35 250
-               C35 262 36 274 37 285 C38 293 38 301 38 307
-               L32 309 C29 314 30 321 36 322 L51 322
-               C55 318 55 312 53 308 L52 307
-               C52 301 52 293 52 285 C53 274 54 262 55 250
-               C56 234 57 217 60 203 C60 199 58 198 58 198 Z"
-        fill="${sf}" stroke="${sc}" stroke-width="1.5" stroke-linejoin="round"/>
-      <ellipse cx="43" cy="261" rx="7" ry="5" fill="none" stroke="${dl}" stroke-width="1.1" opacity="0.65"/>
-
-      <path d="M58 198 Q60 205 62 198" fill="none" stroke="${sc}" stroke-width="1.5"/>
-    </svg>`;
-  }
-}
 
 function _renderHero(revs, p) {
-  const heroEl = document.getElementById('dashHero');
-  const compEl = document.getElementById('dashComp');
-  const progEl = document.getElementById('dashProg');
-  const bodyEl = document.getElementById('dashBody');
+  const heroEl   = document.getElementById('dashHero');
+  const compEl   = document.getElementById('dashComp');
+  const progEl   = document.getElementById('dashProg');
+  const perfilEl = document.getElementById('dashPerfil');
   if (!heroEl) return;
-
-  // ── Figura anatómica ──────────────────────────────────────────────────
-  if (bodyEl && p.sexo) {
-    const edad2 = calcEdad(p.fecha_nac);
-    const genLabel = p.sexo === 'Hombre' ? 'Hombre' : 'Mujer';
-    bodyEl.innerHTML = svgBody(p.sexo) +
-      `<div class="body-fig-label">${genLabel}${edad2 ? ' · ' + edad2 + ' años' : ''}</div>`;
-  }
 
   const edad = calcEdad(p.fecha_nac);
   const conPeso = revs.filter(r => r.peso != null);
@@ -1354,6 +1203,38 @@ function _renderHero(revs, p) {
 
   const { pct: pctGrasa, graso: pesoGraso, magro: pesoMagro } = composicion(revUlt);
   const { pct: pctPri,   graso: grasoPri,  magro: magroPri  } = composicion(revUlt !== revPri ? revPri : null);
+
+  // ── Tarjeta de perfil ─────────────────────────────────────────────────
+  if (perfilEl) {
+    const pesoMostrar = pesoAct ?? p.peso;
+    const tallaMostrar = p.talla;
+    const col = colorFor(p.nombre);
+    const ini = iniciales(p.nombre);
+    const sexoIcon = p.sexo === 'Hombre'
+      ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="14" r="6"/><path d="M15.5 8.5L20 4M20 4h-5M20 4v5"/></svg>`
+      : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="10" r="6"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/></svg>`;
+    perfilEl.innerHTML = `
+      <div class="perfil-av ${col}">${ini}</div>
+      <div class="perfil-name">${p.nombre}</div>
+      <div class="perfil-sub" style="display:flex;align-items:center;gap:4px">${sexoIcon}${p.sexo || 'Paciente'}</div>
+      <div class="perfil-stats">
+        <div class="perfil-stat">
+          <div class="perfil-stat-val">${pesoMostrar ?? '—'}</div>
+          <div class="perfil-stat-u">kg</div>
+          <div class="perfil-stat-lbl">Peso</div>
+        </div>
+        <div class="perfil-stat">
+          <div class="perfil-stat-val">${tallaMostrar ?? '—'}</div>
+          <div class="perfil-stat-u">cm</div>
+          <div class="perfil-stat-lbl">Talla</div>
+        </div>
+        <div class="perfil-stat">
+          <div class="perfil-stat-val">${edad ?? '—'}</div>
+          <div class="perfil-stat-u">años</div>
+          <div class="perfil-stat-lbl">Edad</div>
+        </div>
+      </div>`;
+  }
 
   // ── Helpers visuales ─────────────────────────────────────────────────
   function svgSparkline(vals, color) {
