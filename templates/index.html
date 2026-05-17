@@ -126,18 +126,12 @@
     .dash-filter { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 16px; flex-wrap: wrap; box-shadow: var(--shadow); }
     /* Hero KPI cards */
     .hero-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
-    .hero-card { border-radius: 16px; padding: 20px 22px; color: white; position: relative; overflow: hidden; }
-    .hero-card::before { content:''; position:absolute; top:-28px; right:-18px; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,.07); pointer-events:none; }
-    .hero-card::after  { content:''; position:absolute; bottom:-14px; right:14px; width:60px; height:60px; border-radius:50%; background:rgba(255,255,255,.05); pointer-events:none; }
-    .hc-imc    { background: linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%); }
-    .hc-grasa  { background: linear-gradient(135deg,#7c2d12 0%,#f97316 100%); }
-    .hc-pgraso { background: linear-gradient(135deg,#581c87 0%,#a855f7 100%); }
-    .hc-pmagro { background: linear-gradient(135deg,#14532d 0%,#22c55e 100%); }
-    .hero-sup  { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; opacity:.6; margin-bottom:8px; }
-    .hero-num  { font-size:36px; font-weight:800; line-height:1.1; }
-    .hero-u    { font-size:16px; font-weight:500; opacity:.75; }
-    .hero-badge{ display:inline-block; background:rgba(255,255,255,.2); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; margin-top:8px; }
-    .hero-delta{ font-size:11px; margin-top:6px; font-weight:600; opacity:.9; }
+    .hero-card { border-radius: 16px; padding: 22px 24px; background: white; border: 1px solid var(--border); box-shadow: var(--shadow-md); }
+    .hc-imc, .hc-grasa, .hc-pgraso, .hc-pmagro { background: white; }
+    .hero-sup  { font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:10px; }
+    .hero-num  { font-size:34px; font-weight:800; line-height:1; color:var(--text); }
+    .hero-u    { font-size:15px; font-weight:500; color:var(--text-muted); }
+    .hero-delta{ font-size:12px; margin-top:8px; font-weight:600; }
     /* Mid row: composición + evolución */
     .dash-mid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .dash-card { background:white; border-radius:14px; padding:20px 22px; box-shadow:var(--shadow); border:1px solid var(--border); }
@@ -1190,20 +1184,20 @@ function _renderHero(revs, p) {
   const { pct: pctPri,   graso: grasoPri,  magro: magroPri  } = composicion(revUlt !== revPri ? revPri : null);
 
   // ── Hero cards ────────────────────────────────────────────────────────
-  function heroCard(cls, sup, num, unit, badge, dNum, dRev) {
-    const dStr = dNum !== null && dNum !== undefined
+  function heroCard(cls, sup, num, unit, badge, badgeCls, dNum, dRev) {
+    const dStr = dNum !== null && dNum !== undefined && dRev !== null && dRev !== undefined
       ? (() => {
           const d = Math.round((dNum - dRev) * 10) / 10;
-          if (d === 0) return `<div class="hero-delta" style="opacity:.5">Sin cambio</div>`;
-          const ok = cls === 'hc-pmagro' ? d > 0 : d < 0;
-          const col = ok ? 'rgba(134,239,172,.9)' : 'rgba(252,165,165,.9)';
+          if (d === 0) return `<div class="hero-delta" style="color:var(--text-muted)">Sin cambio</div>`;
+          const ok  = cls === 'hc-pmagro' ? d > 0 : d < 0;
+          const col = ok ? '#16a34a' : '#dc2626';
           return `<div class="hero-delta" style="color:${col}">${d > 0 ? '↑ +' : '↓ '}${d}</div>`;
         })()
       : '';
     return `<div class="hero-card ${cls}">
       <div class="hero-sup">${sup}</div>
       <div><span class="hero-num">${num ?? '—'}</span><span class="hero-u">${num != null && unit ? ' ' + unit : ''}</span></div>
-      ${badge ? `<div class="hero-badge">${badge}</div>` : ''}
+      ${badge ? `<div style="margin-top:8px"><span class="imc-badge ${badgeCls ?? ''}">${badge}</span></div>` : ''}
       ${dStr}
     </div>`;
   }
@@ -1212,10 +1206,10 @@ function _renderHero(revs, p) {
   const imcPriVal = (imc && imcPri && conPeso.length > 1) ? imcPri.val : undefined;
 
   heroEl.innerHTML =
-    heroCard('hc-imc',    'Índice de Masa Corporal', imc?.val ?? null, '',   imc?.etiq, deltaIMC, imcPriVal) +
-    heroCard('hc-grasa',  'Masa Grasa',  pctGrasa, '%',  null, pctGrasa,  pctPri)   +
-    heroCard('hc-pgraso', 'Peso Graso',  pesoGraso, 'kg', null, pesoGraso, grasoPri) +
-    heroCard('hc-pmagro', 'Peso Magro',  pesoMagro, 'kg', null, pesoMagro, magroPri);
+    heroCard('hc-imc',    'Índice de Masa Corporal', imc?.val ?? null, '',   imc?.etiq, imc?.cls, deltaIMC, imcPriVal) +
+    heroCard('hc-grasa',  'Masa Grasa',   pctGrasa,  '%',  null, null, pctGrasa,  pctPri)   +
+    heroCard('hc-pgraso', 'Peso Graso',   pesoGraso, 'kg', null, null, pesoGraso, grasoPri) +
+    heroCard('hc-pmagro', 'Peso Magro',   pesoMagro, 'kg', null, null, pesoMagro, magroPri);
 
   // ── Composición corporal ──────────────────────────────────────────────
   if (compEl) {
