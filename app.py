@@ -376,6 +376,103 @@ def exportar_excel():
         as_attachment=True, download_name=nombre)
 
 
+# ─── EXPORTAR EXCEL REVISIÓN ─────────────────────────────────────────────────
+
+@app.route('/api/exportar-revision/<int:rid>')
+def exportar_revision(rid):
+    conn = get_db()
+    r = conn.execute(
+        '''SELECT r.*, p.nombre, p.fecha_nac, p.sexo, p.dni, p.telefono, p.email,
+                  p.objetivo, p.actividad_fisica, p.intolerancias, p.patologias,
+                  p.peso AS peso_inicial, p.talla
+           FROM revisiones r JOIN pacientes p ON p.id = r.paciente_id
+           WHERE r.id=?''', (rid,)
+    ).fetchone()
+    if not r:
+        conn.close()
+        return jsonify({'error': 'No encontrado'}), 404
+
+    wb  = openpyxl.Workbook()
+    verde  = PatternFill(start_color='16A34A', end_color='16A34A', fill_type='solid')
+    blanco = Font(bold=True, color='FFFFFF', size=11)
+    centro = Alignment(horizontal='center', vertical='center')
+    negrita = Font(bold=True, size=11)
+
+    def fila(ws, label, valor, fila_num):
+        c1 = ws.cell(row=fila_num, column=1, value=label)
+        c1.font = negrita
+        ws.cell(row=fila_num, column=2, value=valor if valor is not None else '')
+
+    ws = wb.active
+    ws.title = 'Revisión'
+    ws.column_dimensions['A'].width = 28
+    ws.column_dimensions['B'].width = 35
+
+    # Cabecera
+    cab = ws.cell(row=1, column=1, value=f"Revisión — {r['nombre']}  ({r['fecha'] or ''})")
+    cab.font = Font(bold=True, color='FFFFFF', size=12)
+    cab.fill = verde
+    cab.alignment = centro
+    ws.merge_cells('A1:B1')
+    ws.row_dimensions[1].height = 24
+
+    # Datos del paciente
+    ws.cell(row=2, column=1, value='DATOS DEL PACIENTE').font = Font(bold=True, size=10, color='16A34A')
+    datos = [
+        ('Nombre',           r['nombre']),
+        ('Fecha nacimiento', r['fecha_nac'] or ''),
+        ('Sexo',             r['sexo'] or ''),
+        ('DNI',              r['dni'] or ''),
+        ('Teléfono',         r['telefono'] or ''),
+        ('Email',            r['email'] or ''),
+        ('Objetivo',         r['objetivo'] or ''),
+        ('Actividad física', r['actividad_fisica'] or ''),
+        ('Talla (cm)',       r['talla'] or ''),
+        ('Peso inicial (kg)',r['peso_inicial'] or ''),
+    ]
+    for i, (lbl, val) in enumerate(datos, start=3):
+        fila(ws, lbl, val, i)
+
+    sep = 3 + len(datos) + 1
+    ws.cell(row=sep, column=1, value='MEDIDAS DE LA REVISIÓN').font = Font(bold=True, size=10, color='16A34A')
+
+    medidas = [
+        ('Fecha revisión',    r['fecha'] or ''),
+        ('Peso (kg)',          r['peso']),
+        ('Envergadura (cm)',   r['envergadura']),
+        ('Pl. Bicipital',      r['pl_bicipital']),
+        ('Pl. Tricipital',     r['pl_tricipital']),
+        ('Pl. Subescapular',   r['pl_subescapular']),
+        ('Pl. Supraespinal',   r['pl_supraespinal']),
+        ('Pl. Supracrestal',   r['pl_supracrestal']),
+        ('Pl. Abdominal',      r['pl_abdominal']),
+        ('Pl. Muslo int.',     r['pl_muslo_int']),
+        ('Pl. Pierna med.',    r['pl_pierna_med']),
+        ('Per. Antebrazo',     r['per_antebrazo']),
+        ('Per. Brazo relaj.',  r['per_brazo_rel']),
+        ('Per. Brazo cont.',   r['per_brazo_cont']),
+        ('Per. Hombros',       r['per_hombros']),
+        ('Per. Pecho',         r['per_pecho']),
+        ('Per. Cintura',       r['per_cintura']),
+        ('Per. Caderas',       r['per_caderas']),
+        ('Per. Muslo',         r['per_muslo']),
+        ('Per. Muslo cont.',   r['per_muslo_cont']),
+        ('Per. Gemelo',        r['per_gemelo']),
+        ('Notas',              r['notas'] or ''),
+    ]
+    for i, (lbl, val) in enumerate(medidas, start=sep + 1):
+        fila(ws, lbl, val, i)
+
+    conn.close()
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    nombre_archivo = f"revision_{r['nombre'].replace(' ', '_')}_{r['fecha'] or 'sin_fecha'}.xlsx"
+    return send_file(buf,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True, download_name=nombre_archivo)
+
+
 # ─── ARRANQUE ─────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

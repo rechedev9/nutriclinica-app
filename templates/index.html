@@ -170,14 +170,7 @@
     NutriClínica
     <span class="logo-sub">— Gestión de pacientes en nutrición</span>
   </div>
-  <div style="display:flex;gap:8px">
-    <a href="/api/exportar-excel" class="btn btn-outline btn-header">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      Exportar Excel
-    </a>
-  </div>
+  <div></div>
 </header>
 
 <div class="app">
@@ -519,6 +512,14 @@ function renderFichaContent(p) {
       <div class="ficha-section-title">Notas / observaciones</div>
       <div style="font-size:14px;color:var(--text);white-space:pre-wrap;line-height:1.6">${p.notas}</div>
     </div>` : ''}
+    <div style="margin-top:20px">
+      <a href="/api/exportar-excel" class="btn btn-outline">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar Excel
+      </a>
+    </div>
   </div>`;
 }
 
@@ -541,6 +542,12 @@ function renderRevisionesContent(revs, pac = {}) {
           <div class="rev-resumen">${resumen}${imcHtml}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
+          <a class="btn btn-outline btn-sm" href="/api/exportar-revision/${r.id}" onclick="event.stopPropagation()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Excel
+          </a>
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarRevision(${r.id})">Editar</button>
           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarRevision(${r.id})">Eliminar</button>
           <svg id="rev-ch-${r.id}" class="rev-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
