@@ -1,0 +1,17 @@
+# Base de datos y fotos de pacientes (datos locales, nunca al repo)
+bbdd/
+fotos/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+env/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
