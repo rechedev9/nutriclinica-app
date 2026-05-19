@@ -1128,10 +1128,7 @@ function renderAnalisisContent(revs, p) {
         <div class="rev-dd-menu" id="revDdMenu"></div>
       </div>
     </div>
-    <div class="analisis-top">
-      <div class="dash-card perfil-card" id="dashPerfil"></div>
-      <div class="hero-grid" id="dashHero"></div>
-    </div>
+    <div class="hero-grid" id="dashHero"></div>
     <div class="dash-mid">
       <div class="dash-card" id="dashComp"></div>
       <div class="dash-card" id="dashProg"></div>
@@ -1242,7 +1239,6 @@ function _renderHero(revs, p) {
   const heroEl   = document.getElementById('dashHero');
   const compEl   = document.getElementById('dashComp');
   const progEl   = document.getElementById('dashProg');
-  const perfilEl = document.getElementById('dashPerfil');
   if (!heroEl) return;
 
   const edad = calcEdad(p.fecha_nac);
@@ -1270,38 +1266,6 @@ function _renderHero(revs, p) {
 
   const { pct: pctGrasa, graso: pesoGraso, magro: pesoMagro } = composicion(revUlt);
   const { pct: pctPri,   graso: grasoPri,  magro: magroPri  } = composicion(revUlt !== revPri ? revPri : null);
-
-  // ── Tarjeta de perfil ─────────────────────────────────────────────────
-  if (perfilEl) {
-    const pesoMostrar = pesoAct ?? p.peso;
-    const tallaMostrar = p.talla;
-    const col = colorFor(p.nombre);
-    const ini = iniciales(p.nombre);
-    const sexoIcon = p.sexo === 'Hombre'
-      ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="14" r="6"/><path d="M15.5 8.5L20 4M20 4h-5M20 4v5"/></svg>`
-      : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="10" r="6"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="9" y1="20" x2="15" y2="20"/></svg>`;
-    perfilEl.innerHTML = `
-      <div class="perfil-av ${col}">${ini}</div>
-      <div class="perfil-name">${p.nombre}</div>
-      <div class="perfil-sub" style="display:flex;align-items:center;gap:4px">${sexoIcon}${p.sexo || 'Paciente'}</div>
-      <div class="perfil-stats">
-        <div class="perfil-stat">
-          <div class="perfil-stat-val">${pesoMostrar ?? '—'}</div>
-          <div class="perfil-stat-u">kg</div>
-          <div class="perfil-stat-lbl">Peso</div>
-        </div>
-        <div class="perfil-stat">
-          <div class="perfil-stat-val">${tallaMostrar ?? '—'}</div>
-          <div class="perfil-stat-u">cm</div>
-          <div class="perfil-stat-lbl">Talla</div>
-        </div>
-        <div class="perfil-stat">
-          <div class="perfil-stat-val">${edad ?? '—'}</div>
-          <div class="perfil-stat-u">años</div>
-          <div class="perfil-stat-lbl">Edad</div>
-        </div>
-      </div>`;
-  }
 
   // ── Helpers visuales ─────────────────────────────────────────────────
   function svgSparkline(vals, color) {
@@ -1511,12 +1475,21 @@ function _renderHero(revs, p) {
       return `<span class="prog-chip ${ok ? 'chip-ok' : 'chip-bad'}">${d > 0 ? '+' : ''}${d}</span>`;
     }
 
+    // Valores de la revisión anterior a la última
+    const prevConPeso = revs.slice(0, -1).filter(r => r.peso != null);
+    const prevPeso    = prevConPeso.length ? prevConPeso[prevConPeso.length - 1].peso : null;
+    const imcAnt      = calcIMC(prevPeso, p.talla);
+    const revAnt      = revs.slice(0, -1).reverse().find(r =>
+      r.pl_bicipital != null && r.pl_tricipital != null &&
+      r.pl_subescapular != null && r.pl_supracrestal != null);
+    const { pct: pctAnt, graso: grasoAnt, magro: magroAnt } = composicion(revAnt ?? null);
+
     const rows = [
-      ['Peso (kg)',        ultRev?.peso,  priRev?.peso ?? p.peso, false],
-      ['IMC',              imc?.val,      imcPri?.val,            false],
-      ['% Grasa',          pctGrasa,      pctPri,                 false],
-      ['Peso graso (kg)',  pesoGraso,     grasoPri,               false],
-      ['Peso magro (kg)',  pesoMagro,     magroPri,               true],
+      ['Peso (kg)',        ultRev?.peso,  priRev?.peso ?? p.peso, prevPeso,    false],
+      ['IMC',              imc?.val,      imcPri?.val,            imcAnt?.val, false],
+      ['% Grasa',          pctGrasa,      pctPri,                 pctAnt,      false],
+      ['Peso graso (kg)',  pesoGraso,     grasoPri,               grasoAnt,    false],
+      ['Peso magro (kg)',  pesoMagro,     magroPri,               magroAnt,    true],
     ];
 
     progEl.innerHTML = n < 2
@@ -1529,12 +1502,13 @@ function _renderHero(revs, p) {
          </div>
          <table class="prog-table">
            <tr>
-             <th></th><th>1ª rev.</th><th>Última</th><th>Δ</th>
+             <th></th><th>1ª rev.</th><th>Última</th><th>vs. ant.</th><th>Δ total</th>
            </tr>
-           ${rows.map(([lbl, now, then, rev]) => `<tr>
+           ${rows.map(([lbl, now, then, prev, rev]) => `<tr>
              <td>${lbl}</td>
              <td style="color:var(--text-muted)">${then != null ? then : '—'}</td>
              <td style="font-weight:700">${now != null ? now : '—'}</td>
+             <td>${chip(now, prev, rev)}</td>
              <td>${chip(now, then, rev)}</td>
            </tr>`).join('')}
          </table>`;
