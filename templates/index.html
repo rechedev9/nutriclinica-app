@@ -149,7 +149,10 @@
     .hero-delta.ok  { color:#16a34a; background:#f0fdf4; }
     .hero-delta.bad { color:#dc2626; background:#fef2f2; }
     .hero-delta.neu { color:var(--text-muted); background:#f1f5f9; }
-    .hero-spark { overflow:hidden; }
+    .hero-compare { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border-radius:10px; padding:9px 12px; }
+    .hero-cmp-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .hero-cmp-lbl  { font-size:10px; color:var(--text-muted); font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
+    .hero-cmp-val  { font-size:13px; font-weight:700; color:var(--text); }
     .hero-foot  { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f5f7fa; padding-top:10px; }
     .hero-sub   { font-size:11px; color:var(--text-muted); }
     .hc-peso   .hero-icon-box { background:#dcfce7; }
@@ -1252,16 +1255,18 @@ function _renderHero(revs, p) {
   const edad = calcEdad(p.fecha_nac);
   const conPeso = revs.filter(r => r.peso != null);
   const pesoAct = conPeso.length ? conPeso[conPeso.length - 1].peso : null;
+  const pesoAnt = conPeso.length >= 2 ? conPeso[conPeso.length - 2].peso : null;
   const pesoPri = conPeso.length ? conPeso[0].peso : p.peso;
   const imc     = calcIMC(pesoAct ?? p.peso, p.talla);
+  const imcAnt  = calcIMC(pesoAnt, p.talla);
   const imcPri  = calcIMC(pesoPri, p.talla);
 
-  const revUlt = [...revs].reverse().find(r =>
+  const conPliegues = revs.filter(r =>
     r.pl_bicipital != null && r.pl_tricipital != null &&
     r.pl_subescapular != null && r.pl_supracrestal != null);
-  const revPri = revs.find(r =>
-    r.pl_bicipital != null && r.pl_tricipital != null &&
-    r.pl_subescapular != null && r.pl_supracrestal != null);
+  const revUlt = conPliegues.length ? conPliegues[conPliegues.length - 1] : null;
+  const revAnt = conPliegues.length >= 2 ? conPliegues[conPliegues.length - 2] : null;
+  const revPri = conPliegues.length ? conPliegues[0] : null;
 
   function composicion(rev) {
     if (!rev) return { pct: null, graso: null, magro: null };
@@ -1273,31 +1278,20 @@ function _renderHero(revs, p) {
   }
 
   const { pct: pctGrasa, graso: pesoGraso, magro: pesoMagro } = composicion(revUlt);
-  const { pct: pctPri,   graso: grasoPri,  magro: magroPri  } = composicion(revUlt !== revPri ? revPri : null);
+  const { pct: pctGrasaAnt, graso: pesoGrasoAnt, magro: pesoMagroAnt } = composicion(revAnt);
+  const { pct: pctPri,      graso: grasoPri,     magro: magroPri     } = composicion(revUlt !== revPri ? revPri : null);
 
   // ── Helpers visuales ─────────────────────────────────────────────────
-  function svgSparkline(vals, color) {
-    const v = vals.filter(x => x != null);
-    if (v.length < 2) return '';
-    const W = 200, H = 48, pad = 5;
-    const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 0.01;
-    const pts = v.map((val, i) => [
-      +(i / (v.length - 1) * W).toFixed(1),
-      +(H - pad - (val - mn) / rng * (H - pad * 2)).toFixed(1)
-    ]);
-    const line = pts.map(([x,y]) => `${x},${y}`).join(' ');
-    const area = `M${pts[0][0]},${H} ${pts.map(([x,y]) => `L${x},${y}`).join(' ')} L${pts.at(-1)[0]},${H} Z`;
-    const [dx, dy] = pts.at(-1);
-    const gid = `g${color.replace('#','')}`;
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" fill="none" style="display:block">
-      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity=".15"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-      </linearGradient></defs>
-      <path d="${area}" fill="url(#${gid})"/>
-      <polyline points="${line}" stroke="${color}" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${dx}" cy="${dy}" r="4" fill="white" stroke="${color}" stroke-width="2.5"/>
-    </svg>`;
+  function cmpHtml(pri, ant, act, unit) {
+    const fmt = v => v != null ? v + (unit ? ' ' + unit : '') : '—';
+    const arr = `<span style="font-size:14px;color:#cbd5e1;line-height:1">›</span>`;
+    return `<div class="hero-compare">
+      <div class="hero-cmp-item"><span class="hero-cmp-lbl">Inicial</span><span class="hero-cmp-val">${fmt(pri)}</span></div>
+      ${arr}
+      <div class="hero-cmp-item"><span class="hero-cmp-lbl">Anterior</span><span class="hero-cmp-val">${fmt(ant)}</span></div>
+      ${arr}
+      <div class="hero-cmp-item"><span class="hero-cmp-lbl">Actual</span><span class="hero-cmp-val">${fmt(act)}</span></div>
+    </div>`;
   }
 
   function svgRing(pct, size, color) {
@@ -1322,23 +1316,8 @@ function _renderHero(revs, p) {
     return `<span class="hero-delta ${ok ? 'ok' : 'bad'}">${d < 0 ? '↓' : '↑'} ${d > 0 ? '+' : ''}${d}</span>`;
   }
 
-  // ── Sparkline data ────────────────────────────────────────────────────
-  const imcSpk    = revs.map(r => r.peso ? (calcIMC(r.peso, p.talla)?.val ?? null) : null);
-  const grasaSpk  = revs.map(r =>
-    (r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null)
-      ? calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo)
-      : null);
-  const grasoPSpk = revs.map((r,i) => {
-    const g = grasaSpk[i];
-    return g != null && r.peso ? Math.round(r.peso * g/100 * 10)/10 : null;
-  });
-  const magroSpk  = revs.map((r,i) => {
-    const gr = grasoPSpk[i];
-    return gr != null && r.peso ? Math.round((r.peso - gr) * 10)/10 : null;
-  });
-
   const imcPriVal = (imc && imcPri && conPeso.length > 1) ? imcPri.val : null;
-  const pesoSpk   = revs.map(r => r.peso);
+  const imcAntVal = (imc && imcAnt && conPeso.length > 2) ? imcAnt.val : null;
 
   heroEl.innerHTML = `
     <div class="hero-card hc-peso">
@@ -1358,9 +1337,9 @@ function _renderHero(revs, p) {
         <span class="hero-num">${pesoAct ?? p.peso ?? '—'}</span>
         ${(pesoAct ?? p.peso) != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(pesoSpk, '#16a34a')}</div>
+      ${cmpHtml(pesoPri, pesoAnt, pesoAct, 'kg')}
       <div class="hero-foot">
-        <span class="hero-sub">${pesoPri != null ? 'Inicio: ' + pesoPri + ' kg' : (p.peso ? 'Inicial: ' + p.peso + ' kg' : '—')}</span>
+        <span class="hero-sub">${pesoAct != null ? 'Último registrado' : '—'}</span>
         ${dHtml(pesoAct, pesoPri)}
       </div>
     </div>
@@ -1379,7 +1358,7 @@ function _renderHero(revs, p) {
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${imc?.val ?? '—'}</span>
       </div>
-      <div class="hero-spark">${svgSparkline(imcSpk, '#3b82f6')}</div>
+      ${cmpHtml(imcPriVal, imcAntVal, imc?.val ?? null, '')}
       <div class="hero-foot">
         <span class="hero-sub">${imc ? imc.etiq : 'Sin datos de peso'}</span>
         ${dHtml(imc?.val, imcPriVal)}
@@ -1401,7 +1380,7 @@ function _renderHero(revs, p) {
         <span class="hero-num">${pctGrasa ?? '—'}</span>
         ${pctGrasa != null ? '<span class="hero-u">%</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(grasaSpk, '#f97316')}</div>
+      ${cmpHtml(pctPri, pctGrasaAnt, pctGrasa, '%')}
       <div class="hero-foot">
         <span class="hero-sub">${pctGrasa == null ? 'Requiere 4 pliegues' : 'Durnin-Womersley'}</span>
         ${dHtml(pctGrasa, pctPri)}
@@ -1423,7 +1402,7 @@ function _renderHero(revs, p) {
         <span class="hero-num">${pesoGraso ?? '—'}</span>
         ${pesoGraso != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(grasoPSpk, '#8b5cf6')}</div>
+      ${cmpHtml(grasoPri, pesoGrasoAnt, pesoGraso, 'kg')}
       <div class="hero-foot">
         <span class="hero-sub">${pesoGraso != null ? pctGrasa + '% del peso total' : 'Sin datos de pliegues'}</span>
         ${dHtml(pesoGraso, grasoPri)}
@@ -1447,7 +1426,7 @@ function _renderHero(revs, p) {
         <span class="hero-num">${pesoMagro ?? '—'}</span>
         ${pesoMagro != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(magroSpk, '#22c55e')}</div>
+      ${cmpHtml(magroPri, pesoMagroAnt, pesoMagro, 'kg')}
       <div class="hero-foot">
         <span class="hero-sub">${pesoMagro != null ? (100 - pctGrasa) + '% del peso total' : 'Sin datos de pliegues'}</span>
         ${dHtml(pesoMagro, magroPri, true)}
