@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -139,22 +139,18 @@
     .rev-dd-sep { height:1px; background:var(--border); margin:4px 6px; }
     /* Hero KPI cards */
     .hero-grid      { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
-    .hero-card      { border-radius:16px; padding:20px; background:white; border:1px solid #f0f2f6; box-shadow:0 2px 14px rgba(0,0,0,.07); display:flex; flex-direction:column; gap:12px; }
-    .hero-card-head { display:flex; align-items:flex-start; justify-content:space-between; }
-    .hero-title     { font-size:14px; font-weight:700; color:var(--text); }
-    .hero-icon-box  { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .hero-num       { font-size:34px; font-weight:800; line-height:1; color:var(--text); }
+    .hero-card      { border-radius:16px; padding:18px 20px; background:white; border:1px solid #f0f2f6; box-shadow:0 2px 14px rgba(0,0,0,.07); display:flex; flex-direction:column; gap:10px; }
+    .hero-title     { font-size:13px; font-weight:700; color:var(--text); }
+    .hero-icon-box  { width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hero-num       { font-size:36px; font-weight:800; line-height:1; color:var(--text); }
     .hero-u         { font-size:14px; font-weight:500; color:var(--text-muted); margin-left:3px; }
     .hero-delta     { font-size:12px; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; }
     .hero-delta.ok  { color:#16a34a; background:#f0fdf4; }
     .hero-delta.bad { color:#dc2626; background:#fef2f2; }
     .hero-delta.neu { color:var(--text-muted); background:#f1f5f9; }
-    .hero-compare { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border-radius:10px; padding:9px 12px; }
-    .hero-cmp-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
-    .hero-cmp-lbl  { font-size:10px; color:var(--text-muted); font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
-    .hero-cmp-val  { font-size:13px; font-weight:700; color:var(--text); }
-    .hero-foot  { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f5f7fa; padding-top:10px; }
-    .hero-sub   { font-size:11px; color:var(--text-muted); }
+    .hero-spark     { overflow:hidden; margin:0 -4px; }
+    .hero-foot      { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f5f7fa; padding-top:8px; }
+    .hero-sub       { font-size:11px; color:var(--text-muted); }
     .hc-peso   .hero-icon-box { background:#dcfce7; }
     .hc-imc    .hero-icon-box { background:#dbeafe; }
     .hc-grasa  .hero-icon-box { background:#ffedd5; }
@@ -1282,16 +1278,20 @@ function _renderHero(revs, p) {
   const { pct: pctPri,      graso: grasoPri,     magro: magroPri     } = composicion(revUlt !== revPri ? revPri : null);
 
   // ── Helpers visuales ─────────────────────────────────────────────────
-  function cmpHtml(pri, ant, act, unit) {
-    const fmt = v => v != null ? v + (unit ? ' ' + unit : '') : '—';
-    const arr = `<span style="font-size:14px;color:#cbd5e1;line-height:1">›</span>`;
-    return `<div class="hero-compare">
-      <div class="hero-cmp-item"><span class="hero-cmp-lbl">Inicial</span><span class="hero-cmp-val">${fmt(pri)}</span></div>
-      ${arr}
-      <div class="hero-cmp-item"><span class="hero-cmp-lbl">Anterior</span><span class="hero-cmp-val">${fmt(ant)}</span></div>
-      ${arr}
-      <div class="hero-cmp-item"><span class="hero-cmp-lbl">Actual</span><span class="hero-cmp-val">${fmt(act)}</span></div>
-    </div>`;
+  function svgSparkline(vals, color) {
+    const v = vals.filter(x => x != null);
+    if (v.length < 2) return '';
+    const W = 200, H = 36, pad = 4;
+    const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 0.01;
+    const pts = v.map((val, i) => [
+      +(i / (v.length - 1) * W).toFixed(1),
+      +(H - pad - (val - mn) / rng * (H - pad * 2)).toFixed(1)
+    ]);
+    const line = pts.map(([x,y]) => `\,\`).join(' ');
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" fill="none" style="display:block">
+      <polyline points="${line}" stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
+    </svg>`;
+  }
   }
 
   function svgRing(pct, size, color) {
@@ -1319,117 +1319,111 @@ function _renderHero(revs, p) {
   const imcPriVal = (imc && imcPri && conPeso.length > 1) ? imcPri.val : null;
   const imcAntVal = (imc && imcAnt && conPeso.length > 2) ? imcAnt.val : null;
 
+  // ── Sparkline data ────────────────────────────────────────────────────
+  const pesoSpk   = revs.map(r => r.peso);
+  const imcSpk    = revs.map(r => r.peso ? (calcIMC(r.peso, p.talla)?.val ?? null) : null);
+  const grasaSpk  = revs.map(r =>
+    (r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null)
+      ? calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo) : null);
+  const grasoPSpk = revs.map((r,i) => { const g = grasaSpk[i]; return g != null && r.peso ? Math.round(r.peso * g/100 * 10)/10 : null; });
+  const magroSpk  = revs.map((r,i) => { const gr = grasoPSpk[i]; return gr != null && r.peso ? Math.round((r.peso - gr) * 10)/10 : null; });
+
+
   heroEl.innerHTML = `
     <div class="hero-card hc-peso">
-      <div class="hero-card-head">
-        <div>
-          <div class="hero-title">Peso actual</div>
-          <div class="hero-sub" style="margin-top:3px">${pesoAct != null ? 'Último registrado' : 'Sin revisiones'}</div>
+      <div class="hero-title">Peso actual</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span class="hero-num">${pesoAct ?? p.peso ?? "—"}</span>
+          ${(pesoAct ?? p.peso) != null ? `<span class="hero-u">kg</span>` : ""}
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="3.5"/>
-            <path d="M20 21a8 8 0 1 0-16 0"/>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.5"/><path d="M20 21a8 8 0 1 0-16 0"/>
           </svg>
         </div>
       </div>
-      <div style="display:flex;align-items:baseline;gap:3px">
-        <span class="hero-num">${pesoAct ?? p.peso ?? '—'}</span>
-        ${(pesoAct ?? p.peso) != null ? '<span class="hero-u">kg</span>' : ''}
-      </div>
-      ${cmpHtml(pesoPri, pesoAnt, pesoAct, 'kg')}
+      <div class="hero-spark">${svgSparkline(pesoSpk, "#16a34a")}</div>
       <div class="hero-foot">
-        <span class="hero-sub">${pesoAct != null ? 'Último registrado' : '—'}</span>
-        ${dHtml(pesoAct, pesoPri)}
+        <span class="hero-sub">vs. anterior</span>
+        ${dHtml(pesoAct, pesoAnt)}
       </div>
     </div>
     <div class="hero-card hc-imc">
-      <div class="hero-card-head">
-        <div>
-          <div class="hero-title">IMC</div>
-          <div class="hero-sub" style="margin-top:3px">Índice de masa corporal</div>
+      <div class="hero-title">IMC</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span class="hero-num">${imc?.val ?? "—"}</span>
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
         </div>
       </div>
-      <div style="display:flex;align-items:baseline;gap:3px">
-        <span class="hero-num">${imc?.val ?? '—'}</span>
-      </div>
-      ${cmpHtml(imcPriVal, imcAntVal, imc?.val ?? null, '')}
+      <div class="hero-spark">${svgSparkline(imcSpk, "#3b82f6")}</div>
       <div class="hero-foot">
-        <span class="hero-sub">${imc ? imc.etiq : 'Sin datos de peso'}</span>
-        ${dHtml(imc?.val, imcPriVal)}
+        <span class="hero-sub">${imc ? imc.etiq : "Sin datos de peso"}</span>
+        ${dHtml(imc?.val, imcAntVal)}
       </div>
     </div>
     <div class="hero-card hc-grasa">
-      <div class="hero-card-head">
-        <div>
-          <div class="hero-title">Masa Grasa</div>
-          <div class="hero-sub" style="margin-top:3px">% Grasa corporal</div>
+      <div class="hero-title">Masa Grasa</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span class="hero-num">${pctGrasa ?? "—"}</span>
+          ${pctGrasa != null ? `<span class="hero-u">%</span>` : ""}
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
           </svg>
         </div>
       </div>
-      <div style="display:flex;align-items:baseline;gap:3px">
-        <span class="hero-num">${pctGrasa ?? '—'}</span>
-        ${pctGrasa != null ? '<span class="hero-u">%</span>' : ''}
-      </div>
-      ${cmpHtml(pctPri, pctGrasaAnt, pctGrasa, '%')}
+      <div class="hero-spark">${svgSparkline(grasaSpk, "#f97316")}</div>
       <div class="hero-foot">
-        <span class="hero-sub">${pctGrasa == null ? 'Requiere 4 pliegues' : 'Durnin-Womersley'}</span>
-        ${dHtml(pctGrasa, pctPri)}
+        <span class="hero-sub">${pctGrasa == null ? "Requiere 4 pliegues" : "Durnin-Womersley"}</span>
+        ${dHtml(pctGrasa, pctGrasaAnt)}
       </div>
     </div>
     <div class="hero-card hc-pgraso">
-      <div class="hero-card-head">
-        <div>
-          <div class="hero-title">Peso Graso</div>
-          <div class="hero-sub" style="margin-top:3px">Masa adiposa</div>
+      <div class="hero-title">Peso Graso</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span class="hero-num">${pesoGraso ?? "—"}</span>
+          ${pesoGraso != null ? `<span class="hero-u">kg</span>` : ""}
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
           </svg>
         </div>
       </div>
-      <div style="display:flex;align-items:baseline;gap:3px">
-        <span class="hero-num">${pesoGraso ?? '—'}</span>
-        ${pesoGraso != null ? '<span class="hero-u">kg</span>' : ''}
-      </div>
-      ${cmpHtml(grasoPri, pesoGrasoAnt, pesoGraso, 'kg')}
+      <div class="hero-spark">${svgSparkline(grasoPSpk, "#8b5cf6")}</div>
       <div class="hero-foot">
-        <span class="hero-sub">${pesoGraso != null ? pctGrasa + '% del peso total' : 'Sin datos de pliegues'}</span>
-        ${dHtml(pesoGraso, grasoPri)}
+        <span class="hero-sub">${pesoGraso != null ? pctGrasa + "% del peso total" : "Sin datos de pliegues"}</span>
+        ${dHtml(pesoGraso, pesoGrasoAnt)}
       </div>
     </div>
     <div class="hero-card hc-pmagro">
-      <div class="hero-card-head">
-        <div>
-          <div class="hero-title">Peso Magro</div>
-          <div class="hero-sub" style="margin-top:3px">Masa libre de grasa</div>
+      <div class="hero-title">Peso Magro</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span class="hero-num">${pesoMagro ?? "—"}</span>
+          ${pesoMagro != null ? `<span class="hero-u">kg</span>` : ""}
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="9" width="5" height="6" rx="2"/>
             <rect x="17" y="9" width="5" height="6" rx="2"/>
             <line x1="7" y1="12" x2="17" y2="12" stroke-width="3"/>
           </svg>
         </div>
       </div>
-      <div style="display:flex;align-items:baseline;gap:3px">
-        <span class="hero-num">${pesoMagro ?? '—'}</span>
-        ${pesoMagro != null ? '<span class="hero-u">kg</span>' : ''}
-      </div>
-      ${cmpHtml(magroPri, pesoMagroAnt, pesoMagro, 'kg')}
+      <div class="hero-spark">${svgSparkline(magroSpk, "#22c55e")}</div>
       <div class="hero-foot">
-        <span class="hero-sub">${pesoMagro != null ? (100 - pctGrasa) + '% del peso total' : 'Sin datos de pliegues'}</span>
-        ${dHtml(pesoMagro, magroPri, true)}
+        <span class="hero-sub">${pesoMagro != null ? (100 - pctGrasa) + "% del peso total" : "Sin datos de pliegues"}</span>
+        ${dHtml(pesoMagro, pesoMagroAnt, true)}
       </div>
     </div>`;
 
