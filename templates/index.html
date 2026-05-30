@@ -391,7 +391,7 @@
       <div class="form-group"><label>Envergadura (cm)</label><input type="number" id="rEnvergadura" placeholder="178" step="0.1" min="0"></div>
     </div>
 
-    <div class="form-section-label">Pliegues cutáneos (MM)</div>
+    <div class="form-section-label">Pliegues cutáneos (CM)</div>
     <div class="form-row-4">
       <div class="form-group"><label>Bicipital</label><input type="number" id="rPlBicipital" placeholder="—" step="0.1" min="0"></div>
       <div class="form-group"><label>Tricipital</label><input type="number" id="rPlTricipital" placeholder="—" step="0.1" min="0"></div>
@@ -659,7 +659,7 @@ function renderRevisionesContent(revs, pac = {}) {
           </div>
         </div>
         <div class="rev-subsection">
-          <div class="ficha-section-title">Pliegues cutáneos (MM)</div>
+          <div class="ficha-section-title">Pliegues cutáneos (CM)</div>
           <div class="rev-grid">
             ${campo('Bicipital', r.pl_bicipital)}
             ${campo('Tricipital', r.pl_tricipital)}
@@ -1134,18 +1134,26 @@ function calcGrasaDW(plBic, plTri, plSub, plSup, edad, sexo) {
 const _charts = {};
 let _globalRevFecha = '';
 let _periRevFecha = '';
-const _periActiveSeries = new Set(['per_cintura','per_caderas','per_muslo','per_pecho']);
-const PERI_SERIES = [
-  { label:'Cintura',      key:'per_cintura',    color:'#3b82f6' },
-  { label:'Caderas',      key:'per_caderas',    color:'#f59e0b' },
-  { label:'Muslo',        key:'per_muslo',      color:'#ef4444' },
-  { label:'Pecho',        key:'per_pecho',      color:'#8b5cf6' },
-  { label:'Hombros',      key:'per_hombros',    color:'#06b6d4' },
-  { label:'Brazo rel.',   key:'per_brazo_rel',  color:'#84cc16' },
-  { label:'Brazo cont.',  key:'per_brazo_cont', color:'#f43f5e' },
-  { label:'Antebrazo',    key:'per_antebrazo',  color:'#a78bfa' },
-  { label:'Muslo cont.',  key:'per_muslo_cont', color:'#fb923c' },
-  { label:'Gemelo',       key:'per_gemelo',     color:'#34d399' },
+const _activeMedidas = new Set(['per_cintura','per_caderas','per_muslo','per_pecho']);
+const ALL_MEDIDAS = [
+  { label:'Bicipital',    key:'pl_bicipital',    unit:'cm', color:'#6366f1' },
+  { label:'Tricipital',   key:'pl_tricipital',   unit:'cm', color:'#8b5cf6' },
+  { label:'Subescapular', key:'pl_subescapular', unit:'cm', color:'#a855f7' },
+  { label:'Supraespinal', key:'pl_supraespinal', unit:'cm', color:'#d946ef' },
+  { label:'Supracrestal', key:'pl_supracrestal', unit:'cm', color:'#ec4899' },
+  { label:'Abdominal',    key:'pl_abdominal',    unit:'cm', color:'#f43f5e' },
+  { label:'Muslo int.',   key:'pl_muslo_int',    unit:'cm', color:'#fb7185' },
+  { label:'Pierna med.',  key:'pl_pierna_med',   unit:'cm', color:'#fda4af' },
+  { label:'Cintura',      key:'per_cintura',     unit:'cm', color:'#3b82f6' },
+  { label:'Caderas',      key:'per_caderas',     unit:'cm', color:'#f59e0b' },
+  { label:'Muslo',        key:'per_muslo',       unit:'cm', color:'#ef4444' },
+  { label:'Pecho',        key:'per_pecho',       unit:'cm', color:'#7c3aed' },
+  { label:'Hombros',      key:'per_hombros',     unit:'cm', color:'#06b6d4' },
+  { label:'Brazo rel.',   key:'per_brazo_rel',   unit:'cm', color:'#84cc16' },
+  { label:'Brazo cont.',  key:'per_brazo_cont',  unit:'cm', color:'#f97316' },
+  { label:'Antebrazo',    key:'per_antebrazo',   unit:'cm', color:'#10b981' },
+  { label:'Muslo cont.',  key:'per_muslo_cont',  unit:'cm', color:'#0ea5e9' },
+  { label:'Gemelo',       key:'per_gemelo',      unit:'cm', color:'#34d399' },
 ];
 
 function renderAnalisisContent(revs, p) {
@@ -1175,35 +1183,45 @@ function renderAnalisisContent(revs, p) {
       <div class="dash-card" id="dashComp"></div>
       <div class="dash-card" id="dashProg"></div>
     </div>
-    <div class="charts-row">
-      <div class="chart-card-new" style="grid-column:1/-1">
+    <div class="charts-row" style="grid-template-columns:3fr 2fr">
+      <div class="chart-card-new">
         <div class="chart-lbl">Evolución del peso y masa grasa</div>
         <div class="chart-sub">kg · % grasa corporal (Durnin-Womersley) · revisiones del período</div>
         <canvas id="chartPesoGrasa" style="max-height:240px"></canvas>
       </div>
+      <div class="chart-card-new" id="dashCuerpo" style="display:flex;flex-direction:column"></div>
     </div>
     <div class="charts-row">
       <div class="chart-card-new">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
           <div>
-            <div class="chart-lbl">Perímetros principales</div>
-            <div class="chart-sub" style="margin-bottom:0">cm · revisiones del período</div>
+            <div class="chart-lbl">Evolución de medidas</div>
+            <div class="chart-sub" style="margin-bottom:0">revisiones del período</div>
           </div>
-          <div class="rev-dd" id="periRevDd" style="flex-shrink:0">
-            <button class="rev-dd-btn" id="periRevDdBtn" onclick="togglePeriRevDD()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
-              <span id="periRevDdLabel">Revisión</span>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div class="rev-dd-menu" id="periRevDdMenu" style="right:0"></div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <div class="rev-dd" id="medidasDd">
+              <button type="button" class="rev-dd-btn" id="medidasDdBtn" onclick="toggleMedidasDD()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2.5" fill="currentColor" stroke="none"/><circle cx="11" cy="18" r="2.5" fill="currentColor" stroke="none"/></svg>
+                <span id="medidasDdLabel">Medidas</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="rev-dd-menu" id="medidasDdMenu" style="right:0;min-width:210px;max-height:340px;overflow-y:auto"></div>
+            </div>
+            <div class="rev-dd" id="periRevDd">
+              <button type="button" class="rev-dd-btn" id="periRevDdBtn" onclick="togglePeriRevDD()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+                <span id="periRevDdLabel">Revisión</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="rev-dd-menu" id="periRevDdMenu" style="right:0"></div>
+            </div>
           </div>
         </div>
-        <div id="periSeriesFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px"></div>
         <canvas id="chartPerimetros" style="max-height:240px"></canvas>
       </div>
       <div class="chart-card-new">
-        <div class="chart-lbl">Pliegues cutáneos — última revisión del período</div>
-        <div class="chart-sub">mm</div>
+        <div class="chart-lbl">Pliegues cutáneos (cm) — última revisión del período</div>
+        <div class="chart-sub">cm</div>
         <canvas id="chartPliegues" style="max-height:240px"></canvas>
       </div>
     </div>
@@ -1668,53 +1686,183 @@ function renderPeriRevMenu() {
   if (btn)   btn.classList.toggle('active', !!_periRevFecha);
 }
 
-function togglePeriSerie(key) {
-  if (_periActiveSeries.has(key)) {
-    if (_periActiveSeries.size > 1) _periActiveSeries.delete(key);
+function toggleMedidasDD() {
+  const menu = document.getElementById('medidasDdMenu');
+  if (!menu) return;
+  const opening = !menu.classList.contains('open');
+  menu.classList.toggle('open', opening);
+  if (opening) {
+    setTimeout(() => {
+      document.addEventListener('click', function cerrar(e) {
+        if (!document.getElementById('medidasDd')?.contains(e.target)) {
+          menu.classList.remove('open');
+          document.removeEventListener('click', cerrar);
+        }
+      });
+    }, 0);
+  }
+}
+
+function toggleMedida(key) {
+  if (_activeMedidas.has(key)) {
+    if (_activeMedidas.size > 1) _activeMedidas.delete(key);
   } else {
-    _periActiveSeries.add(key);
+    _activeMedidas.add(key);
   }
   actualizarAnalisis();
 }
 
-function toggleTodasPeriSeries() {
-  const allActive = PERI_SERIES.every(s => _periActiveSeries.has(s.key));
-  if (allActive) {
-    const first = PERI_SERIES[0].key;
-    PERI_SERIES.forEach(s => { if (s.key !== first) _periActiveSeries.delete(s.key); });
+function toggleTodasMedidas(unit) {
+  const grupo = ALL_MEDIDAS.filter(m => m.unit === unit);
+  const allOn = grupo.every(m => _activeMedidas.has(m.key));
+  if (allOn) {
+    grupo.forEach(m => { if (_activeMedidas.size > 1) _activeMedidas.delete(m.key); });
   } else {
-    PERI_SERIES.forEach(s => _periActiveSeries.add(s.key));
+    grupo.forEach(m => _activeMedidas.add(m.key));
   }
   actualizarAnalisis();
 }
 
-function renderPeriSeriesChips(revs) {
-  const el = document.getElementById('periSeriesFilter');
-  if (!el) return;
+function renderMedidasMenu(revs) {
+  const menu = document.getElementById('medidasDdMenu');
+  const btn  = document.getElementById('medidasDdBtn');
+  const lbl  = document.getElementById('medidasDdLabel');
+  if (!menu) return;
   const periRevs = _periRevFecha
     ? revs.filter(r => (r.fecha||'').split('T')[0] === _periRevFecha)
     : revs;
-  const allActive = PERI_SERIES.every(s => _periActiveSeries.has(s.key));
-  const btnStyle = (active, color) => [
-    'display:inline-flex;align-items:center;gap:4px',
-    'padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600',
-    'cursor:pointer;transition:all .15s;white-space:nowrap',
-    active
-      ? `border:1.5px solid ${color};background:${color}22;color:${color}`
-      : 'border:1.5px solid var(--border);background:transparent;color:var(--text-muted)'
-  ].join(';');
-  const allBtnStyle = allActive
-    ? 'display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #0f172a;background:#0f172a;color:white'
-    : 'display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--text-muted)';
-  el.innerHTML =
-    `<button type="button" onclick="toggleTodasPeriSeries()" style="${allBtnStyle}">Todos</button>` +
-    PERI_SERIES.map(s => {
-      const active  = _periActiveSeries.has(s.key);
-      const hasData = periRevs.some(r => r[s.key] != null);
-      const opacity = hasData ? '1' : '0.35';
-      return `<button type="button" onclick="togglePeriSerie('${s.key}')" style="${btnStyle(active, s.color)};opacity:${opacity}">` +
-        `<span style="width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0"></span>${s.label}</button>`;
-    }).join('');
+
+  function itemHtml(m) {
+    const active  = _activeMedidas.has(m.key);
+    const hasData = periRevs.some(r => r[m.key] != null);
+    return `<button type="button" class="rev-dd-item" onclick="toggleMedida('${m.key}')"
+      style="display:flex;align-items:center;gap:8px;opacity:${hasData ? 1 : 0.4}">
+      <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${active ? m.color : '#cbd5e1'}"></span>
+      <span style="flex:1">${m.label}</span>
+      ${active ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${m.color}" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+    </button>`;
+  }
+
+  const mmGroup = ALL_MEDIDAS.filter(m => m.unit === 'mm');
+  const cmGroup = ALL_MEDIDAS.filter(m => m.unit === 'cm');
+  const allMmOn = mmGroup.every(m => _activeMedidas.has(m.key));
+  const allCmOn = cmGroup.every(m => _activeMedidas.has(m.key));
+
+  menu.innerHTML =
+    `<div style="padding:5px 12px 4px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">
+      Pliegues cutáneos (cm)
+      <button type="button" onclick="toggleTodasMedidas('mm')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allMmOn ? 'Quitar todos' : 'Todos'}</button>
+    </div>` +
+    mmGroup.map(itemHtml).join('') +
+    `<div class="rev-dd-sep"></div>
+    <div style="padding:5px 12px 4px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">
+      Perímetros (cm)
+      <button type="button" onclick="toggleTodasMedidas('cm')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allCmOn ? 'Quitar todos' : 'Todos'}</button>
+    </div>` +
+    cmGroup.map(itemHtml).join('');
+
+  const n = _activeMedidas.size;
+  if (lbl) lbl.textContent = n === 1
+    ? (ALL_MEDIDAS.find(m => _activeMedidas.has(m.key))?.label || 'Medidas')
+    : `Medidas (${n})`;
+  if (btn) btn.classList.toggle('active', n > 0);
+}
+
+function _renderCuerpo(revs) {
+  const el = document.getElementById('dashCuerpo');
+  if (!el) return;
+  const ult = revs.length ? revs[revs.length - 1] : null;
+  const ant = revs.length > 1 ? revs[revs.length - 2] : null;
+  if (!ult) {
+    el.innerHTML = '<div class="chart-lbl">Perfil corporal</div><div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-muted)">Sin revisiones</div>';
+    return;
+  }
+  function medida(key, label, textX, lineY, anchor, bodyX) {
+    const v = ult[key];
+    if (v == null) return '';
+    const d = ant?.[key] != null ? Math.round((v - ant[key]) * 10) / 10 : null;
+    const dStr = d != null && d !== 0 ? (d > 0 ? `+${d}` : `${d}`) : null;
+    const dCol = d != null && d < 0 ? '#16a34a' : '#dc2626';
+    const lx = anchor === 'end' ? textX + 5 : textX - 5;
+    return `
+      <line x1="${lx}" y1="${lineY}" x2="${bodyX}" y2="${lineY}" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="${textX}" y="${lineY - 2}" text-anchor="${anchor}" font-size="13" fill="#64748b">${label}</text>
+      <text x="${textX}" y="${lineY + 14}" text-anchor="${anchor}" font-size="20" font-weight="700" fill="#1e293b">${v} cm</text>
+      ${dStr ? `<text x="${textX}" y="${lineY + 27}" text-anchor="${anchor}" font-size="13" font-weight="700" fill="${dCol}">${dStr} cm</text>` : ''}`;
+  }
+  el.innerHTML = `
+    <div class="chart-lbl">Perfil corporal</div>
+    <div class="chart-sub" style="margin-bottom:4px">cm · última revisión · vs. anterior</div>
+    <svg viewBox="0 0 380 430" style="width:100%;height:240px" xmlns="http://www.w3.org/2000/svg">
+      <defs><style>.bd{fill:#e2eaf4;stroke:#94a3b8;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}</style></defs>
+      <!-- Cuerpo: torso + cadera + piernas (curvas bezier suaves) -->
+      <path class="bd" d="
+        M 148,80
+        C 145,94 142,108 143,113
+        C 143,128 143,154 141,167
+        C 140,176 140,180 140,183
+        C 138,198 133,218 132,233
+        C 131,248 136,258 140,265
+        C 138,278 137,296 138,312
+        C 138,330 139,346 140,362
+        C 141,380 142,398 143,415
+        L 157,415
+        C 158,398 159,380 160,362
+        C 162,346 164,330 166,312
+        C 168,296 171,278 173,265
+        C 177,256 183,252 190,254
+        C 197,252 203,256 207,265
+        C 209,278 212,296 214,312
+        C 216,330 217,346 219,362
+        C 220,380 221,398 222,415
+        L 237,415
+        C 238,398 239,380 240,362
+        C 241,346 242,330 242,312
+        C 243,296 244,278 240,265
+        C 244,258 249,248 248,233
+        C 247,218 242,198 240,183
+        C 240,180 240,176 239,167
+        C 237,154 236,128 236,113
+        C 237,108 234,94 232,80
+        C 228,75 215,70 205,70
+        C 200,66 196,63 190,63
+        C 184,63 180,66 175,70
+        C 165,70 152,75 148,80 Z"/>
+      <!-- Brazo derecho -->
+      <path class="bd" d="
+        M 234,86
+        C 242,82 256,80 266,87
+        C 270,97 270,126 268,152
+        C 268,170 270,180 270,190
+        C 270,214 266,236 262,256
+        L 252,263
+        C 252,246 252,226 252,206
+        C 253,188 252,172 252,158
+        C 251,136 249,108 248,88
+        C 244,84 238,84 234,86 Z"/>
+      <!-- Brazo izquierdo -->
+      <path class="bd" d="
+        M 146,86
+        C 138,82 124,80 114,87
+        C 110,97 110,126 112,152
+        C 112,170 110,180 110,190
+        C 110,214 114,236 118,256
+        L 128,263
+        C 128,246 128,226 128,206
+        C 127,188 128,172 128,158
+        C 129,136 131,108 132,88
+        C 136,84 142,84 146,86 Z"/>
+      <!-- Cabeza (encima del cuello) -->
+      <ellipse class="bd" cx="190" cy="34" rx="26" ry="29"/>
+      ${medida('per_hombros',   'Hombros',   90,  82,  'end',   148)}
+      ${medida('per_cintura',   'Cintura',   90,  183, 'end',   140)}
+      ${medida('per_caderas',   'Caderas',   90,  233, 'end',   132)}
+      ${medida('per_muslo',     'Muslo',     90,  312, 'end',   138)}
+      ${medida('per_pecho',     'Pecho',     290, 100, 'start', 236)}
+      ${medida('per_brazo_rel', 'Brazo',     290, 158, 'start', 268)}
+      ${medida('per_antebrazo', 'Antebrazo', 290, 203, 'start', 270)}
+      ${medida('per_gemelo',    'Gemelo',    290, 368, 'start', 240)}
+    </svg>`;
 }
 
 function _renderCharts(revs, p) {
@@ -1727,6 +1875,9 @@ function _renderCharts(revs, p) {
   const noLegend = { legend: { display: false } };
   const xOpts  = { grid: { display: false }, ticks: { font: { size: 11 } } };
   const inter  = { mode: 'nearest', axis: 'x', intersect: false };
+
+  // — Perfil corporal —
+  _renderCuerpo(revs);
 
   // — Peso + % Masa Grasa (combinado, doble eje) —
   const grasaFn = r => (r.pl_bicipital != null && r.pl_tricipital != null &&
@@ -1761,25 +1912,35 @@ function _renderCharts(revs, p) {
     });
   }
 
-  // — Perímetros —
+  // — Evolución de medidas —
   renderPeriRevMenu();
-  renderPeriSeriesChips(revs);
+  renderMedidasMenu(revs);
   const periRevs = _periRevFecha
     ? revs.filter(r => (r.fecha||'').split('T')[0] === _periRevFecha)
     : revs;
-  const activeSeries = PERI_SERIES.filter(s => _periActiveSeries.has(s.key));
-  const { labels: periLbls, datasets: periData } = buildMonthMultiData(periRevs, activeSeries.map(s => r => r[s.key]));
+  const activeMed = ALL_MEDIDAS.filter(m => _activeMedidas.has(m.key));
+  const { labels: periLbls, datasets: periData } = buildMonthMultiData(periRevs, activeMed.map(m => r => r[m.key]));
+  const hasCm = activeMed.some(m => m.unit === 'cm');
+  const hasMm = activeMed.some(m => m.unit === 'mm');
   const c2 = document.getElementById('chartPerimetros');
   if (c2) _charts.peri = new Chart(c2, {
     type: 'line',
-    data: { labels: periLbls, datasets: activeSeries.map((s, i) => ({
-      label: s.label, data: periData[i],
-      borderColor: s.color, tension: 0.4, pointRadius: 4, pointHoverRadius: 6,
+    data: { labels: periLbls, datasets: activeMed.map((m, i) => ({
+      label: m.label, data: periData[i], yAxisID: m.unit === 'cm' ? 'yCm' : 'yMm',
+      borderColor: m.color, tension: 0.4, pointRadius: 4, pointHoverRadius: 6,
       spanGaps: true, borderWidth: 2, fill: false
     }))},
     options: { responsive: true, interaction: inter,
       plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 }, padding: 16 } } },
-      scales: { y: { beginAtZero: false, grid, ticks: { callback: v => v + ' cm', font: { size: 11 } } }, x: xOpts } }
+      scales: {
+        ...(hasCm ? { yCm: { type:'linear', position:'left',  beginAtZero:false, grid,
+          ticks:{ callback: v => v + ' cm', font:{size:11} } } } : {}),
+        ...(hasMm ? { yMm: { type:'linear', position: hasCm ? 'right' : 'left', beginAtZero:false,
+          grid: hasCm ? { drawOnChartArea:false } : grid,
+          ticks:{ callback: v => v + ' mm', font:{size:11} } } } : {}),
+        x: xOpts
+      }
+    }
   });
 
   // — Pliegues (última revisión del período) —
@@ -1800,7 +1961,7 @@ function _renderCharts(revs, p) {
         borderColor: barColors.slice(0, pl.length),
         borderWidth: 1, borderRadius: 6, borderSkipped: false }] },
       options: { responsive: true, interaction: inter, plugins: noLegend,
-        scales: { y: { beginAtZero: true, grid, ticks: { callback: v => v + ' mm', font: { size: 11 } } }, x: xOpts } }
+        scales: { y: { beginAtZero: true, grid, ticks: { callback: v => v + ' cm', font: { size: 11 } } }, x: xOpts } }
     });
   }
 }
