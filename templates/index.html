@@ -123,6 +123,7 @@
     .imc-normal    { background: var(--primary-light); color: var(--primary-dark); }
     .imc-sobrepeso { background: #fefce8; color: #a16207; }
     .imc-obesidad  { background: #fef2f2; color: #dc2626; }
+    .blood-badge { display:inline-flex; align-items:center; gap:5px; background:#fef2f2; color:#b91c1c; font-weight:700; padding:3px 10px; border-radius:20px; font-size:13px; }
 
     /* ── Dashboard Análisis ──────────────────────────────────────────── */
     .dash-area { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
@@ -138,20 +139,20 @@
     .rev-dd-item.act { background:#0f172a; color:white; font-weight:700; }
     .rev-dd-sep { height:1px; background:var(--border); margin:4px 6px; }
     /* Hero KPI cards */
-    .hero-grid      { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
-    .hero-card      { border-radius:16px; padding:20px; background:white; border:1px solid #f0f2f6; box-shadow:0 2px 14px rgba(0,0,0,.07); display:flex; flex-direction:column; gap:12px; }
+    .hero-grid      { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+    .hero-card      { border-radius:12px; padding:14px 16px; background:white; border:1px solid #f0f2f6; box-shadow:0 2px 10px rgba(0,0,0,.07); display:flex; flex-direction:column; gap:8px; min-width:0; }
     .hero-card-head { display:flex; align-items:flex-start; justify-content:space-between; }
-    .hero-title     { font-size:14px; font-weight:700; color:var(--text); }
-    .hero-icon-box  { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .hero-num       { font-size:34px; font-weight:800; line-height:1; color:var(--text); }
-    .hero-u         { font-size:14px; font-weight:500; color:var(--text-muted); margin-left:3px; }
-    .hero-delta     { font-size:12px; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap; }
+    .hero-title     { font-size:12px; font-weight:700; color:var(--text); }
+    .hero-icon-box  { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
+    .hero-num       { font-size:26px; font-weight:800; line-height:1; color:var(--text); }
+    .hero-u         { font-size:12px; font-weight:500; color:var(--text-muted); margin-left:2px; }
+    .hero-delta     { font-size:11px; font-weight:700; padding:2px 6px; border-radius:5px; white-space:nowrap; }
     .hero-delta.ok  { color:#16a34a; background:#f0fdf4; }
     .hero-delta.bad { color:#dc2626; background:#fef2f2; }
     .hero-delta.neu { color:var(--text-muted); background:#f1f5f9; }
-    .hero-spark { overflow:hidden; }
-    .hero-foot  { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f5f7fa; padding-top:10px; }
-    .hero-sub   { font-size:11px; color:var(--text-muted); }
+    .hero-spark { overflow:hidden; height:38px; position:relative; }
+    .hero-foot  { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f5f7fa; padding-top:7px; }
+    .hero-sub   { font-size:10px; color:var(--text-muted); }
     .hc-peso   .hero-icon-box { background:#dcfce7; }
     .hc-imc    .hero-icon-box { background:#dbeafe; }
     .hc-grasa  .hero-icon-box { background:#ffedd5; }
@@ -280,7 +281,7 @@
       <label>Nombre completo *</label>
       <input type="text" id="pNombre" placeholder="Ej: Rafael Pascual García">
     </div>
-    <div class="form-row">
+    <div class="form-row-3">
       <div class="form-group">
         <label>Fecha de nacimiento</label>
         <input type="date" id="pFecha">
@@ -292,6 +293,20 @@
           <option value="Mujer">Mujer</option>
           <option value="Hombre">Hombre</option>
           <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>🩸 Grupo sanguíneo</label>
+        <select id="pGrupoSanguineo">
+          <option value="">— Sin especificar —</option>
+          <option value="A+">A+</option>
+          <option value="A-">A−</option>
+          <option value="B+">B+</option>
+          <option value="B-">B−</option>
+          <option value="AB+">AB+</option>
+          <option value="AB-">AB−</option>
+          <option value="O+">O+</option>
+          <option value="O-">O−</option>
         </select>
       </div>
     </div>
@@ -503,7 +518,6 @@ function renderPacienteView(p, fotos, revs, tab = currentTab) {
     p.talla != null ? `<span class="pv-stat"><b>${p.talla}</b> cm</span>` : '',
     edad    != null ? `<span class="pv-stat"><b>${edad}</b> años</span>` : '',
     p.sexo          ? `<span class="pv-stat">${p.sexo}</span>` : '',
-    imc             ? `<span class="pv-stat">IMC <b>${imc.val}</b> · ${imc.etiq}</span>` : '',
   ].filter(Boolean).join('');
   document.getElementById('main').innerHTML = `
     <div class="patient-view">
@@ -569,6 +583,9 @@ function renderFichaContent(p) {
         ${campo('DNI / NIF', p.dni)}
         ${campo('Sexo', p.sexo)}
         ${campo('Fecha de nacimiento', p.fecha_nac ? fmtFecha(p.fecha_nac) : null)}
+        ${p.grupo_sanguineo
+          ? `<div><div class="ficha-label">Grupo sanguíneo</div><div class="ficha-value"><span class="blood-badge">🩸 ${p.grupo_sanguineo}</span></div></div>`
+          : campo('Grupo sanguíneo', null)}
         ${campo('Teléfono', p.telefono)}
         ${campo('Email', p.email)}
       </div>
@@ -785,7 +802,7 @@ function activarTab(tab) {
 function showModalPaciente() {
   editandoId = null;
   document.getElementById('modalPacienteTitulo').textContent = 'Nuevo paciente';
-  ['pNombre','pFecha','pSexo','pDni','pTelefono','pEmail',
+  ['pNombre','pFecha','pSexo','pGrupoSanguineo','pDni','pTelefono','pEmail',
    'pPeso','pTalla','pObjetivo','pActividad','pIntolerancias','pPatologias','pNotas']
     .forEach(id => document.getElementById(id).value = '');
   abrirModal('modalPaciente');
@@ -799,6 +816,7 @@ async function editarPaciente(id) {
   document.getElementById('pNombre').value        = p.nombre           || '';
   document.getElementById('pFecha').value         = p.fecha_nac        || '';
   document.getElementById('pSexo').value          = p.sexo             || '';
+  document.getElementById('pGrupoSanguineo').value = p.grupo_sanguineo || '';
   document.getElementById('pDni').value           = p.dni              || '';
   document.getElementById('pTelefono').value      = p.telefono         || '';
   document.getElementById('pEmail').value         = p.email            || '';
@@ -820,6 +838,7 @@ async function guardarPaciente() {
     nombre,
     fecha_nac:        document.getElementById('pFecha').value           || null,
     sexo:             document.getElementById('pSexo').value            || null,
+    grupo_sanguineo:  document.getElementById('pGrupoSanguineo').value  || null,
     dni:              document.getElementById('pDni').value.trim()      || null,
     telefono:         document.getElementById('pTelefono').value.trim() || null,
     email:            document.getElementById('pEmail').value.trim()    || null,
@@ -1113,6 +1132,21 @@ function calcGrasaDW(plBic, plTri, plSub, plSup, edad, sexo) {
 // ── Dashboard Análisis ────────────────────────────────────────────────────────
 
 const _charts = {};
+let _globalRevFecha = '';
+let _periRevFecha = '';
+const _periActiveSeries = new Set(['per_cintura','per_caderas','per_muslo','per_pecho']);
+const PERI_SERIES = [
+  { label:'Cintura',      key:'per_cintura',    color:'#3b82f6' },
+  { label:'Caderas',      key:'per_caderas',    color:'#f59e0b' },
+  { label:'Muslo',        key:'per_muslo',      color:'#ef4444' },
+  { label:'Pecho',        key:'per_pecho',      color:'#8b5cf6' },
+  { label:'Hombros',      key:'per_hombros',    color:'#06b6d4' },
+  { label:'Brazo rel.',   key:'per_brazo_rel',  color:'#84cc16' },
+  { label:'Brazo cont.',  key:'per_brazo_cont', color:'#f43f5e' },
+  { label:'Antebrazo',    key:'per_antebrazo',  color:'#a78bfa' },
+  { label:'Muslo cont.',  key:'per_muslo_cont', color:'#fb923c' },
+  { label:'Gemelo',       key:'per_gemelo',     color:'#34d399' },
+];
 
 function renderAnalisisContent(revs, p) {
   return `<div class="dash-area" id="analisisArea">
@@ -1124,7 +1158,7 @@ function renderAnalisisContent(revs, p) {
       <span style="font-size:13px;color:var(--text-muted);font-weight:600">Período</span>
       <input type="date" id="analisisDesde" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="actualizarAnalisis()">
       <span style="font-size:13px;color:var(--text-muted)">—</span>
-      <input type="date" id="analisisHasta" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="actualizarAnalisis()">
+      <input type="date" id="analisisHasta" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="_globalRevFecha='';actualizarAnalisis()">
       <button class="btn btn-outline btn-sm" onclick="limpiarAnalisis()">Limpiar</button>
       <div style="width:1px;height:18px;background:var(--border);margin:0 2px"></div>
       <div class="rev-dd" id="revDd">
@@ -1142,29 +1176,35 @@ function renderAnalisisContent(revs, p) {
       <div class="dash-card" id="dashProg"></div>
     </div>
     <div class="charts-row">
-      <div class="chart-card-new">
-        <div class="chart-lbl">Evolución del peso</div>
-        <div class="chart-sub">kg · revisiones del período</div>
-        <canvas id="chartPeso"></canvas>
-      </div>
-      <div class="chart-card-new">
-        <div class="chart-lbl">% Masa Grasa</div>
-        <div class="chart-sub">Durnin-Womersley · revisiones con los 4 pliegues</div>
-        <canvas id="chartGrasa"></canvas>
+      <div class="chart-card-new" style="grid-column:1/-1">
+        <div class="chart-lbl">Evolución del peso y masa grasa</div>
+        <div class="chart-sub">kg · % grasa corporal (Durnin-Womersley) · revisiones del período</div>
+        <canvas id="chartPesoGrasa" style="max-height:240px"></canvas>
       </div>
     </div>
     <div class="charts-row">
-      <div class="chart-card-new" style="grid-column:1/-1">
-        <div class="chart-lbl">Perímetros principales</div>
-        <div class="chart-sub">cm · cintura, caderas, muslo, pecho</div>
-        <canvas id="chartPerimetros"></canvas>
+      <div class="chart-card-new">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+          <div>
+            <div class="chart-lbl">Perímetros principales</div>
+            <div class="chart-sub" style="margin-bottom:0">cm · revisiones del período</div>
+          </div>
+          <div class="rev-dd" id="periRevDd" style="flex-shrink:0">
+            <button class="rev-dd-btn" id="periRevDdBtn" onclick="togglePeriRevDD()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+              <span id="periRevDdLabel">Revisión</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="rev-dd-menu" id="periRevDdMenu" style="right:0"></div>
+          </div>
+        </div>
+        <div id="periSeriesFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px"></div>
+        <canvas id="chartPerimetros" style="max-height:240px"></canvas>
       </div>
-    </div>
-    <div class="charts-row">
-      <div class="chart-card-new" style="grid-column:1/-1">
+      <div class="chart-card-new">
         <div class="chart-lbl">Pliegues cutáneos — última revisión del período</div>
         <div class="chart-sub">mm</div>
-        <canvas id="chartPliegues"></canvas>
+        <canvas id="chartPliegues" style="max-height:240px"></canvas>
       </div>
     </div>
   </div>`;
@@ -1172,14 +1212,15 @@ function renderAnalisisContent(revs, p) {
 
 function getRevsFiltradas() {
   const desde = document.getElementById('analisisDesde')?.value || '';
-  const hasta = document.getElementById('analisisHasta')?.value || '';
+  const hastaInput = document.getElementById('analisisHasta')?.value || '';
+  const hasta = _globalRevFecha || hastaInput;
   return revisiones.filter(r => {
     const f = (r.fecha || '').split('T')[0];
     return (!desde || f >= desde) && (!hasta || f <= hasta);
   }).slice().reverse();
 }
 
-function renderRevMenu(selectedFecha) {
+function renderRevMenu() {
   const menu  = document.getElementById('revDdMenu');
   const label = document.getElementById('revDdLabel');
   const btn   = document.getElementById('revDdBtn');
@@ -1190,15 +1231,14 @@ function renderRevMenu(selectedFecha) {
   }
   const sorted = [...revisiones].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
   menu.innerHTML =
-    `<button class="rev-dd-item${!selectedFecha ? ' act' : ''}" onclick="seleccionarRevision('')">Todas las revisiones</button>` +
+    `<button type="button" class="rev-dd-item${!_globalRevFecha ? ' act' : ''}" onclick="seleccionarRevision('')">Todas las revisiones</button>` +
     '<div class="rev-dd-sep"></div>' +
     sorted.map(r => {
       const f = (r.fecha || '').split('T')[0];
-      const act = f === selectedFecha;
-      return `<button class="rev-dd-item${act ? ' act' : ''}" onclick="seleccionarRevision('${f}')">${fmtFechaCorta(f)}</button>`;
+      return `<button type="button" class="rev-dd-item${f === _globalRevFecha ? ' act' : ''}" onclick="seleccionarRevision('${f}')">${fmtFechaCorta(f)}</button>`;
     }).join('');
-  if (label) label.textContent = selectedFecha ? fmtFechaCorta(selectedFecha) : 'Revisión';
-  if (btn)   btn.classList.toggle('active', !!selectedFecha);
+  if (label) label.textContent = _globalRevFecha ? fmtFechaCorta(_globalRevFecha) : 'Revisión';
+  if (btn)   btn.classList.toggle('active', !!_globalRevFecha);
 }
 
 function toggleRevDropdown() {
@@ -1219,9 +1259,7 @@ function toggleRevDropdown() {
 }
 
 function seleccionarRevision(fecha) {
-  const hastaEl = document.getElementById('analisisHasta');
-  if (!hastaEl) return;
-  hastaEl.value = fecha;
+  _globalRevFecha = fecha;
   document.getElementById('revDdMenu')?.classList.remove('open');
   actualizarAnalisis();
 }
@@ -1232,16 +1270,52 @@ function actualizarAnalisis() {
   const revs = getRevsFiltradas();
   _renderHero(revs, p);
   _renderCharts(revs, p);
-  renderRevMenu(document.getElementById('analisisHasta')?.value || '');
+  renderRevMenu();
 }
 
 function limpiarAnalisis() {
   const d = document.getElementById('analisisDesde');
   const h = document.getElementById('analisisHasta');
   if (d) d.value = ''; if (h) h.value = '';
+  _globalRevFecha = '';
   actualizarAnalisis();
 }
 
+
+function buildMonthData(revs, valueFn) {
+  const map = new Map();
+  for (const r of revs) {
+    const ym = (r.fecha || '').split('T')[0].slice(0, 7);
+    const v = valueFn(r);
+    if (v != null) map.set(ym, Math.round(v * 10) / 10);
+  }
+  const sorted = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return {
+    labels: sorted.map(([ym]) => {
+      const [y, m] = ym.split('-');
+      return new Date(+y, +m - 1, 1).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+    }),
+    data: sorted.map(([, v]) => v)
+  };
+}
+
+function buildMonthMultiData(revs, seriesFns) {
+  const maps = seriesFns.map(() => new Map());
+  for (const r of revs) {
+    const ym = (r.fecha || '').split('T')[0].slice(0, 7);
+    seriesFns.forEach((fn, i) => {
+      const v = fn(r);
+      if (v != null) maps[i].set(ym, Math.round(v * 10) / 10);
+    });
+  }
+  const allYMs = [...new Set(maps.flatMap(m => [...m.keys()]))].sort();
+  const labels = allYMs.map(ym => {
+    const [y, m] = ym.split('-');
+    return new Date(+y, +m - 1, 1).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+  });
+  const datasets = maps.map(m => allYMs.map(ym => m.has(ym) ? m.get(ym) : null));
+  return { labels, datasets };
+}
 
 function _renderHero(revs, p) {
   const heroEl   = document.getElementById('dashHero');
@@ -1275,45 +1349,6 @@ function _renderHero(revs, p) {
   const { pct: pctGrasa, graso: pesoGraso, magro: pesoMagro } = composicion(revUlt);
   const { pct: pctPri,   graso: grasoPri,  magro: magroPri  } = composicion(revUlt !== revPri ? revPri : null);
 
-  // ── Helpers visuales ─────────────────────────────────────────────────
-  function svgSparkline(vals, color) {
-    const v = vals.filter(x => x != null);
-    if (v.length < 2) return '';
-    const W = 200, H = 48, pad = 5;
-    const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 0.01;
-    const pts = v.map((val, i) => [
-      +(i / (v.length - 1) * W).toFixed(1),
-      +(H - pad - (val - mn) / rng * (H - pad * 2)).toFixed(1)
-    ]);
-    const line = pts.map(([x,y]) => `${x},${y}`).join(' ');
-    const area = `M${pts[0][0]},${H} ${pts.map(([x,y]) => `L${x},${y}`).join(' ')} L${pts.at(-1)[0]},${H} Z`;
-    const [dx, dy] = pts.at(-1);
-    const gid = `g${color.replace('#','')}`;
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" fill="none" style="display:block">
-      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity=".15"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-      </linearGradient></defs>
-      <path d="${area}" fill="url(#${gid})"/>
-      <polyline points="${line}" stroke="${color}" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${dx}" cy="${dy}" r="4" fill="white" stroke="${color}" stroke-width="2.5"/>
-    </svg>`;
-  }
-
-  function svgRing(pct, size, color) {
-    if (pct == null) return '';
-    const r = (size - 10) / 2, cx = size/2, cy = size/2;
-    const c = 2 * Math.PI * r, d = Math.min(pct/100, 1) * c;
-    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f0f2f5" stroke-width="7"/>
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="7"
-        stroke-dasharray="${d.toFixed(1)} ${c.toFixed(1)}"
-        stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
-      <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="central"
-        font-size="11" font-weight="800" fill="${color}" font-family="inherit">${pct}%</text>
-    </svg>`;
-  }
-
   function dHtml(now, ref, reverse = false) {
     if (now == null || ref == null) return '';
     const d = Math.round((now - ref) * 10) / 10;
@@ -1322,23 +1357,7 @@ function _renderHero(revs, p) {
     return `<span class="hero-delta ${ok ? 'ok' : 'bad'}">${d < 0 ? '↓' : '↑'} ${d > 0 ? '+' : ''}${d}</span>`;
   }
 
-  // ── Sparkline data ────────────────────────────────────────────────────
-  const imcSpk    = revs.map(r => r.peso ? (calcIMC(r.peso, p.talla)?.val ?? null) : null);
-  const grasaSpk  = revs.map(r =>
-    (r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null)
-      ? calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo)
-      : null);
-  const grasoPSpk = revs.map((r,i) => {
-    const g = grasaSpk[i];
-    return g != null && r.peso ? Math.round(r.peso * g/100 * 10)/10 : null;
-  });
-  const magroSpk  = revs.map((r,i) => {
-    const gr = grasoPSpk[i];
-    return gr != null && r.peso ? Math.round((r.peso - gr) * 10)/10 : null;
-  });
-
   const imcPriVal = (imc && imcPri && conPeso.length > 1) ? imcPri.val : null;
-  const pesoSpk   = revs.map(r => r.peso);
 
   heroEl.innerHTML = `
     <div class="hero-card hc-peso">
@@ -1348,17 +1367,14 @@ function _renderHero(revs, p) {
           <div class="hero-sub" style="margin-top:3px">${pesoAct != null ? 'Último registrado' : 'Sin revisiones'}</div>
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="3.5"/>
-            <path d="M20 21a8 8 0 1 0-16 0"/>
-          </svg>
+          <span style="font-size:24px;line-height:1">🏋️</span>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pesoAct ?? p.peso ?? '—'}</span>
         ${(pesoAct ?? p.peso) != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(pesoSpk, '#16a34a')}</div>
+      <div class="hero-spark"><canvas id="sparkPeso"></canvas></div>
       <div class="hero-foot">
         <span class="hero-sub">${pesoPri != null ? 'Inicio: ' + pesoPri + ' kg' : (p.peso ? 'Inicial: ' + p.peso + ' kg' : '—')}</span>
         ${dHtml(pesoAct, pesoPri)}
@@ -1371,15 +1387,13 @@ function _renderHero(revs, p) {
           <div class="hero-sub" style="margin-top:3px">Índice de masa corporal</div>
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-          </svg>
+          <span style="font-size:24px;line-height:1">❤️</span>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${imc?.val ?? '—'}</span>
       </div>
-      <div class="hero-spark">${svgSparkline(imcSpk, '#3b82f6')}</div>
+      <div class="hero-spark"><canvas id="sparkIMC"></canvas></div>
       <div class="hero-foot">
         <span class="hero-sub">${imc ? imc.etiq : 'Sin datos de peso'}</span>
         ${dHtml(imc?.val, imcPriVal)}
@@ -1392,16 +1406,14 @@ function _renderHero(revs, p) {
           <div class="hero-sub" style="margin-top:3px">% Grasa corporal</div>
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-          </svg>
+          <span style="font-size:24px;line-height:1">💧</span>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pctGrasa ?? '—'}</span>
         ${pctGrasa != null ? '<span class="hero-u">%</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(grasaSpk, '#f97316')}</div>
+      <div class="hero-spark"><canvas id="sparkGrasa"></canvas></div>
       <div class="hero-foot">
         <span class="hero-sub">${pctGrasa == null ? 'Requiere 4 pliegues' : 'Durnin-Womersley'}</span>
         ${dHtml(pctGrasa, pctPri)}
@@ -1414,16 +1426,14 @@ function _renderHero(revs, p) {
           <div class="hero-sub" style="margin-top:3px">Masa adiposa</div>
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-          </svg>
+          <span style="font-size:24px;line-height:1">🔥</span>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pesoGraso ?? '—'}</span>
         ${pesoGraso != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(grasoPSpk, '#8b5cf6')}</div>
+      <div class="hero-spark"><canvas id="sparkPgraso"></canvas></div>
       <div class="hero-foot">
         <span class="hero-sub">${pesoGraso != null ? pctGrasa + '% del peso total' : 'Sin datos de pliegues'}</span>
         ${dHtml(pesoGraso, grasoPri)}
@@ -1436,23 +1446,21 @@ function _renderHero(revs, p) {
           <div class="hero-sub" style="margin-top:3px">Masa libre de grasa</div>
         </div>
         <div class="hero-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="9" width="5" height="6" rx="2"/>
-            <rect x="17" y="9" width="5" height="6" rx="2"/>
-            <line x1="7" y1="12" x2="17" y2="12" stroke-width="3"/>
-          </svg>
+          <span style="font-size:24px;line-height:1">💪</span>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pesoMagro ?? '—'}</span>
         ${pesoMagro != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark">${svgSparkline(magroSpk, '#22c55e')}</div>
+      <div class="hero-spark"><canvas id="sparkPmagro"></canvas></div>
       <div class="hero-foot">
         <span class="hero-sub">${pesoMagro != null ? (100 - pctGrasa) + '% del peso total' : 'Sin datos de pliegues'}</span>
         ${dHtml(pesoMagro, magroPri, true)}
       </div>
     </div>`;
+
+  _initSparkCharts(revs, p, edad);
 
   // ── Composición corporal ──────────────────────────────────────────────
   if (compEl) {
@@ -1568,62 +1576,208 @@ function _renderHero(revs, p) {
   }
 }
 
-function _renderCharts(revs, p) {
-  Object.values(_charts).forEach(c => { try { c.destroy(); } catch(e){} });
+function _initSparkCharts(revs, p, edad) {
+  const sparkCfg = [
+    { id: 'sparkPeso',   color: '#16a34a', unit: 'kg',
+      fn: r => r.peso },
+    { id: 'sparkIMC',    color: '#3b82f6', unit: '',
+      fn: r => r.peso ? (calcIMC(r.peso, p.talla)?.val ?? null) : null },
+    { id: 'sparkGrasa',  color: '#f97316', unit: '%',
+      fn: r => (r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null)
+        ? calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo) : null },
+    { id: 'sparkPgraso', color: '#8b5cf6', unit: 'kg',
+      fn: r => {
+        if (!r.peso || r.pl_bicipital == null || r.pl_tricipital == null || r.pl_subescapular == null || r.pl_supracrestal == null) return null;
+        const g = calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo);
+        return g != null ? Math.round(r.peso * g / 100 * 10) / 10 : null;
+      }},
+    { id: 'sparkPmagro', color: '#22c55e', unit: 'kg',
+      fn: r => {
+        if (!r.peso || r.pl_bicipital == null || r.pl_tricipital == null || r.pl_subescapular == null || r.pl_supracrestal == null) return null;
+        const g = calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo);
+        return g != null ? Math.round((r.peso - r.peso * g / 100) * 10) / 10 : null;
+      }},
+  ];
+  sparkCfg.forEach(({ id, color, unit, fn }) => {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const old = _charts[id];
+    if (old) { try { old.destroy(); } catch(e) {} delete _charts[id]; }
+    const { labels, data } = buildMonthData(revs, fn);
+    if (!data.length) return;
+    _charts[id] = new Chart(c, {
+      type: 'line',
+      data: { labels, datasets: [{ data,
+        borderColor: color, backgroundColor: color + '18', fill: true,
+        tension: 0.4, pointBackgroundColor: color, pointBorderColor: '#fff',
+        pointBorderWidth: 1.5, pointRadius: data.length === 1 ? 5 : 3,
+        pointHoverRadius: 6, spanGaps: true, borderWidth: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { displayColors: false,
+            callbacks: { label: ctx => `${ctx.parsed.y}${unit ? ' ' + unit : ''}` }
+          }
+        },
+        scales: { x: { display: false }, y: { display: false } }
+      }
+    });
+  });
+}
 
-  const labels = revs.map(r => fmtFecha((r.fecha || '').split('T')[0]));
+function togglePeriRevDD() {
+  const menu = document.getElementById('periRevDdMenu');
+  if (!menu) return;
+  const opening = !menu.classList.contains('open');
+  menu.classList.toggle('open', opening);
+  if (opening) {
+    setTimeout(() => {
+      document.addEventListener('click', function cerrar(e) {
+        if (!document.getElementById('periRevDd')?.contains(e.target)) {
+          menu.classList.remove('open');
+          document.removeEventListener('click', cerrar);
+        }
+      });
+    }, 0);
+  }
+}
+
+function seleccionarPeriRevision(fecha) {
+  _periRevFecha = fecha;
+  document.getElementById('periRevDdMenu')?.classList.remove('open');
+  actualizarAnalisis();
+}
+
+function renderPeriRevMenu() {
+  const menu  = document.getElementById('periRevDdMenu');
+  const label = document.getElementById('periRevDdLabel');
+  const btn   = document.getElementById('periRevDdBtn');
+  if (!menu) return;
+  const sorted = [...revisiones].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  menu.innerHTML =
+    `<button type="button" class="rev-dd-item${!_periRevFecha ? ' act' : ''}" onclick="seleccionarPeriRevision('')">Todas las revisiones</button>` +
+    '<div class="rev-dd-sep"></div>' +
+    sorted.map(r => {
+      const f = (r.fecha || '').split('T')[0];
+      return `<button type="button" class="rev-dd-item${f === _periRevFecha ? ' act' : ''}" onclick="seleccionarPeriRevision('${f}')">${fmtFechaCorta(f)}</button>`;
+    }).join('');
+  if (label) label.textContent = _periRevFecha ? fmtFechaCorta(_periRevFecha) : 'Revisión';
+  if (btn)   btn.classList.toggle('active', !!_periRevFecha);
+}
+
+function togglePeriSerie(key) {
+  if (_periActiveSeries.has(key)) {
+    if (_periActiveSeries.size > 1) _periActiveSeries.delete(key);
+  } else {
+    _periActiveSeries.add(key);
+  }
+  actualizarAnalisis();
+}
+
+function toggleTodasPeriSeries() {
+  const allActive = PERI_SERIES.every(s => _periActiveSeries.has(s.key));
+  if (allActive) {
+    const first = PERI_SERIES[0].key;
+    PERI_SERIES.forEach(s => { if (s.key !== first) _periActiveSeries.delete(s.key); });
+  } else {
+    PERI_SERIES.forEach(s => _periActiveSeries.add(s.key));
+  }
+  actualizarAnalisis();
+}
+
+function renderPeriSeriesChips(revs) {
+  const el = document.getElementById('periSeriesFilter');
+  if (!el) return;
+  const periRevs = _periRevFecha
+    ? revs.filter(r => (r.fecha||'').split('T')[0] === _periRevFecha)
+    : revs;
+  const allActive = PERI_SERIES.every(s => _periActiveSeries.has(s.key));
+  const btnStyle = (active, color) => [
+    'display:inline-flex;align-items:center;gap:4px',
+    'padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600',
+    'cursor:pointer;transition:all .15s;white-space:nowrap',
+    active
+      ? `border:1.5px solid ${color};background:${color}22;color:${color}`
+      : 'border:1.5px solid var(--border);background:transparent;color:var(--text-muted)'
+  ].join(';');
+  const allBtnStyle = allActive
+    ? 'display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #0f172a;background:#0f172a;color:white'
+    : 'display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--text-muted)';
+  el.innerHTML =
+    `<button type="button" onclick="toggleTodasPeriSeries()" style="${allBtnStyle}">Todos</button>` +
+    PERI_SERIES.map(s => {
+      const active  = _periActiveSeries.has(s.key);
+      const hasData = periRevs.some(r => r[s.key] != null);
+      const opacity = hasData ? '1' : '0.35';
+      return `<button type="button" onclick="togglePeriSerie('${s.key}')" style="${btnStyle(active, s.color)};opacity:${opacity}">` +
+        `<span style="width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0"></span>${s.label}</button>`;
+    }).join('');
+}
+
+function _renderCharts(revs, p) {
+  ['pesoGrasa','peri','pliegues'].forEach(k => {
+    if (_charts[k]) { try { _charts[k].destroy(); } catch(e){} delete _charts[k]; }
+  });
+
   const edad   = calcEdad(p.fecha_nac);
   const grid   = { color: '#f1f5f9' };
   const noLegend = { legend: { display: false } };
   const xOpts  = { grid: { display: false }, ticks: { font: { size: 11 } } };
+  const inter  = { mode: 'nearest', axis: 'x', intersect: false };
 
-  // — Peso —
-  const c1 = document.getElementById('chartPeso');
-  if (c1) _charts.peso = new Chart(c1, {
-    type: 'line',
-    data: { labels, datasets: [{ data: revs.map(r => r.peso),
-      borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.08)', fill: true,
-      tension: 0.4, pointBackgroundColor: '#16a34a', pointRadius: 5,
-      pointHoverRadius: 7, spanGaps: true, borderWidth: 2 }] },
-    options: { responsive: true, plugins: noLegend,
-      scales: { y: { beginAtZero: false, grid, ticks: { callback: v => v + ' kg', font: { size: 11 } } }, x: xOpts } }
-  });
-
-  // — % Masa Grasa —
-  const c1g = document.getElementById('chartGrasa');
-  if (c1g) {
-    const gData = revs.map(r =>
-      (r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null)
-        ? calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo)
-        : null
-    );
-    _charts.grasa = new Chart(c1g, {
+  // — Peso + % Masa Grasa (combinado, doble eje) —
+  const grasaFn = r => (r.pl_bicipital != null && r.pl_tricipital != null &&
+    r.pl_subescapular != null && r.pl_supracrestal != null)
+    ? calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, p.sexo) : null;
+  const { labels: pgLbls, datasets: pgData } = buildMonthMultiData(revs, [r => r.peso, grasaFn]);
+  const c1 = document.getElementById('chartPesoGrasa');
+  if (c1 && (pgData[0].some(v => v != null) || pgData[1].some(v => v != null))) {
+    _charts.pesoGrasa = new Chart(c1, {
       type: 'line',
-      data: { labels, datasets: [{ data: gData,
-        borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.08)', fill: true,
-        tension: 0.4, pointBackgroundColor: '#f97316', pointRadius: 5,
-        pointHoverRadius: 7, spanGaps: true, borderWidth: 2 }] },
-      options: { responsive: true, plugins: noLegend,
-        scales: { y: { beginAtZero: false, grid, ticks: { callback: v => v + '%', font: { size: 11 } } }, x: xOpts } }
+      data: { labels: pgLbls, datasets: [
+        { label: 'Peso (kg)', data: pgData[0], yAxisID: 'yPeso',
+          borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.08)', fill: true,
+          tension: 0.4, pointBackgroundColor: '#16a34a', pointRadius: 5,
+          pointHoverRadius: 7, spanGaps: true, borderWidth: 2 },
+        { label: '% Masa Grasa', data: pgData[1], yAxisID: 'yGrasa',
+          borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.06)', fill: true,
+          tension: 0.4, pointBackgroundColor: '#f97316', pointRadius: 5,
+          pointHoverRadius: 7, spanGaps: true, borderWidth: 2 }
+      ]},
+      options: { responsive: true, interaction: inter,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 }, padding: 16 } } },
+        scales: {
+          yPeso:  { type: 'linear', position: 'left',  beginAtZero: false, grid,
+            ticks: { callback: v => v + ' kg', font: { size: 11 } } },
+          yGrasa: { type: 'linear', position: 'right', beginAtZero: false,
+            grid: { drawOnChartArea: false },
+            ticks: { callback: v => v + '%', font: { size: 11 } } },
+          x: xOpts
+        }
+      }
     });
   }
 
   // — Perímetros —
-  const series = [
-    { label: 'Cintura',  key: 'per_cintura',  color: '#3b82f6' },
-    { label: 'Caderas',  key: 'per_caderas',  color: '#f59e0b' },
-    { label: 'Muslo',    key: 'per_muslo',    color: '#ef4444' },
-    { label: 'Pecho',    key: 'per_pecho',    color: '#8b5cf6' },
-  ];
+  renderPeriRevMenu();
+  renderPeriSeriesChips(revs);
+  const periRevs = _periRevFecha
+    ? revs.filter(r => (r.fecha||'').split('T')[0] === _periRevFecha)
+    : revs;
+  const activeSeries = PERI_SERIES.filter(s => _periActiveSeries.has(s.key));
+  const { labels: periLbls, datasets: periData } = buildMonthMultiData(periRevs, activeSeries.map(s => r => r[s.key]));
   const c2 = document.getElementById('chartPerimetros');
   if (c2) _charts.peri = new Chart(c2, {
     type: 'line',
-    data: { labels, datasets: series.map(s => ({
-      label: s.label, data: revs.map(r => r[s.key]),
+    data: { labels: periLbls, datasets: activeSeries.map((s, i) => ({
+      label: s.label, data: periData[i],
       borderColor: s.color, tension: 0.4, pointRadius: 4, pointHoverRadius: 6,
       spanGaps: true, borderWidth: 2, fill: false
     }))},
-    options: { responsive: true,
+    options: { responsive: true, interaction: inter,
       plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 }, padding: 16 } } },
       scales: { y: { beginAtZero: false, grid, ticks: { callback: v => v + ' cm', font: { size: 11 } } }, x: xOpts } }
   });
@@ -1645,7 +1799,7 @@ function _renderCharts(revs, p) {
         backgroundColor: barColors.slice(0, pl.length).map(c => c + 'b3'),
         borderColor: barColors.slice(0, pl.length),
         borderWidth: 1, borderRadius: 6, borderSkipped: false }] },
-      options: { responsive: true, plugins: noLegend,
+      options: { responsive: true, interaction: inter, plugins: noLegend,
         scales: { y: { beginAtZero: true, grid, ticks: { callback: v => v + ' mm', font: { size: 11 } } }, x: xOpts } }
     });
   }

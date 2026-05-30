@@ -44,11 +44,12 @@ def init_db():
         notas            TEXT,
         peso             REAL,
         talla            REAL,
+        grupo_sanguineo  TEXT,
         creado           TEXT DEFAULT (datetime('now','localtime'))
     )''')
-    for col in ('peso', 'talla'):
+    for col, tipo in [('peso', 'REAL'), ('talla', 'REAL'), ('grupo_sanguineo', 'TEXT')]:
         try:
-            conn.execute(f'ALTER TABLE pacientes ADD COLUMN {col} REAL')
+            conn.execute(f'ALTER TABLE pacientes ADD COLUMN {col} {tipo}')
         except Exception:
             pass
     conn.execute('''CREATE TABLE IF NOT EXISTS revisiones (
@@ -120,13 +121,14 @@ def create_paciente():
     cur = conn.execute(
         '''INSERT INTO pacientes
            (nombre, fecha_nac, sexo, dni, telefono, email,
-            objetivo, actividad_fisica, intolerancias, patologias, notas, peso, talla)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            objetivo, actividad_fisica, intolerancias, patologias, notas, peso, talla, grupo_sanguineo)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
         (d['nombre'].strip(), d.get('fecha_nac') or None, d.get('sexo') or None,
          d.get('dni') or None, d.get('telefono') or None, d.get('email') or None,
          d.get('objetivo') or None, d.get('actividad_fisica') or None,
          d.get('intolerancias') or None, d.get('patologias') or None,
-         d.get('notas') or None, d.get('peso') or None, d.get('talla') or None)
+         d.get('notas') or None, d.get('peso') or None, d.get('talla') or None,
+         d.get('grupo_sanguineo') or None)
     )
     conn.commit()
     p = conn.execute('SELECT * FROM pacientes WHERE id=?', (cur.lastrowid,)).fetchone()
@@ -140,13 +142,15 @@ def update_paciente(pid):
     conn = get_db()
     conn.execute(
         '''UPDATE pacientes SET nombre=?, fecha_nac=?, sexo=?, dni=?, telefono=?, email=?,
-           objetivo=?, actividad_fisica=?, intolerancias=?, patologias=?, notas=?, peso=?, talla=?
+           objetivo=?, actividad_fisica=?, intolerancias=?, patologias=?, notas=?, peso=?, talla=?,
+           grupo_sanguineo=?
            WHERE id=?''',
         (d['nombre'].strip(), d.get('fecha_nac') or None, d.get('sexo') or None,
          d.get('dni') or None, d.get('telefono') or None, d.get('email') or None,
          d.get('objetivo') or None, d.get('actividad_fisica') or None,
          d.get('intolerancias') or None, d.get('patologias') or None,
-         d.get('notas') or None, d.get('peso') or None, d.get('talla') or None, pid)
+         d.get('notas') or None, d.get('peso') or None, d.get('talla') or None,
+         d.get('grupo_sanguineo') or None, pid)
     )
     conn.commit()
     p       = conn.execute('SELECT * FROM pacientes WHERE id=?', (pid,)).fetchone()
