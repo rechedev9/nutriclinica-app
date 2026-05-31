@@ -1183,11 +1183,11 @@ function renderAnalisisContent(revs, p) {
       <div class="dash-card" id="dashComp"></div>
       <div class="dash-card" id="dashProg"></div>
     </div>
-    <div class="charts-row" style="grid-template-columns:3fr 2fr">
+    <div class="charts-row">
       <div class="chart-card-new">
         <div class="chart-lbl">Evolución del peso y masa grasa</div>
         <div class="chart-sub">kg · % grasa corporal (Durnin-Womersley) · revisiones del período</div>
-        <canvas id="chartPesoGrasa" style="max-height:240px"></canvas>
+        <canvas id="chartPesoGrasa" style="max-height:320px"></canvas>
       </div>
       <div class="chart-card-new" id="dashCuerpo" style="display:flex;flex-direction:column"></div>
     </div>
@@ -1768,7 +1768,7 @@ function renderMedidasMenu(revs) {
   if (btn) btn.classList.toggle('active', n > 0);
 }
 
-function _renderCuerpo(revs) {
+function _renderCuerpo(revs, p, edad) {
   const el = document.getElementById('dashCuerpo');
   if (!el) return;
   const ult = revs.length ? revs[revs.length - 1] : null;
@@ -1786,83 +1786,47 @@ function _renderCuerpo(revs) {
     const lx = anchor === 'end' ? textX + 5 : textX - 5;
     return `
       <line x1="${lx}" y1="${lineY}" x2="${bodyX}" y2="${lineY}" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
-      <text x="${textX}" y="${lineY - 2}" text-anchor="${anchor}" font-size="13" fill="#64748b">${label}</text>
-      <text x="${textX}" y="${lineY + 14}" text-anchor="${anchor}" font-size="20" font-weight="700" fill="#1e293b">${v} cm</text>
-      ${dStr ? `<text x="${textX}" y="${lineY + 27}" text-anchor="${anchor}" font-size="13" font-weight="700" fill="${dCol}">${dStr} cm</text>` : ''}`;
+      <text x="${textX}" y="${lineY - 6}" text-anchor="${anchor}" font-size="18" fill="#475569">${label}</text>
+      <text x="${textX}" y="${lineY + 18}" text-anchor="${anchor}" font-size="32" font-weight="700" fill="#0f172a">${v} cm</text>
+      ${dStr ? `<text x="${textX}" y="${lineY + 36}" text-anchor="${anchor}" font-size="17" font-weight="600" fill="${dCol}">${dStr} cm</text>` : ''}`;
   }
+  function statRow(label, value, unit, delta, deltaUnit) {
+    if (value == null) return '';
+    const d = delta != null && delta !== 0 ? (delta > 0 ? `+${delta}` : `${delta}`) : null;
+    const dCol = d != null && delta < 0 ? '#16a34a' : '#dc2626';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #f1f5f9">
+      <span style="font-size:13px;color:#64748b;font-weight:500">${label}</span>
+      <div style="text-align:right;line-height:1.3">
+        <span style="font-size:22px;font-weight:700;color:#0f172a">${value}</span><span style="font-size:13px;color:#64748b;margin-left:3px">${unit}</span>
+        ${d ? `<br><span style="font-size:13px;font-weight:600;color:${dCol}">${d} ${deltaUnit}</span>` : ''}
+      </div>
+    </div>`;
+  }
+  const graVal = (ult.pl_bicipital != null && ult.pl_tricipital != null &&
+    ult.pl_subescapular != null && ult.pl_supracrestal != null)
+    ? calcGrasaDW(ult.pl_bicipital, ult.pl_tricipital, ult.pl_subescapular, ult.pl_supracrestal, edad, p.sexo) : null;
+  const graAnt = ant && (ant.pl_bicipital != null && ant.pl_tricipital != null &&
+    ant.pl_subescapular != null && ant.pl_supracrestal != null)
+    ? calcGrasaDW(ant.pl_bicipital, ant.pl_tricipital, ant.pl_subescapular, ant.pl_supracrestal, edad, p.sexo) : null;
+  const graDelta = graVal != null && graAnt != null ? Math.round((graVal - graAnt) * 10) / 10 : null;
+  const imcObj   = calcIMC(ult.peso, p.talla);
+  const pesoDelta  = ult.peso != null && ant?.peso != null ? Math.round((ult.peso - ant.peso) * 10) / 10 : null;
+  const brazoDelta = ult.per_brazo_rel != null && ant?.per_brazo_rel != null ? Math.round((ult.per_brazo_rel - ant.per_brazo_rel) * 10) / 10 : null;
+  const antebDelta = ult.per_antebrazo != null && ant?.per_antebrazo != null ? Math.round((ult.per_antebrazo - ant.per_antebrazo) * 10) / 10 : null;
   el.innerHTML = `
     <div class="chart-lbl">Perfil corporal</div>
-    <div class="chart-sub" style="margin-bottom:4px">cm · última revisión · vs. anterior</div>
-    <svg viewBox="0 0 380 430" style="width:100%;height:240px" xmlns="http://www.w3.org/2000/svg">
-      <defs><style>.bd{fill:#e2eaf4;stroke:#94a3b8;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}</style></defs>
-      <!-- Cuerpo: torso + cadera + piernas (curvas bezier suaves) -->
-      <path class="bd" d="
-        M 148,80
-        C 145,94 142,108 143,113
-        C 143,128 143,154 141,167
-        C 140,176 140,180 140,183
-        C 138,198 133,218 132,233
-        C 131,248 136,258 140,265
-        C 138,278 137,296 138,312
-        C 138,330 139,346 140,362
-        C 141,380 142,398 143,415
-        L 157,415
-        C 158,398 159,380 160,362
-        C 162,346 164,330 166,312
-        C 168,296 171,278 173,265
-        C 177,256 183,252 190,254
-        C 197,252 203,256 207,265
-        C 209,278 212,296 214,312
-        C 216,330 217,346 219,362
-        C 220,380 221,398 222,415
-        L 237,415
-        C 238,398 239,380 240,362
-        C 241,346 242,330 242,312
-        C 243,296 244,278 240,265
-        C 244,258 249,248 248,233
-        C 247,218 242,198 240,183
-        C 240,180 240,176 239,167
-        C 237,154 236,128 236,113
-        C 237,108 234,94 232,80
-        C 228,75 215,70 205,70
-        C 200,66 196,63 190,63
-        C 184,63 180,66 175,70
-        C 165,70 152,75 148,80 Z"/>
-      <!-- Brazo derecho -->
-      <path class="bd" d="
-        M 234,86
-        C 242,82 256,80 266,87
-        C 270,97 270,126 268,152
-        C 268,170 270,180 270,190
-        C 270,214 266,236 262,256
-        L 252,263
-        C 252,246 252,226 252,206
-        C 253,188 252,172 252,158
-        C 251,136 249,108 248,88
-        C 244,84 238,84 234,86 Z"/>
-      <!-- Brazo izquierdo -->
-      <path class="bd" d="
-        M 146,86
-        C 138,82 124,80 114,87
-        C 110,97 110,126 112,152
-        C 112,170 110,180 110,190
-        C 110,214 114,236 118,256
-        L 128,263
-        C 128,246 128,226 128,206
-        C 127,188 128,172 128,158
-        C 129,136 131,108 132,88
-        C 136,84 142,84 146,86 Z"/>
-      <!-- Cabeza (encima del cuello) -->
-      <ellipse class="bd" cx="190" cy="34" rx="26" ry="29"/>
-      ${medida('per_hombros',   'Hombros',   90,  82,  'end',   148)}
-      ${medida('per_cintura',   'Cintura',   90,  183, 'end',   140)}
-      ${medida('per_caderas',   'Caderas',   90,  233, 'end',   132)}
-      ${medida('per_muslo',     'Muslo',     90,  312, 'end',   138)}
-      ${medida('per_pecho',     'Pecho',     290, 100, 'start', 236)}
-      ${medida('per_brazo_rel', 'Brazo',     290, 158, 'start', 268)}
-      ${medida('per_antebrazo', 'Antebrazo', 290, 203, 'start', 270)}
-      ${medida('per_gemelo',    'Gemelo',    290, 368, 'start', 240)}
-    </svg>`;
+    <div class="chart-sub" style="margin-bottom:6px">cm · última revisión · vs. anterior</div>
+    <div style="flex:1;min-height:0;overflow:hidden">
+      <svg viewBox="0 0 900 380" style="width:100%;max-height:320px" xmlns="http://www.w3.org/2000/svg">
+        <image href="/static/1.png" x="310" y="0" width="280" height="380" preserveAspectRatio="xMidYMid meet"/>
+        ${medida('per_hombros', 'Hombros',  52,  68, 'end', 335)}
+        ${medida('per_cintura', 'Cintura',  52, 186, 'end', 368)}
+        ${medida('per_muslo',   'Muslo',    52, 266, 'end', 355)}
+        ${medida('per_pecho',   'Pecho',   848, 114, 'start', 582)}
+        ${medida('per_caderas', 'Caderas', 848, 220, 'start', 568)}
+        ${medida('per_gemelo',  'Gemelo',  848, 315, 'start', 558)}
+      </svg>
+    </div>`;
 }
 
 function _renderCharts(revs, p) {
@@ -1877,7 +1841,7 @@ function _renderCharts(revs, p) {
   const inter  = { mode: 'nearest', axis: 'x', intersect: false };
 
   // — Perfil corporal —
-  _renderCuerpo(revs);
+  _renderCuerpo(revs, p, edad);
 
   // — Peso + % Masa Grasa (combinado, doble eje) —
   const grasaFn = r => (r.pl_bicipital != null && r.pl_tricipital != null &&
