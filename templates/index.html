@@ -1873,13 +1873,13 @@ function _renderCuerpo(revs, p, edad) {
     if (v == null) return '';
     const d = ant?.[key] != null ? Math.round((v - ant[key]) * 10) / 10 : null;
     const dStr = d != null && d !== 0 ? (d > 0 ? `+${d}` : `${d}`) : null;
-    const dCol = d != null && d < 0 ? '#16a34a' : '#dc2626';
+    const dCol = d != null && d < 0 ? '#15803d' : '#b91c1c';
     const lx = anchor === 'end' ? textX + 5 : textX - 5;
     return `
       <line x1="${lx}" y1="${lineY}" x2="${bodyX}" y2="${lineY}" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
       <text x="${textX}" y="${lineY - 4}" text-anchor="${anchor}" font-size="15" font-weight="600" fill="#64748b">${label}</text>
       <text x="${textX}" y="${lineY + 20}" text-anchor="${anchor}" font-size="26" font-weight="700" fill="#0f172a">${v} cm</text>
-      ${dStr ? `<text x="${textX}" y="${lineY + 35}" text-anchor="${anchor}" font-size="13" font-weight="600" fill="${dCol}">${dStr} cm</text>` : ''}`;
+      ${dStr ? `<text x="${textX}" y="${lineY + 36}" text-anchor="${anchor}" font-size="15" font-weight="700" fill="${dCol}">${dStr} cm</text>` : ''}`;
   }
   function statRow(label, value, unit, delta, deltaUnit) {
     if (value == null) return '';
