@@ -1802,11 +1802,12 @@ function toggleMedida(key) {
   actualizarAnalisis();
 }
 
-function toggleTodasMedidas(unit) {
-  const grupo = ALL_MEDIDAS.filter(m => m.unit === unit);
+function toggleTodasMedidas(prefix) {
+  const grupo = ALL_MEDIDAS.filter(m => m.key.startsWith(prefix + '_'));
   const allOn = grupo.every(m => _activeMedidas.has(m.key));
   if (allOn) {
-    grupo.forEach(m => { if (_activeMedidas.size > 1) _activeMedidas.delete(m.key); });
+    grupo.forEach(m => _activeMedidas.delete(m.key));
+    if (_activeMedidas.size === 0) _activeMedidas.add(grupo[0].key);
   } else {
     grupo.forEach(m => _activeMedidas.add(m.key));
   }
@@ -1833,23 +1834,23 @@ function renderMedidasMenu(revs) {
     </button>`;
   }
 
-  const mmGroup = ALL_MEDIDAS.filter(m => m.unit === 'mm');
-  const cmGroup = ALL_MEDIDAS.filter(m => m.unit === 'cm');
-  const allMmOn = mmGroup.every(m => _activeMedidas.has(m.key));
-  const allCmOn = cmGroup.every(m => _activeMedidas.has(m.key));
+  const plieguesGroup = ALL_MEDIDAS.filter(m => m.key.startsWith('pl_'));
+  const periGroup     = ALL_MEDIDAS.filter(m => m.key.startsWith('per_'));
+  const allPlOn  = plieguesGroup.every(m => _activeMedidas.has(m.key));
+  const allPerOn = periGroup.every(m => _activeMedidas.has(m.key));
 
   menu.innerHTML =
     `<div style="padding:5px 12px 4px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">
       Pliegues cutáneos (cm)
-      <button type="button" onclick="toggleTodasMedidas('mm')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allMmOn ? 'Quitar todos' : 'Todos'}</button>
+      <button type="button" onclick="toggleTodasMedidas('pl')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allPlOn ? 'Quitar todos' : 'Todos'}</button>
     </div>` +
-    mmGroup.map(itemHtml).join('') +
+    plieguesGroup.map(itemHtml).join('') +
     `<div class="rev-dd-sep"></div>
     <div style="padding:5px 12px 4px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">
       Perímetros (cm)
-      <button type="button" onclick="toggleTodasMedidas('cm')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allCmOn ? 'Quitar todos' : 'Todos'}</button>
+      <button type="button" onclick="toggleTodasMedidas('per')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allPerOn ? 'Quitar todos' : 'Todos'}</button>
     </div>` +
-    cmGroup.map(itemHtml).join('');
+    periGroup.map(itemHtml).join('');
 
   const n = _activeMedidas.size;
   if (lbl) lbl.textContent = n === 1
@@ -1876,9 +1877,9 @@ function _renderCuerpo(revs, p, edad) {
     const lx = anchor === 'end' ? textX + 5 : textX - 5;
     return `
       <line x1="${lx}" y1="${lineY}" x2="${bodyX}" y2="${lineY}" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
-      <text x="${textX}" y="${lineY - 3}" text-anchor="${anchor}" font-size="12" fill="#64748b">${label}</text>
-      <text x="${textX}" y="${lineY + 14}" text-anchor="${anchor}" font-size="20" font-weight="700" fill="#0f172a">${v} cm</text>
-      ${dStr ? `<text x="${textX}" y="${lineY + 26}" text-anchor="${anchor}" font-size="11" font-weight="600" fill="${dCol}">${dStr} cm</text>` : ''}`;
+      <text x="${textX}" y="${lineY - 4}" text-anchor="${anchor}" font-size="15" font-weight="600" fill="#64748b">${label}</text>
+      <text x="${textX}" y="${lineY + 20}" text-anchor="${anchor}" font-size="26" font-weight="700" fill="#0f172a">${v} cm</text>
+      ${dStr ? `<text x="${textX}" y="${lineY + 35}" text-anchor="${anchor}" font-size="13" font-weight="600" fill="${dCol}">${dStr} cm</text>` : ''}`;
   }
   function statRow(label, value, unit, delta, deltaUnit) {
     if (value == null) return '';
