@@ -1907,7 +1907,8 @@ function _renderCuerpo(revs, p, edad) {
     <div class="chart-lbl">Perfil corporal</div>
     <div class="chart-sub" style="margin-bottom:6px">cm · última revisión · vs. anterior</div>
     <div style="flex:1;min-height:0;overflow:hidden">
-      <svg viewBox="0 0 900 420" style="width:100%;max-height:400px" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 1800 432" style="width:100%;max-height:420px" xmlns="http://www.w3.org/2000/svg">
+        <!-- ── Vista frontal ── -->
         <image href="/static/1.png" x="250" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
         ${medida('per_hombros', 'Hombros',  52,  98, 'end', 308)}
         ${medida('per_cintura', 'Cintura',  52, 163, 'end', 385)}
@@ -1915,6 +1916,16 @@ function _renderCuerpo(revs, p, edad) {
         ${medida('per_pecho',   'Pecho',   848, 113, 'start', 460)}
         ${medida('per_caderas', 'Caderas', 848, 193, 'start', 535)}
         ${medida('per_gemelo',  'Gemelo',  848, 332, 'start', 522)}
+        <text x="450" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA FRONTAL</text>
+        <!-- ── Separador central ── -->
+        <line x1="900" y1="12" x2="900" y2="408" stroke="#E8EDF2" stroke-width="1.5" stroke-dasharray="5,5"/>
+        <!-- ── Vista posterior ── -->
+        <image href="/static/2.png" x="1150" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
+        ${medida('per_hombros', 'Espalda',      952,  98, 'end', 1208)}
+        ${medida('per_muslo',   'Femoral',      952, 250, 'end', 1245)}
+        ${medida('per_caderas', 'Glúteo',      1748, 193, 'start', 1435)}
+        ${medida('per_gemelo',  'Pantorrilla', 1748, 332, 'start', 1422)}
+        <text x="1350" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA POSTERIOR</text>
       </svg>
     </div>`;
 }
