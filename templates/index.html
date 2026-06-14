@@ -146,7 +146,7 @@
     .hero-grid      { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
     .hero-card      { border-radius:18px; padding:16px 16px 14px; background:white; border:1px solid var(--border); box-shadow:0 1px 2px rgba(15,27,45,.04),0 12px 30px -20px rgba(15,27,45,.18); display:flex; flex-direction:column; gap:13px; min-width:0; }
     .hero-card-head { display:flex; align-items:flex-start; justify-content:space-between; }
-    .hero-title     { font-size:12px; font-weight:700; color:var(--text); }
+    .hero-title     { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); }
     .hero-icon-box  { width:34px; height:34px; border-radius:10px; background:#E6F3F6; color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .hero-num       { font-size:32px; font-weight:700; line-height:1; color:var(--text); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
     .hero-u         { font-size:14px; font-weight:600; color:var(--text-muted); margin-left:3px; }
@@ -1466,7 +1466,7 @@ function _renderHero(revs, p) {
     const d = Math.round((now - ref) * 10) / 10;
     if (d === 0) return `<span class="hero-delta neu">= 0</span>`;
     const ok = reverse ? d > 0 : d < 0;
-    return `<span class="hero-delta ${ok ? 'ok' : 'bad'}">${d < 0 ? '↓' : '↑'} ${d > 0 ? '+' : ''}${d}</span>`;
+    return `<span class="hero-delta ${ok ? 'ok' : 'bad'}">${d < 0 ? '↓' : '↑'} ${Math.abs(d)}</span>`;
   }
 
   const imcPriVal = (imc && imcPri && conPeso.length > 1) ? imcPri.val : null;
@@ -1479,16 +1479,15 @@ function _renderHero(revs, p) {
           <div class="hero-sub" style="margin-top:3px">${pesoAct != null ? 'Último registrado' : 'Sin revisiones'}</div>
         </div>
         <div class="hero-icon-box">
-          <span style="font-size:24px;line-height:1">🏋️</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pesoAct ?? p.peso ?? '—'}</span>
         ${(pesoAct ?? p.peso) != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark"><canvas id="sparkPeso"></canvas></div>
       <div class="hero-foot">
-        <span class="hero-sub">${pesoPri != null ? 'Inicio: ' + pesoPri + ' kg' : (p.peso ? 'Inicial: ' + p.peso + ' kg' : '—')}</span>
+        <span class="hero-sub">${pesoPri != null ? 'Inicio ' + pesoPri : (p.peso ? 'Inicio ' + p.peso : '—')}</span>
         ${dHtml(pesoAct, pesoPri)}
       </div>
     </div>
@@ -1496,38 +1495,36 @@ function _renderHero(revs, p) {
       <div class="hero-card-head">
         <div>
           <div class="hero-title">IMC</div>
-          <div class="hero-sub" style="margin-top:3px">Índice de masa corporal</div>
+          <div class="hero-sub" style="margin-top:3px">${imc ? imc.etiq : 'Sin datos de peso'}</div>
         </div>
         <div class="hero-icon-box">
-          <span style="font-size:24px;line-height:1">❤️</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${imc?.val ?? '—'}</span>
       </div>
-      <div class="hero-spark"><canvas id="sparkIMC"></canvas></div>
       <div class="hero-foot">
-        <span class="hero-sub">${imc ? imc.etiq : 'Sin datos de peso'}</span>
+        <span class="hero-sub">${imcPriVal != null ? 'Inicio ' + imcPriVal : '—'}</span>
         ${dHtml(imc?.val, imcPriVal)}
       </div>
     </div>
     <div class="hero-card hc-grasa">
       <div class="hero-card-head">
         <div>
-          <div class="hero-title">Masa Grasa</div>
-          <div class="hero-sub" style="margin-top:3px">% Grasa corporal</div>
+          <div class="hero-title">% Grasa</div>
+          <div class="hero-sub" style="margin-top:3px">Durnin-Womersley</div>
         </div>
         <div class="hero-icon-box">
-          <span style="font-size:24px;line-height:1">💧</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/></svg>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pctGrasa ?? '—'}</span>
         ${pctGrasa != null ? '<span class="hero-u">%</span>' : ''}
       </div>
-      <div class="hero-spark"><canvas id="sparkGrasa"></canvas></div>
       <div class="hero-foot">
-        <span class="hero-sub">${pctGrasa == null ? 'Requiere 4 pliegues' : 'Durnin-Womersley'}</span>
+        <span class="hero-sub">${pctPri != null ? 'Inicio ' + pctPri : 'Requiere 4 pliegues'}</span>
         ${dHtml(pctGrasa, pctPri)}
       </div>
     </div>
@@ -1535,19 +1532,18 @@ function _renderHero(revs, p) {
       <div class="hero-card-head">
         <div>
           <div class="hero-title">Peso Graso</div>
-          <div class="hero-sub" style="margin-top:3px">Masa adiposa</div>
+          <div class="hero-sub" style="margin-top:3px">${pesoGraso != null ? pctGrasa + '% del total' : 'Masa adiposa'}</div>
         </div>
         <div class="hero-icon-box">
-          <span style="font-size:24px;line-height:1">🔥</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.5 3 3 4.5 3 8a3 3 0 0 1-6 0c0-1 .4-1.8 1-2.4C9 11 12 7 12 3z"/><path d="M12 3c2.5 3 5 5.5 5 9a5 5 0 0 1-10 0"/></svg>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pesoGraso ?? '—'}</span>
         ${pesoGraso != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark"><canvas id="sparkPgraso"></canvas></div>
       <div class="hero-foot">
-        <span class="hero-sub">${pesoGraso != null ? pctGrasa + '% del peso total' : 'Sin datos de pliegues'}</span>
+        <span class="hero-sub">${grasoPri != null ? 'Inicio ' + grasoPri : 'Sin datos de pliegues'}</span>
         ${dHtml(pesoGraso, grasoPri)}
       </div>
     </div>
@@ -1555,19 +1551,18 @@ function _renderHero(revs, p) {
       <div class="hero-card-head">
         <div>
           <div class="hero-title">Peso Magro</div>
-          <div class="hero-sub" style="margin-top:3px">Masa libre de grasa</div>
+          <div class="hero-sub" style="margin-top:3px">${pesoMagro != null ? (100 - pctGrasa) + '% del total' : 'Masa libre de grasa'}</div>
         </div>
         <div class="hero-icon-box">
-          <span style="font-size:24px;line-height:1">💪</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11"/></svg>
         </div>
       </div>
       <div style="display:flex;align-items:baseline;gap:3px">
         <span class="hero-num">${pesoMagro ?? '—'}</span>
         ${pesoMagro != null ? '<span class="hero-u">kg</span>' : ''}
       </div>
-      <div class="hero-spark"><canvas id="sparkPmagro"></canvas></div>
       <div class="hero-foot">
-        <span class="hero-sub">${pesoMagro != null ? (100 - pctGrasa) + '% del peso total' : 'Sin datos de pliegues'}</span>
+        <span class="hero-sub">${magroPri != null ? 'Inicio ' + magroPri : 'Sin datos de pliegues'}</span>
         ${dHtml(pesoMagro, magroPri, true)}
       </div>
     </div>`;
