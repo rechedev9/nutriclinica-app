@@ -18,11 +18,11 @@
       --shadow-md: 0 4px 12px rgba(15,27,45,.10);
       --radius: 18px;
     }
-    body { font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #EEF1F6; color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    body { font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; background: #EEF1F6; color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
     header { background: var(--primary); color: white; padding: 0 24px; height: 58px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(15,123,146,0.3); flex-shrink: 0; }
-    .logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; }
-    .logo-sub { font-size: 13px; opacity: 0.7; font-weight: 400; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; }
+    .logo-sub { font-size: 14px; opacity: 0.7; font-weight: 400; }
 
     .app { display: flex; flex: 1; overflow: hidden; }
 
@@ -30,9 +30,9 @@
     .sidebar-header { padding: 14px; border-bottom: 1px solid var(--border); }
     .search-box { position: relative; }
     .search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-    .search-box input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; background: var(--surface-2); }
+    .search-box input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; transition: border-color .2s; background: var(--surface-2); }
     .search-box input:focus { border-color: var(--primary); background: white; }
-    .btn-new { width: 100%; margin-top: 10px; padding: 9px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .2s; }
+    .btn-new { width: 100%; margin-top: 10px; padding: 9px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .2s; }
     .btn-new:hover { background: var(--primary-dark); }
     .patient-list { flex: 1; overflow-y: auto; padding: 8px; }
     .patient-item { padding: 11px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background .15s; border: 1px solid transparent; }
@@ -40,9 +40,9 @@
     .patient-item.active { background: var(--primary-light); border-color: #bbf7d0; }
     .avatar { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: white; flex-shrink: 0; }
     .patient-info { flex: 1; min-width: 0; }
-    .patient-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .patient-meta { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
-    .badge { background: var(--primary-light); color: var(--primary); font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+    .patient-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .patient-meta { font-size: 13px; color: var(--text-muted); margin-top: 1px; }
+    .badge { background: var(--primary-light); color: var(--primary); font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
     .patient-item.active .badge { background: #bbf7d0; }
     .empty-list { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 14px; }
 
@@ -55,14 +55,14 @@
     .pv-header { background: white; border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
     .pv-avatar { width: 52px; height: 52px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white; flex-shrink: 0; box-shadow: 0 6px 16px -4px rgba(15,123,146,.45); }
     .pv-info { flex: 1; }
-    .pv-name { font-size: 20px; font-weight: 700; }
-    .pv-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .pv-name { font-size: 22px; font-weight: 700; }
+    .pv-sub { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
     .pv-stats { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
-    .pv-stat  { font-size:12px; color:var(--text-muted); background:#f1f5f9; padding:3px 9px; border-radius:6px; }
+    .pv-stat  { font-size:13px; color:var(--text-muted); background:#f1f5f9; padding:3px 9px; border-radius:6px; }
     .pv-stat b { color:var(--text); font-weight:700; }
     .pv-actions { display: flex; gap: 8px; }
 
-    .btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; transition: all .2s; text-decoration: none; }
+    .btn { padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; transition: all .2s; text-decoration: none; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-outline { background: white; color: var(--text); border: 1px solid var(--border); }
@@ -94,11 +94,11 @@
     .modal { background: white; border-radius: 14px; padding: 28px; width: 500px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); animation: slideUp .2s; }
     .modal-wide { width: 720px; }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; position: sticky; top: -28px; background: white; padding: 0 0 14px; z-index: 1; }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; position: sticky; top: -28px; background: white; padding: 0 0 14px; z-index: 1; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; position: sticky; bottom: -28px; background: white; padding: 14px 0 0; }
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color .2s; font-family: inherit; background: white; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; transition: border-color .2s; font-family: inherit; background: white; }
     .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--primary); }
     .form-group textarea { resize: vertical; min-height: 60px; }
     .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -107,7 +107,7 @@
     .form-section-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); padding-bottom: 7px; margin: 20px 0 14px; }
 
     .pv-tabs { display: flex; border-bottom: 1px solid var(--border); background: white; padding: 0 24px; flex-shrink: 0; }
-    .pv-tab { padding: 12px 18px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text-muted); transition: all .15s; display: flex; align-items: center; gap: 6px; user-select: none; }
+    .pv-tab { padding: 12px 18px; font-size: 15px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text-muted); transition: all .15s; display: flex; align-items: center; gap: 6px; user-select: none; }
     .pv-tab:hover { color: var(--text); }
     .pv-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
@@ -116,10 +116,10 @@
 
     .ficha-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
     .ficha-section { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; }
-    .ficha-section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
+    .ficha-section-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; }
     .ficha-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
-    .ficha-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-    .ficha-value { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 4px; line-height: 1.4; }
+    .ficha-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .ficha-value { font-size: 15px; font-weight: 600; color: var(--text); margin-top: 4px; line-height: 1.4; }
     .ficha-nodata { color: #cbd5e1; font-style: normal; font-weight: 400; }
     .ficha-block { margin-top: 14px; }
     .imc-badge { display: inline-block; font-weight: 700; font-size: 13px; padding: 3px 10px; border-radius: 20px; }
@@ -133,12 +133,12 @@
     .dash-area { padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
     .dash-filter { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 16px; flex-wrap: wrap; box-shadow: var(--shadow); }
     .rev-dd     { position:relative; margin-left:auto; }
-    .rev-dd-btn { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:5px 12px; border-radius:7px; border:1px solid var(--border); background:white; color:var(--text-muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .rev-dd-btn { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; padding:5px 12px; border-radius:7px; border:1px solid var(--border); background:white; color:var(--text-muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
     .rev-dd-btn:hover { border-color:#94a3b8; color:var(--text); }
     .rev-dd-btn.active { border-color:#0f172a; background:#0f172a; color:white; }
     .rev-dd-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:200; background:white; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); padding:5px; min-width:190px; max-height:280px; overflow-y:auto; display:none; }
     .rev-dd-menu.open { display:block; }
-    .rev-dd-item { display:block; width:100%; text-align:left; font-size:12px; font-weight:500; padding:7px 12px; border-radius:6px; border:none; background:none; color:var(--text); cursor:pointer; }
+    .rev-dd-item { display:block; width:100%; text-align:left; font-size:13px; font-weight:500; padding:7px 12px; border-radius:6px; border:none; background:none; color:var(--text); cursor:pointer; }
     .rev-dd-item:hover { background:#f1f5f9; }
     .rev-dd-item.act { background:#0f172a; color:white; font-weight:700; }
     .rev-dd-sep { height:1px; background:var(--border); margin:4px 6px; }
@@ -146,17 +146,17 @@
     .hero-grid      { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
     .hero-card      { border-radius:18px; padding:16px 16px 14px; background:white; border:1px solid var(--border); box-shadow:0 1px 2px rgba(15,27,45,.04),0 12px 30px -20px rgba(15,27,45,.18); display:flex; flex-direction:column; gap:13px; min-width:0; }
     .hero-card-head { display:flex; align-items:flex-start; justify-content:space-between; }
-    .hero-title     { font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); }
-    .hero-icon-box  { width:36px; height:36px; border-radius:10px; background:#E6F3F6; color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .hero-num       { font-size:40px; font-weight:700; line-height:1; color:var(--text); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
-    .hero-u         { font-size:17px; font-weight:600; color:var(--text-muted); margin-left:3px; }
-    .hero-delta     { font-size:12px; font-weight:700; padding:3px 9px; border-radius:7px; white-space:nowrap; }
+    .hero-title     { font-size:14px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); }
+    .hero-icon-box  { width:38px; height:38px; border-radius:10px; background:#E6F3F6; color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .hero-num       { font-size:36px; font-weight:700; line-height:1; color:var(--text); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+    .hero-u         { font-size:18px; font-weight:600; color:var(--text-muted); margin-left:3px; }
+    .hero-delta     { font-size:14px; font-weight:700; padding:4px 10px; border-radius:7px; white-space:nowrap; }
     .hero-delta.ok  { color:#0E9F6E; background:#E7F6F0; }
     .hero-delta.bad { color:#dc2626; background:#fef2f2; }
     .hero-delta.neu { color:var(--text-muted); background:#F2F5F8; }
     .hero-spark { overflow:hidden; height:38px; position:relative; }
     .hero-foot  { display:flex; align-items:center; justify-content:space-between; border-top:1px solid #F0F3F6; padding-top:11px; }
-    .hero-sub   { font-size:12px; color:#9AA4B2; }
+    .hero-sub   { font-size:14px; color:#9AA4B2; }
     .hc-peso   .hero-icon-box { background:#E6F3F6; color:var(--primary); }
     .hc-imc    .hero-icon-box { background:#E6F3F6; color:var(--primary); }
     .hc-grasa  .hero-icon-box { background:#E6F3F6; color:var(--primary); }
@@ -165,30 +165,30 @@
     /* Mid row (no utilizado como grid, dejado por compatibilidad) */
     .dash-mid  { display:grid; grid-template-columns:1fr; gap:14px; }
     .dash-card { background:white; border-radius:18px; padding:20px 22px; box-shadow:var(--shadow); border:1px solid var(--border); }
-    .dash-card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:14px; display:flex; align-items:center; }
+    .dash-card-title { font-size:16px; font-weight:700; color:var(--text); margin-bottom:14px; display:flex; align-items:center; }
     /* Barra composición */
     .comp-bar  { height:26px; border-radius:13px; overflow:hidden; display:flex; margin:12px 0 10px; box-shadow:inset 0 2px 4px rgba(0,0,0,.08); }
     .comp-lean { background:linear-gradient(90deg,#0F7B92,#3BAEC4); flex-shrink:0; transition:width .7s cubic-bezier(.4,0,.2,1); }
     .comp-fat  { background:linear-gradient(90deg,#F0A35E,#E8743B); flex:1; min-width:0; }
-    .comp-legend { display:flex; justify-content:space-between; margin-top:10px; }
-    .comp-leg  { display:flex; align-items:center; gap:7px; font-size:12px; }
+    .comp-legend { display:flex; justify-content:space-between; margin-top:10px; gap:8px; flex-wrap:wrap; }
+    .comp-leg  { display:flex; align-items:center; gap:7px; font-size:14px; }
     .comp-dot  { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
     /* Tabla progreso */
-    .prog-table { width:100%; border-collapse:collapse; font-size:12px; }
-    .prog-table th { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; padding:0 8px 10px 0; text-align:right; }
+    .prog-table { width:100%; border-collapse:collapse; font-size:15px; }
+    .prog-table th { font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; padding:0 8px 12px 0; text-align:right; }
     .prog-table th:first-child { text-align:left; }
-    .prog-table td { padding:6px 6px 6px 0; border-top:1px solid var(--border); text-align:right; }
+    .prog-table td { padding:8px 6px 8px 0; border-top:1px solid var(--border); text-align:right; }
     .prog-table td:first-child { text-align:left; font-weight:600; color:var(--text); }
-    .prog-chip { display:inline-block; padding:2px 7px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .prog-chip { display:inline-block; padding:3px 8px; border-radius:20px; font-size:13px; font-weight:700; white-space:nowrap; }
     .chip-ok  { background:#E7F6F0; color:#0E9F6E; }
     .chip-bad { background:#fef2f2; color:#dc2626; }
     .chip-neu { background:#F2F5F8; color:var(--text-muted); }
     /* Gráficos */
     .charts-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .tri-row    { display:grid; grid-template-columns:minmax(0,0.8fr) minmax(0,1.1fr) minmax(0,1.6fr); gap:14px; }
+    .tri-row    { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.6fr); gap:14px; }
     .chart-card-new { background:white; border-radius:18px; padding:20px 22px; box-shadow:var(--shadow); border:1px solid var(--border); }
-    .chart-lbl { font-size:13px; font-weight:700; color:var(--text); }
-    .chart-sub { font-size:11px; color:var(--text-muted); margin:2px 0 14px; }
+    .chart-lbl { font-size:17px; font-weight:700; color:var(--text); }
+    .chart-sub { font-size:13px; color:var(--text-muted); margin:2px 0 14px; }
     .no-analisis { text-align:center; padding:60px 20px; color:var(--text-muted); font-size:14px; }
     /* compat */
     .kpi-delta.mejora { color:#0E9F6E; } .kpi-delta.empeora { color:#dc2626; }
@@ -199,8 +199,8 @@
     .rev-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
     .rev-header { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background .15s; }
     .rev-header:hover { background: var(--surface-2); }
-    .rev-fecha { font-size: 15px; font-weight: 700; }
-    .rev-resumen { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .rev-fecha { font-size: 16px; font-weight: 700; }
+    .rev-resumen { font-size: 14px; color: var(--text-muted); margin-top: 3px; }
     .rev-detail { border-top: 1px solid var(--border); padding: 16px 18px; background: var(--surface-2); }
     .rev-subsection { margin-bottom: 16px; }
     .rev-subsection:last-child { margin-bottom: 0; }
@@ -212,8 +212,8 @@
 
     .info-bar { padding: 14px 24px; display: flex; gap: 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
     .info-card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 11px 16px; flex: 1; }
-    .info-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
-    .info-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .info-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+    .info-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
 
     .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 200; animation: fadeIn .15s; }
     .lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain; }
@@ -1259,10 +1259,10 @@ function renderAnalisisContent(revs, p) {
         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
         <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
-      <span style="font-size:13px;color:var(--text-muted);font-weight:600">Período</span>
-      <input type="date" id="analisisDesde" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="actualizarAnalisis()">
-      <span style="font-size:13px;color:var(--text-muted)">—</span>
-      <input type="date" id="analisisHasta" style="font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="_globalRevFecha='';actualizarAnalisis()">
+      <span style="font-size:14px;color:var(--text-muted);font-weight:600">Período</span>
+      <input type="date" id="analisisDesde" style="font-size:14px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="actualizarAnalisis()">
+      <span style="font-size:14px;color:var(--text-muted)">—</span>
+      <input type="date" id="analisisHasta" style="font-size:14px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="_globalRevFecha='';actualizarAnalisis()">
       <button class="btn btn-outline btn-sm" onclick="limpiarAnalisis()">Limpiar</button>
       <div style="width:1px;height:18px;background:var(--border);margin:0 2px"></div>
       <div class="rev-dd" id="revDd">
@@ -1276,7 +1276,7 @@ function renderAnalisisContent(revs, p) {
     </div>
     <div class="hero-grid" id="dashHero"></div>
     <div class="tri-row">
-      <div class="dash-card" id="dashComp"></div>
+      <div class="dash-card" id="dashComp" style="display:flex;flex-direction:column"></div>
       <div class="dash-card" id="dashProg"></div>
       <div class="chart-card-new">
         <div class="chart-lbl">Evolución del peso y masa grasa</div>
@@ -1580,26 +1580,26 @@ function _renderHero(revs, p) {
       ['',          'Obesidad',   '≥ 30',         v => v >= 30],
     ];
     const imcScale = `
-      <div style="margin-top:16px">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Clasificación IMC</div>
+      <div style="margin-top:28px;flex:1;display:flex;flex-direction:column;justify-content:flex-end">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;border-top:1px solid var(--border);padding-top:16px">Clasificación IMC</div>
         ${[
           ['#bfdbfe','#1d4ed8','Infrapeso','< 18.5', imc && imc.val < 18.5],
           ['#A5D4DE','#0F7B92','Normal','18.5–24.9', imc && imc.val >= 18.5 && imc.val < 25],
           ['#fef08a','#a16207','Sobrepeso','25–29.9', imc && imc.val >= 25 && imc.val < 30],
           ['#fecaca','#dc2626','Obesidad','≥ 30',     imc && imc.val >= 30],
         ].map(([bg,fg,lbl,rng,act]) =>
-          `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <div style="width:26px;height:9px;border-radius:3px;background:${bg};${act ? `outline:2px solid ${fg}` : ''}"></div>
-            <span style="font-size:12px;font-weight:${act?700:400};color:${act?fg:'var(--text-muted)'};">${lbl}</span>
-            <span style="font-size:11px;color:var(--text-muted);margin-left:auto">${rng}</span>
-            ${act ? `<span style="font-size:11px;font-weight:700;color:${fg}">◀ ${imc.val}</span>` : ''}
+          `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+            <div style="width:28px;height:10px;border-radius:4px;background:${bg};flex-shrink:0;${act ? `outline:2px solid ${fg}` : ''}"></div>
+            <span style="font-size:14px;font-weight:${act?700:400};color:${act?fg:'var(--text-muted)'};">${lbl}</span>
+            <span style="font-size:13px;color:var(--text-muted);margin-left:auto">${rng}</span>
+            ${act ? `<span style="font-size:13px;font-weight:700;color:${fg};margin-left:6px">◀ ${imc.val}</span>` : ''}
           </div>`
         ).join('')}
       </div>`;
 
     compEl.innerHTML = leanPct != null ? `
       <div class="dash-card-title">Composición corporal
-        <span style="margin-left:auto;font-size:12px;font-weight:400;color:var(--text-muted)">${pesoTotal} kg total</span>
+        <span style="margin-left:auto;font-size:13px;font-weight:400;color:var(--text-muted)">${pesoTotal} kg total</span>
       </div>
       <div class="comp-bar">
         <div class="comp-lean" style="width:${leanPct}%"></div>
@@ -1666,7 +1666,7 @@ function _renderHero(revs, p) {
            Con <strong>2 o más revisiones</strong> aquí verás la evolución de cada métrica entre la primera y la última del período.
          </div>`
       : `<div class="dash-card-title">Evolución
-           <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--text-muted)">${n} revisiones</span>
+           <span style="margin-left:auto;font-size:12px;font-weight:400;color:var(--text-muted)">${n} revisiones</span>
          </div>
          <table class="prog-table">
            <tr>
@@ -1886,10 +1886,10 @@ function _renderCuerpo(revs, p, edad) {
     const d = delta != null && delta !== 0 ? (delta > 0 ? `+${delta}` : `${delta}`) : null;
     const dCol = d != null && delta < 0 ? '#0E9F6E' : '#dc2626';
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #f1f5f9">
-      <span style="font-size:13px;color:#64748b;font-weight:500">${label}</span>
+      <span style="font-size:14px;color:#64748b;font-weight:500">${label}</span>
       <div style="text-align:right;line-height:1.3">
-        <span style="font-size:22px;font-weight:700;color:#0f172a">${value}</span><span style="font-size:13px;color:#64748b;margin-left:3px">${unit}</span>
-        ${d ? `<br><span style="font-size:13px;font-weight:600;color:${dCol}">${d} ${deltaUnit}</span>` : ''}
+        <span style="font-size:24px;font-weight:700;color:#0f172a">${value}</span><span style="font-size:14px;color:#64748b;margin-left:3px">${unit}</span>
+        ${d ? `<br><span style="font-size:14px;font-weight:600;color:${dCol}">${d} ${deltaUnit}</span>` : ''}
       </div>
     </div>`;
   }
@@ -1905,14 +1905,12 @@ function _renderCuerpo(revs, p, edad) {
   const brazoDelta = ult.per_brazo_rel != null && ant?.per_brazo_rel != null ? Math.round((ult.per_brazo_rel - ant.per_brazo_rel) * 10) / 10 : null;
   const antebDelta = ult.per_antebrazo != null && ant?.per_antebrazo != null ? Math.round((ult.per_antebrazo - ant.per_antebrazo) * 10) / 10 : null;
   el.innerHTML = `
-    <div style="margin-bottom:10px">
-      <div class="chart-lbl">Perfil corporal</div>
-      <div class="chart-sub">cm · última revisión · vs. anterior</div>
-    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <!-- ── Tarjeta frontal ── -->
       <div class="chart-card-new" style="overflow:hidden">
-        <svg viewBox="0 0 900 432" style="width:100%;max-height:400px" xmlns="http://www.w3.org/2000/svg">
+        <div class="chart-lbl" style="margin-bottom:4px">Perfil corporal frontal</div>
+        <div class="chart-sub">cm · última revisión · vs. anterior</div>
+        <svg viewBox="0 0 900 432" style="width:100%;max-height:380px" xmlns="http://www.w3.org/2000/svg">
           <image href="/static/1.png" x="175" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
           ${medida('per_hombros', 'Hombros',  52,  98, 'end', 233)}
           ${medida('per_cintura', 'Cintura',  52, 163, 'end', 310)}
@@ -1925,7 +1923,9 @@ function _renderCuerpo(revs, p, edad) {
       </div>
       <!-- ── Tarjeta posterior ── -->
       <div class="chart-card-new" style="overflow:hidden">
-        <svg viewBox="0 0 900 432" style="width:100%;max-height:400px" xmlns="http://www.w3.org/2000/svg">
+        <div class="chart-lbl" style="margin-bottom:4px">Perfil corporal posterior</div>
+        <div class="chart-sub">cm · última revisión · vs. anterior</div>
+        <svg viewBox="0 0 900 432" style="width:100%;max-height:380px" xmlns="http://www.w3.org/2000/svg">
           <image href="/static/2.png" x="175" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
           ${medida('per_hombros', 'Espalda',     52,  98, 'end', 335)}
           ${medida('per_muslo',   'Femoral',     52, 250, 'end', 270)}
