@@ -1284,7 +1284,7 @@ function renderAnalisisContent(revs, p) {
         <canvas id="chartPesoGrasa" style="max-height:280px"></canvas>
       </div>
     </div>
-    <div class="chart-card-new" id="dashCuerpo" style="display:flex;flex-direction:column"></div>
+    <div id="dashCuerpo"></div>
     <div class="charts-row">
       <div class="chart-card-new">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
@@ -1876,6 +1876,7 @@ function _renderCuerpo(revs, p, edad) {
     const lx = anchor === 'end' ? textX + 5 : textX - 5;
     return `
       <line x1="${lx}" y1="${lineY}" x2="${bodyX}" y2="${lineY}" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="${bodyX}" cy="${lineY}" r="4" fill="#ef4444"/>
       <text x="${textX}" y="${lineY - 4}" text-anchor="${anchor}" font-size="15" font-weight="600" fill="#64748b">${label}</text>
       <text x="${textX}" y="${lineY + 20}" text-anchor="${anchor}" font-size="26" font-weight="700" fill="#0f172a">${v} cm</text>
       ${dStr ? `<text x="${textX}" y="${lineY + 36}" text-anchor="${anchor}" font-size="15" font-weight="700" fill="${dCol}">${dStr} cm</text>` : ''}`;
@@ -1904,29 +1905,35 @@ function _renderCuerpo(revs, p, edad) {
   const brazoDelta = ult.per_brazo_rel != null && ant?.per_brazo_rel != null ? Math.round((ult.per_brazo_rel - ant.per_brazo_rel) * 10) / 10 : null;
   const antebDelta = ult.per_antebrazo != null && ant?.per_antebrazo != null ? Math.round((ult.per_antebrazo - ant.per_antebrazo) * 10) / 10 : null;
   el.innerHTML = `
-    <div class="chart-lbl">Perfil corporal</div>
-    <div class="chart-sub" style="margin-bottom:6px">cm · última revisión · vs. anterior</div>
-    <div style="flex:1;min-height:0;overflow:hidden">
-      <svg viewBox="0 0 2000 432" style="width:100%;max-height:420px" xmlns="http://www.w3.org/2000/svg">
-        <!-- ── Vista frontal ── -->
-        <image href="/static/1.png" x="200" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
-        ${medida('per_hombros', 'Hombros',  52,  98, 'end', 258)}
-        ${medida('per_cintura', 'Cintura',  52, 163, 'end', 335)}
-        ${medida('per_muslo',   'Muslo',    52, 250, 'end', 295)}
-        ${medida('per_pecho',   'Pecho',   680, 113, 'start', 410)}
-        ${medida('per_caderas', 'Caderas', 680, 193, 'start', 485)}
-        ${medida('per_gemelo',  'Gemelo',  680, 332, 'start', 472)}
-        <text x="400" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA FRONTAL</text>
-        <!-- ── Separador central ── -->
-        <line x1="1000" y1="12" x2="1000" y2="408" stroke="#E8EDF2" stroke-width="1.5" stroke-dasharray="5,5"/>
-        <!-- ── Vista posterior ── -->
-        <image href="/static/2.png" x="1400" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
-        ${medida('per_hombros', 'Espalda',      1290,  98, 'end', 1458)}
-        ${medida('per_muslo',   'Femoral',      1290, 250, 'end', 1495)}
-        ${medida('per_caderas', 'Glúteo',       1840, 193, 'start', 1685)}
-        ${medida('per_gemelo',  'Pantorrilla',  1840, 332, 'start', 1672)}
-        <text x="1600" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA POSTERIOR</text>
-      </svg>
+    <div style="margin-bottom:10px">
+      <div class="chart-lbl">Perfil corporal</div>
+      <div class="chart-sub">cm · última revisión · vs. anterior</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <!-- ── Tarjeta frontal ── -->
+      <div class="chart-card-new" style="overflow:hidden">
+        <svg viewBox="0 0 900 432" style="width:100%;max-height:400px" xmlns="http://www.w3.org/2000/svg">
+          <image href="/static/1.png" x="175" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
+          ${medida('per_hombros', 'Hombros',  52,  98, 'end', 233)}
+          ${medida('per_cintura', 'Cintura',  52, 163, 'end', 310)}
+          ${medida('per_muslo',   'Muslo',    52, 250, 'end', 270)}
+          ${medida('per_pecho',   'Pecho',   680, 113, 'start', 385)}
+          ${medida('per_caderas', 'Caderas', 680, 193, 'start', 460)}
+          ${medida('per_gemelo',  'Gemelo',  680, 332, 'start', 447)}
+          <text x="375" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA FRONTAL</text>
+        </svg>
+      </div>
+      <!-- ── Tarjeta posterior ── -->
+      <div class="chart-card-new" style="overflow:hidden">
+        <svg viewBox="0 0 900 432" style="width:100%;max-height:400px" xmlns="http://www.w3.org/2000/svg">
+          <image href="/static/2.png" x="175" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
+          ${medida('per_hombros', 'Espalda',     52,  98, 'end', 335)}
+          ${medida('per_muslo',   'Femoral',     52, 250, 'end', 270)}
+          ${medida('per_caderas', 'Glúteo',     680, 218, 'start', 445)}
+          ${medida('per_gemelo',  'Pantorrilla',680, 332, 'start', 447)}
+          <text x="375" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA POSTERIOR</text>
+        </svg>
+      </div>
     </div>`;
 }
 
