@@ -295,6 +295,42 @@
       .dash-filter { gap: 6px; }
       .rev-dd     { margin-left: 0; }
     }
+
+    /* ── PDF / Impresión ──────────────────────────────────────────────── */
+    #pdfHeader { display: none; }
+
+    @media print {
+      @page { size: A4 portrait; margin: 14mm 12mm; }
+
+      /* Ocultar chrome de la app */
+      header, .sidebar, .sidebar-backdrop,
+      .pv-header, .pv-tabs, .dash-filter,
+      .btn-pdf-export { display: none !important; }
+
+      /* Desbloquear scroll/overflow para imprimir todo */
+      html, body { height: auto !important; overflow: visible !important; }
+      .app-layout, .patient-view, .pv-content { height: auto !important; overflow: visible !important; }
+
+      /* Solo mostrar tab de análisis */
+      .tab-pane { display: none !important; }
+      #tab-analisis { display: block !important; }
+      .dash-area { overflow: visible !important; flex: none !important; padding: 0 !important; gap: 12px !important; }
+
+      /* Cabecera del informe */
+      #pdfHeader { display: block !important; margin-bottom: 16px; }
+
+      /* Grids en A4 */
+      .hero-grid  { grid-template-columns: repeat(5, 1fr) !important; }
+      .tri-row    { grid-template-columns: 1fr 1fr 2fr !important; }
+      .charts-row { grid-template-columns: 1fr 1fr !important; }
+
+      /* Evitar cortes de página dentro de tarjetas */
+      .hero-card, .chart-card-new, .dash-card,
+      #dashCuerpo, .hero-grid { page-break-inside: avoid; break-inside: avoid; }
+
+      /* Forzar colores e imágenes en impresión */
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body>
@@ -1254,6 +1290,7 @@ const ALL_MEDIDAS = [
 
 function renderAnalisisContent(revs, p) {
   return `<div class="dash-area" id="analisisArea">
+    <div id="pdfHeader"></div>
     <div class="dash-filter">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--text-muted);flex-shrink:0">
         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
@@ -1264,6 +1301,10 @@ function renderAnalisisContent(revs, p) {
       <span style="font-size:14px;color:var(--text-muted)">—</span>
       <input type="date" id="analisisHasta" style="font-size:14px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:white" onchange="_globalRevFecha='';actualizarAnalisis()">
       <button class="btn btn-outline btn-sm" onclick="limpiarAnalisis()">Limpiar</button>
+      <button class="btn btn-sm btn-pdf-export" onclick="exportarPDF()" style="margin-left:auto;background:#0f172a;color:white;border:none;display:flex;align-items:center;gap:6px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Exportar PDF
+      </button>
       <div style="width:1px;height:18px;background:var(--border);margin:0 2px"></div>
       <div class="rev-dd" id="revDd">
         <button class="rev-dd-btn" id="revDdBtn" onclick="toggleRevDropdown()">
@@ -2047,6 +2088,43 @@ function _renderCharts(revs, p) {
         scales: { y: { beginAtZero: true, grid, ticks: { callback: v => v + ' cm', font: { size: 11 } } }, x: xOpts } }
     });
   }
+}
+
+// ── Exportar PDF ──────────────────────────────────────────────────────────────
+function exportarPDF() {
+  const p = pacientes.find(x => x.id === currentId);
+  if (!p) return;
+
+  const nombre   = [p.nombre, p.apellidos].filter(Boolean).join(' ') || 'Paciente';
+  const revs     = getRevsFiltradas();
+  const ultRev   = revs.length
+    ? new Date(revs[revs.length - 1].fecha).toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'})
+    : '—';
+  const hoy      = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'});
+  const fnac     = p.fecha_nac
+    ? new Date(p.fecha_nac).toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'})
+    : null;
+  const edad     = p.fecha_nac ? calcEdad(p.fecha_nac) : null;
+  const sexoTxt  = p.sexo === 'M' ? 'Hombre' : p.sexo === 'F' ? 'Mujer' : null;
+
+  const meta = [fnac ? `Nacimiento: ${fnac}` : null, edad ? `${edad} años` : null, sexoTxt, p.talla ? `Talla: ${p.talla} cm` : null]
+    .filter(Boolean).join('  ·  ');
+
+  document.getElementById('pdfHeader').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2px solid #0F7B92;margin-bottom:4px">
+      <div>
+        <div style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.3px">${nombre}</div>
+        ${meta ? `<div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:500">${meta}</div>` : ''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Informe generado</div>
+        <div style="font-size:13px;color:#0f172a;font-weight:700;margin-top:2px">${hoy}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Última revisión</div>
+        <div style="font-size:13px;color:#0f172a;font-weight:700;margin-top:2px">${ultRev}</div>
+      </div>
+    </div>`;
+
+  window.print();
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
