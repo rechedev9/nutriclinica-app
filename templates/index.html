@@ -319,9 +319,13 @@
       /* Cabecera del informe */
       #pdfHeader { display: block !important; margin-bottom: 16px; }
 
+      /* Ocultar gráfico de peso (se corta en A4) */
+      #chartPesoGrasa, #chartPesoGrasa + * { display: none !important; }
+      .tri-row > .chart-card-new { display: none !important; }
+
       /* Grids en A4 */
       .hero-grid  { grid-template-columns: repeat(5, 1fr) !important; }
-      .tri-row    { grid-template-columns: 1fr 1fr 2fr !important; }
+      .tri-row    { grid-template-columns: 1fr 1fr !important; }
       .charts-row { grid-template-columns: 1fr 1fr !important; }
 
       /* Evitar cortes de página dentro de tarjetas */
