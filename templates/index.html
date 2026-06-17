@@ -1265,6 +1265,22 @@ function calcGrasaDW(plBic, plTri, plSub, plSup, edad, sexo) {
   return Math.round((4.95 / D - 4.50) * 1000) / 10;
 }
 
+function clasificarGrasa(pct, sexo) {
+  if (pct == null || !sexo) return null;
+  const h = sexo === 'Hombre';
+  if (h) {
+    if (pct <  8)  return { etiq: 'Bajo',      cls: 'chip-neu' };
+    if (pct < 20)  return { etiq: 'Saludable',  cls: 'chip-ok'  };
+    if (pct < 25)  return { etiq: 'Límite',     cls: 'chip-neu' };
+                   return { etiq: 'Exceso',      cls: 'chip-bad' };
+  } else {
+    if (pct < 21)  return { etiq: 'Bajo',       cls: 'chip-neu' };
+    if (pct < 33)  return { etiq: 'Saludable',  cls: 'chip-ok'  };
+    if (pct < 39)  return { etiq: 'Límite',     cls: 'chip-neu' };
+                   return { etiq: 'Exceso',      cls: 'chip-bad' };
+  }
+}
+
 // ── Dashboard Análisis ────────────────────────────────────────────────────────
 
 const _charts = {};
@@ -1538,7 +1554,7 @@ function _renderHero(revs, p) {
       <div class="hero-card-head">
         <div>
           <div class="hero-title">% Grasa</div>
-          <div class="hero-sub" style="margin-top:3px">Durnin-Womersley</div>
+          <div class="hero-sub" style="margin-top:3px">${(() => { const c = clasificarGrasa(pctGrasa, p.sexo); return c ? c.etiq : 'Requiere pliegues'; })()}</div>
         </div>
         <div class="hero-icon-box">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/></svg>
