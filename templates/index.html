@@ -1910,31 +1910,42 @@ function _renderCuerpo(revs, p, edad) {
       <div class="chart-card-new" style="overflow:hidden">
         <div class="chart-lbl" style="margin-bottom:4px">Perfil corporal frontal</div>
         <div class="chart-sub">cm · última revisión · vs. anterior</div>
-        <svg viewBox="0 0 900 432" style="width:100%;max-height:380px" xmlns="http://www.w3.org/2000/svg">
+        <svg id="svgFrontal" viewBox="0 0 900 432" style="width:100%;max-height:380px" xmlns="http://www.w3.org/2000/svg">
           <image href="/static/1.png" x="175" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
-          ${medida('per_hombros', 'Hombros',  52,  98, 'end', 233)}
-          ${medida('per_cintura', 'Cintura',  52, 163, 'end', 310)}
-          ${medida('per_muslo',   'Muslo',    52, 250, 'end', 270)}
-          ${medida('per_pecho',   'Pecho',   680, 113, 'start', 385)}
-          ${medida('per_caderas', 'Caderas', 680, 193, 'start', 460)}
-          ${medida('per_gemelo',  'Gemelo',  680, 332, 'start', 447)}
+          ${medida('per_hombros', 'Hombros',  52,  97, 'end', 300)}
+          ${medida('per_cintura', 'Cintura',  52, 169, 'end', 338)}
+          ${medida('per_muslo',   'Muslo',    52, 249, 'end', 320)}
+          ${medida('per_pecho',   'Pecho',   680, 108, 'start', 399)}
+          ${medida('per_gemelo',  'Gemelo',  680, 338, 'start', 447)}
           <text x="375" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA FRONTAL</text>
+          <!-- COORD-TRACKER-FRONTAL (descomentar para calibrar puntos)
+          <rect id="coordBgF" x="0" y="0" width="160" height="28" rx="4" fill="#1e293b" opacity="0.85" style="display:none"/>
+          <text id="coordTxtF" x="8" y="19" font-size="14" font-weight="700" fill="#f8fafc" style="display:none">X=0 Y=0</text>
+          -->
         </svg>
       </div>
       <!-- ── Tarjeta posterior ── -->
       <div class="chart-card-new" style="overflow:hidden">
         <div class="chart-lbl" style="margin-bottom:4px">Perfil corporal posterior</div>
         <div class="chart-sub">cm · última revisión · vs. anterior</div>
-        <svg viewBox="0 0 900 432" style="width:100%;max-height:380px" xmlns="http://www.w3.org/2000/svg">
+        <svg id="svgPosterior" viewBox="0 0 900 432" style="width:100%;max-height:380px" xmlns="http://www.w3.org/2000/svg">
           <image href="/static/2.png" x="175" y="0" width="400" height="420" preserveAspectRatio="xMidYMid meet"/>
-          ${medida('per_hombros', 'Espalda',     52,  98, 'end', 335)}
-          ${medida('per_muslo',   'Femoral',     52, 250, 'end', 270)}
-          ${medida('per_caderas', 'Glúteo',     680, 218, 'start', 445)}
-          ${medida('per_gemelo',  'Pantorrilla',680, 332, 'start', 447)}
+          ${medida('per_hombros', 'Espalda',      52,  97, 'end', 364)}
+          ${medida('per_caderas', 'Caderas',     52, 184, 'end', 331)}
+          ${medida('per_muslo',   'Femoral',     52, 260, 'end', 356)}
+          ${medida('per_caderas', 'Glúteo',     680, 207, 'start', 397)}
+          ${medida('per_gemelo',  'Pantorrilla',680, 338, 'start', 452)}
           <text x="375" y="426" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".08em" fill="#CBD5E1">VISTA POSTERIOR</text>
+          <!-- COORD-TRACKER-POSTERIOR (descomentar para calibrar puntos)
+          <rect id="coordBgP" x="0" y="0" width="160" height="28" rx="4" fill="#1e293b" opacity="0.85" style="display:none"/>
+          <text id="coordTxtP" x="8" y="19" font-size="14" font-weight="700" fill="#f8fafc" style="display:none">X=0 Y=0</text>
+          -->
         </svg>
       </div>
     </div>`;
+  // COORD-TRACKER (descomentar junto con los bloques SVG para calibrar puntos)
+  // activarCoordTracker('svgFrontal',   'coordBgF', 'coordTxtF');
+  // activarCoordTracker('svgPosterior', 'coordBgP', 'coordTxtP');
 }
 
 function _renderCharts(revs, p) {
@@ -2039,5 +2050,36 @@ function _renderCharts(revs, p) {
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+/* COORD-TRACKER — descomentar todo este bloque para calibrar puntos del perfil corporal:
+   1. Descomentar este <script>
+   2. Descomentar los bloques COORD-TRACKER-FRONTAL y COORD-TRACKER-POSTERIOR en los SVG
+   3. Descomentar las dos llamadas activarCoordTracker() en _renderCuerpo
+<script>
+function activarCoordTracker(svgId, bgId, txtId) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const bg  = document.getElementById(bgId);
+  const txt = document.getElementById(txtId);
+  svg.style.cursor = 'crosshair';
+  svg.addEventListener('mousemove', function(e) {
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const x = Math.round(svgP.x), y = Math.round(svgP.y);
+    const label = 'X=' + x + '  Y=' + y;
+    txt.textContent = label;
+    bg.setAttribute('width', label.length * 8 + 16);
+    const bx = Math.min(x + 10, 900 - (label.length * 8 + 20));
+    const by = Math.max(y - 35, 2);
+    bg.setAttribute('x', bx); bg.setAttribute('y', by);
+    txt.setAttribute('x', bx + 8); txt.setAttribute('y', by + 19);
+    bg.style.display = ''; txt.style.display = '';
+  });
+  svg.addEventListener('mouseleave', function() {
+    bg.style.display = 'none'; txt.style.display = 'none';
+  });
+}
+</script>
+*/
 </body>
 </html>
