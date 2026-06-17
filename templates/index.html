@@ -1269,12 +1269,12 @@ function clasificarGrasa(pct, sexo) {
   if (pct == null || !sexo) return null;
   const h = sexo === 'Hombre';
   if (h) {
-    if (pct <  8)  return { etiq: 'Bajo',      bg: '#dbeafe', color: '#1d4ed8' };
+    if (pct <  8)  return { etiq: 'Bajo',      bg: '#fef9c3', color: '#a16207' };
     if (pct < 20)  return { etiq: 'Saludable', bg: '#dcfce7', color: '#15803d' };
     if (pct < 25)  return { etiq: 'Límite',    bg: '#fef9c3', color: '#a16207' };
                    return { etiq: 'Exceso',     bg: '#fee2e2', color: '#b91c1c' };
   } else {
-    if (pct < 21)  return { etiq: 'Bajo',      bg: '#dbeafe', color: '#1d4ed8' };
+    if (pct < 21)  return { etiq: 'Bajo',      bg: '#fef9c3', color: '#a16207' };
     if (pct < 33)  return { etiq: 'Saludable', bg: '#dcfce7', color: '#15803d' };
     if (pct < 39)  return { etiq: 'Límite',    bg: '#fef9c3', color: '#a16207' };
                    return { etiq: 'Exceso',     bg: '#fee2e2', color: '#b91c1c' };
