@@ -1360,7 +1360,7 @@ function renderAnalisisContent(revs, p) {
 function getRevsFiltradas() {
   return revisiones.filter(r => {
     if (!_globalRevFecha) return true;
-    return (r.fecha || '').split('T')[0] === _globalRevFecha;
+    return (r.fecha || '').split('T')[0] <= _globalRevFecha;
   }).slice().reverse();
 }
 
