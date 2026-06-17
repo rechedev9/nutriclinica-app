@@ -1695,11 +1695,12 @@ function _renderHero(revs, p) {
          </div>
          <table class="prog-table">
            <tr>
-             <th></th><th>1ª rev.</th><th>Última</th><th>vs. ant.</th><th>Δ total</th>
+             <th></th><th>1ª rev.</th><th>Anterior</th><th>Última</th><th>vs. ant.</th><th>Δ total</th>
            </tr>
            ${rows.map(([lbl, now, then, prev, rev]) => `<tr>
              <td>${lbl}</td>
              <td style="color:var(--text-muted)">${then != null ? then : '—'}</td>
+             <td style="color:var(--text-muted)">${prev != null ? prev : '—'}</td>
              <td style="font-weight:700">${now != null ? now : '—'}</td>
              <td>${chip(now, prev, rev)}</td>
              <td>${chip(now, then, rev)}</td>
