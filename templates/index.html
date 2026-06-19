@@ -2171,6 +2171,17 @@ function _renderCharts(revs, p) {
         scales: { y: { beginAtZero: true, grid, ticks: { callback: v => v + ' cm', font: { size: 11 } } }, x: xOpts } }
     });
   }
+
+  // Animar tarjetas de gráficos y perfiles corporales
+  document.querySelectorAll('.tri-row > .chart-card-new').forEach(function(el, i) {
+    animSlideUp(el, 0.85 + i * 0.15);
+  });
+  document.querySelectorAll('#dashCuerpo .chart-card-new').forEach(function(el, i) {
+    animSlideUp(el, 1.0 + i * 0.18);
+  });
+  document.querySelectorAll('.charts-row .chart-card-new').forEach(function(el, i) {
+    animSlideUp(el, 1.2 + i * 0.18);
+  });
 }
 
 // ── Exportar PDF ──────────────────────────────────────────────────────────────
