@@ -1835,11 +1835,21 @@ function toggleMedidasDD() {
 }
 
 function toggleMedida(key) {
-  if (_activeMedidas.has(key)) {
-    if (_activeMedidas.size > 1) _activeMedidas.delete(key);
+  if (_activeMedidas.size === 1 && _activeMedidas.has(key)) {
+    // Era la única activa → restaurar todas
+    ALL_MEDIDAS.forEach(m => _activeMedidas.add(m.key));
+  } else if (_activeMedidas.has(key) && _activeMedidas.size > 1) {
+    // Hay varias activas y se clica una → solo esa
+    _activeMedidas.clear();
+    _activeMedidas.add(key);
   } else {
     _activeMedidas.add(key);
   }
+  actualizarAnalisis();
+}
+
+function todasMedidas() {
+  ALL_MEDIDAS.forEach(m => _activeMedidas.add(m.key));
   actualizarAnalisis();
 }
 
@@ -1879,9 +1889,13 @@ function renderMedidasMenu(revs) {
   const periGroup     = ALL_MEDIDAS.filter(m => m.key.startsWith('per_'));
   const allPlOn  = plieguesGroup.every(m => _activeMedidas.has(m.key));
   const allPerOn = periGroup.every(m => _activeMedidas.has(m.key));
+  const allOn    = ALL_MEDIDAS.every(m => _activeMedidas.has(m.key));
 
   menu.innerHTML =
-    `<div style="padding:5px 12px 4px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">
+    `<div style="padding:6px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:flex-end">
+      <button type="button" onclick="todasMedidas()" style="font-size:11px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0;opacity:${allOn ? 0.5 : 1}">${allOn ? '✓ Todas activas' : 'Mostrar todas'}</button>
+    </div>
+    <div style="padding:5px 12px 4px;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center">
       Pliegues cutáneos (cm)
       <button type="button" onclick="toggleTodasMedidas('pl')" style="font-size:10px;font-weight:600;color:var(--primary);background:none;border:none;cursor:pointer;padding:0">${allPlOn ? 'Quitar todos' : 'Todos'}</button>
     </div>` +
