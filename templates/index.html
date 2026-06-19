@@ -142,6 +142,10 @@
     .rev-dd-item:hover { background:#f1f5f9; }
     .rev-dd-item.act { background:#0f172a; color:white; font-weight:700; }
     .rev-dd-sep { height:1px; background:var(--border); margin:4px 6px; }
+    @keyframes kSlideUp {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
     /* Hero KPI cards */
     .hero-grid      { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
     .hero-card      { border-radius:18px; padding:16px 16px 14px; background:white; border:1px solid var(--border); box-shadow:0 1px 2px rgba(15,27,45,.04),0 12px 30px -20px rgba(15,27,45,.18); display:flex; flex-direction:column; gap:13px; min-width:0; }
@@ -751,7 +755,7 @@ function renderFichaContent(p) {
       <div style="font-size:14px;color:var(--text);white-space:pre-wrap;line-height:1.6">${p.notas}</div>
     </div>` : ''}
     <div style="margin-top:20px">
-      <a href="/api/exportar-excel" class="btn btn-outline">
+      <a href="/api/exportar-excel?id=${p.id}" class="btn btn-outline">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
@@ -1478,6 +1482,25 @@ function buildMonthMultiData(revs, seriesFns) {
   return { labels, datasets };
 }
 
+function countUp(el, target, dec, ms) {
+  ms = ms || 800;
+  var t0 = performance.now();
+  el.textContent = (0).toFixed(dec);
+  (function tick(now) {
+    var p = Math.min((now - t0) / ms, 1);
+    var e = p < 0.5 ? 2*p*p : -1+(4-2*p)*p;
+    el.textContent = (e * target).toFixed(dec);
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+function animSlideUp(el, delay) {
+  if (!el) return;
+  el.style.animation = 'none';
+  void el.offsetHeight;
+  el.style.animation = 'kSlideUp 0.45s cubic-bezier(.22,.68,0,1.2) ' + (delay || 0) + 's both';
+}
+
 function _renderHero(revs, p) {
   const heroEl   = document.getElementById('dashHero');
   const compEl   = document.getElementById('dashComp');
@@ -1617,6 +1640,17 @@ function _renderHero(revs, p) {
     </div>`;
 
   _initSparkCharts(revs, p, edad);
+
+  // Animaciones de entrada: slide-up escalonado + contador numérico
+  heroEl.querySelectorAll('.hero-card').forEach(function(card, i) { animSlideUp(card, i * 0.07); });
+  heroEl.querySelectorAll('.hero-num').forEach(function(el) {
+    var raw = el.textContent.trim();
+    var val = parseFloat(raw);
+    if (!isNaN(val)) countUp(el, val, raw.indexOf('.') >= 0 ? raw.split('.')[1].length : 0);
+  });
+
+  animSlideUp(compEl, 0.38);
+  animSlideUp(progEl, 0.44);
 
   // ── Composición corporal ──────────────────────────────────────────────
   if (compEl) {

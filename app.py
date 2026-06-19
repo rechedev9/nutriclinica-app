@@ -304,7 +304,11 @@ def serve_foto(filename):
 @app.route('/api/exportar-excel')
 def exportar_excel():
     conn = get_db()
-    pacientes = conn.execute('SELECT * FROM pacientes ORDER BY nombre COLLATE NOCASE').fetchall()
+    pac_id = request.args.get('id', type=int)
+    if pac_id:
+        pacientes = conn.execute('SELECT * FROM pacientes WHERE id=?', (pac_id,)).fetchall()
+    else:
+        pacientes = conn.execute('SELECT * FROM pacientes ORDER BY nombre COLLATE NOCASE').fetchall()
 
     wb = openpyxl.Workbook()
 
@@ -353,11 +357,19 @@ def exportar_excel():
          13, 13, 16, 16, 16, 14, 14, 15,
          14, 14, 15, 13, 11, 12, 12, 11, 14, 12, 35]
     )
-    revisiones = conn.execute(
-        '''SELECT r.*, p.nombre FROM revisiones r
-           JOIN pacientes p ON p.id = r.paciente_id
-           ORDER BY p.nombre COLLATE NOCASE, r.fecha DESC'''
-    ).fetchall()
+    if pac_id:
+        revisiones = conn.execute(
+            '''SELECT r.*, p.nombre FROM revisiones r
+               JOIN pacientes p ON p.id = r.paciente_id
+               WHERE r.paciente_id=?
+               ORDER BY r.fecha DESC''', (pac_id,)
+        ).fetchall()
+    else:
+        revisiones = conn.execute(
+            '''SELECT r.*, p.nombre FROM revisiones r
+               JOIN pacientes p ON p.id = r.paciente_id
+               ORDER BY p.nombre COLLATE NOCASE, r.fecha DESC'''
+        ).fetchall()
     for r in revisiones:
         def v(f): return r[f] if r[f] is not None else ''
         ws2.append([
@@ -374,7 +386,8 @@ def exportar_excel():
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    nombre = f"nutricion_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    nombre_pac = pacientes[0]['nombre'].replace(' ', '_') if pac_id and pacientes else 'nutricion'
+    nombre = f"{nombre_pac}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     return send_file(buf,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True, download_name=nombre)
