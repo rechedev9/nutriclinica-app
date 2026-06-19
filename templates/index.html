@@ -2057,6 +2057,27 @@ function _renderCuerpo(revs, p, edad) {
         </svg>
       </div>
     </div>`;
+  // countUp en los valores cm de los SVGs (text con font-size="26")
+  ['svgFrontal','svgPosterior'].forEach(function(id) {
+    var svg = document.getElementById(id);
+    if (!svg) return;
+    svg.querySelectorAll('text[font-size="26"]').forEach(function(el) {
+      var txt = el.textContent.trim();
+      var val = parseFloat(txt);
+      if (isNaN(val)) return;
+      var unit = txt.replace(/[\d.]/g,'').trim();
+      var dec  = txt.indexOf('.') >= 0 ? txt.split('.')[0].replace(/\D/g,'').length >= 0 && 1 : 0;
+      dec = (txt.split('.')[1] || '').replace(/\D/g,'').length;
+      var t0 = performance.now(), ms = 1800;
+      (function tick(now) {
+        var p = Math.min((now - t0) / ms, 1);
+        var e = p < 0.5 ? 2*p*p : -1+(4-2*p)*p;
+        el.textContent = (e * val).toFixed(dec) + (unit ? ' ' + unit : '');
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+    });
+  });
+
   // COORD-TRACKER (descomentar junto con los bloques SVG para calibrar puntos)
   // activarCoordTracker('svgFrontal',   'coordBgF', 'coordTxtF');
   // activarCoordTracker('svgPosterior', 'coordBgP', 'coordTxtP');
