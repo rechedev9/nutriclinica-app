@@ -124,6 +124,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+
 @app.route('/')
 @login_required
 def index():
