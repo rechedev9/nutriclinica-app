@@ -324,9 +324,17 @@
       .tri-row > .chart-card-new { display: none !important; }
 
       /* Grids en A4 */
-      .hero-grid  { grid-template-columns: repeat(5, 1fr) !important; }
-      .tri-row    { grid-template-columns: 1fr 1fr !important; }
-      .charts-row { grid-template-columns: 1fr 1fr !important; }
+      .hero-grid { grid-template-columns: repeat(5, 1fr) !important; }
+      .tri-row   { grid-template-columns: 1fr 1fr !important; }
+
+      /* Ocultar gráficos — el PDF solo incluye KPIs, IMC, tabla y perfiles corporales */
+      .charts-row { display: none !important; }
+
+      /* Compactar perfiles corporales para que entren en página 1 */
+      #dashCuerpo .chart-card-new { padding: 10px 12px !important; }
+      #dashCuerpo .chart-lbl { font-size: 13px !important; margin-bottom: 1px !important; }
+      #dashCuerpo .chart-sub { font-size: 10px !important; margin-bottom: 4px !important; }
+      #dashCuerpo svg { max-height: 165px !important; }
 
       /* Evitar cortes de página dentro de tarjetas */
       .hero-card, .chart-card-new, .dash-card,
@@ -2156,7 +2164,7 @@ function exportarPDF() {
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-/* COORD-TRACKER — descomentar todo este bloque para calibrar puntos del perfil corporal:
+<div style="display:none">/* COORD-TRACKER — descomentar todo este bloque para calibrar puntos del perfil corporal:
    1. Descomentar este <script>
    2. Descomentar los bloques COORD-TRACKER-FRONTAL y COORD-TRACKER-POSTERIOR en los SVG
    3. Descomentar las dos llamadas activarCoordTracker() en _renderCuerpo
@@ -2186,6 +2194,6 @@ function activarCoordTracker(svgId, bgId, txtId) {
   });
 }
 </script>
-*/
+*/</div>
 </body>
 </html>
