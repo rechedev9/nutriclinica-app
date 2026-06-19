@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify, send_file, render_template, send_from_directory
+from flask import Flask, request, jsonify, send_file, render_template, send_from_directory, session, redirect, url_for
 import sqlite3, os, uuid, io, unicodedata, shutil
 from datetime import datetime
+from functools import wraps
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 
@@ -14,6 +15,17 @@ def nombre_a_carpeta(nombre):
 
 app      = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.secret_key = 'nutriclinica-secret-2025'
+
+USUARIOS = {'admin': 'admin'}
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(BASE_DIR, 'bbdd', 'pacientes.db')
 FOTOS_DIR = os.path.join(BASE_DIR, 'fotos')
@@ -94,7 +106,26 @@ def init_db():
 
 # ─── RUTAS PRINCIPALES ────────────────────────────────────────────────────────
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        user = request.form.get('usuario', '')
+        pwd  = request.form.get('password', '')
+        if USUARIOS.get(user) == pwd:
+            session['logged_in'] = True
+            session['usuario']   = user
+            return redirect(url_for('index'))
+        error = 'Usuario o contraseña incorrectos'
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
