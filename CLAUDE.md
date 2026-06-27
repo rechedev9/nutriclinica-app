@@ -73,3 +73,51 @@ React Router models the navigation: the NavRail and patient tabs are **routes** 
 - Git remotes: `origin` is the owner's **private** repo (`rechedev9/nutriclinica`) — push here; `upstream` is the original `granrafael/nutriclinica` it derived from. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
 - Keep new code in Spanish (identifiers, UI strings, comments) to match the codebase.
 - Backend: add a route in the matching `handlers/*.go` and a method in the matching `store/*.go`. Frontend: add a feature file/hook alongside the existing ones; don't reach for global state when the URL or a parent's local state suffices.
+
+## Convenciones de código (criterio)
+
+Adaptadas a este stack (Go + React/Vite/TS + Zod + Tailwind, app en español).
+Las reglas de otros entornos (Elysia/Eden, TypeBox, Lingui, mecánicas de juego como inventario, member badges o diminishing-returns) no aplican aquí y se omiten a propósito.
+
+### TypeScript / seguridad de tipos
+- La validación en runtime es con **Zod** (la librería elegida); no introduzcas otra librería de validación.
+- No uses `as any`, casts `as <Tipo>` para esquivar el chequeo, ni el operador `!` (non-null).
+El `tsconfig` es estricto con `noUncheckedIndexedAccess`: modela la nulabilidad de forma explícita.
+El backend Go emite `null` (campos puntero) y los tipos de `src/types/` lo reflejan con `| null`.
+- No hay inferencia de tipos extremo a extremo desde el backend (es Go), no hay equivalente a Eden.
+Los tipos de `src/types/` se mantienen a mano como espejo del JSON de Go; la fuente de verdad es el handler/modelo Go.
+Si un tipo no cuadra, corrige el tipo (o el handler), no lo fuerces con un cast; valida con Zod las respuestas críticas.
+- Evita los barrels de re-export.
+Los únicos agregadores permitidos son `src/types/index.ts` y `src/lib/calc/index.ts`; no añadas más, importa desde el módulo que define el símbolo y actualiza los imports al mover código.
+- Importa desde el subpaquete concreto, no desde un barrel (p. ej. `@radix-ui/react-dialog`).
+Este proyecto no usa lodash, date-fns, MUI ni una librería de iconos.
+
+### Backend Go: transacciones y errores
+- Dentro de una transacción usa el handle `tx`, nunca el `s.DB` exterior (ver `CreateCompra`/`CreateVenta`/`DeleteCompra`/`DeletePaciente`).
+- El pool tiene una sola conexión (`SetMaxOpenConns(1)`), así que las escrituras ya están serializadas.
+Para invariantes multi-sentencia usa una transacción, y NUNCA ejecutes una query mientras iteras las filas de otra (deadlock; ver la sección de arquitectura).
+- Errores HTTP con `writeError(w, status, msg)`.
+Dentro de una transacción no escribas la respuesta: devuelve el error para hacer rollback y escribe el status en el handler, después del commit/rollback.
+
+### Asíncrono
+- Frontend: usa `Promise.all` para operaciones independientes; encadenar `await` de cosas independientes es un bug de rendimiento (TanStack Query ya paraleliza las queries independientes).
+- Backend: las operaciones de BBDD van en secuencia (una sola conexión); no las paralelices con goroutines.
+
+### Cambios numéricos
+- Si piden un ajuste ("+30%"), haz la aritmética y escribe la constante raíz resultante; no apiles un multiplicador encima del valor existente.
+
+### UI y estilo
+- Respeta los tokens de diseño de `tailwind.config.ts` (paleta `primary`/`surface`, radios `rounded-card`/`rounded-lg`, sombras `card`/`md`, fuente Hanken Grotesk).
+El redondeo es deliberado en este diseño: usa los radios del theme, no valores sueltos.
+- Iconos: SVG inline coherente con los componentes existentes; no añadas una librería de iconos.
+- En botones, indica la carga deshabilitando el botón y manteniendo el layout estable; no metas elementos que descuadren.
+- Nunca dejes texto en inglés visible para el usuario: todas las cadenas de UI van en español.
+No hay capa de i18n (app monolingüe), así que escribe el español directamente (sin envoltorios de traducción).
+
+### Imágenes
+- Para imágenes raster nuevas, prefiere **WebP** (lossless para pixel-art/iconos, lossy q85-90 para fotografía); PNG/JPEG solo para OG/social.
+No cambies la extensión de assets existentes.
+Las fotos de pacientes conservan el formato con que se suben (el backend preserva la extensión original).
+
+### Documentación
+- Mantén este CLAUDE.md al día: si un cambio deja obsoleta una referencia (ruta, función, flag), arregla todas las referencias muertas en el mismo turno.
