@@ -54,12 +54,12 @@ $server = Start-Process -FilePath "py" -ArgumentList "app.py" -WorkingDirectory 
 
 Start-Sleep -Milliseconds 1500
 
-Write-Ok "Servidor activo  →  http://localhost:5000"
+Write-Ok "Servidor activo  →  http://localhost:5001"
 Write-Host ""
 Write-Host "  ────────────────────────────────────" -ForegroundColor DarkGray
 Write-Host ""
 
-Start-Process "http://localhost:5000"
+Start-Process "http://localhost:5001"
 
 Write-Host "  Presiona " -NoNewline -ForegroundColor DarkGray
 Write-Host "Ctrl+C" -NoNewline -ForegroundColor White

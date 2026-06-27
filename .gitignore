@@ -15,3 +15,17 @@ env/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# Build artifacts
+/dist/
+# SPA embebido generado por el build (se conserva solo .gitkeep para que go:embed compile)
+backend/web/dist/*
+!backend/web/dist/.gitkeep
+
+# Go
+*.exe
+*.bak-*

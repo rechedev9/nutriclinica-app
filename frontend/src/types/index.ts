@@ -1,0 +1,5 @@
+export * from './paciente'
+export * from './revision'
+export * from './foto'
+export * from './stock'
+export * from './usuario'

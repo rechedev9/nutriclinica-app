@@ -17,7 +17,7 @@ app      = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.secret_key = 'nutriclinica-secret-2025'
 
-USUARIOS = {'admin': 'admin'}
+USUARIOS = {'admin': 'admin', 'Jose': 'Jose123'}
 
 def login_required(f):
     @wraps(f)
@@ -100,6 +100,65 @@ def init_db():
         fecha       TEXT DEFAULT (datetime('now','localtime')),
         FOREIGN KEY (paciente_id) REFERENCES pacientes(id)
     )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_categorias (
+        id     INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_proveedores (
+        id       INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre   TEXT NOT NULL,
+        telefono TEXT,
+        email    TEXT,
+        notas    TEXT
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_productos (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre       TEXT NOT NULL,
+        categoria_id INTEGER,
+        proveedor_id INTEGER,
+        precio_coste REAL DEFAULT 0,
+        precio_venta REAL DEFAULT 0,
+        unidad       TEXT DEFAULT 'ud',
+        stock_minimo REAL DEFAULT 0,
+        activo       INTEGER DEFAULT 1,
+        creado       TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY (categoria_id) REFERENCES stock_categorias(id),
+        FOREIGN KEY (proveedor_id) REFERENCES stock_proveedores(id)
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_compras (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha        TEXT DEFAULT (date('now','localtime')),
+        proveedor_id INTEGER,
+        notas        TEXT,
+        total        REAL DEFAULT 0,
+        FOREIGN KEY (proveedor_id) REFERENCES stock_proveedores(id)
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_compras_lineas (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        compra_id       INTEGER NOT NULL,
+        producto_id     INTEGER NOT NULL,
+        cantidad        REAL NOT NULL,
+        precio_unitario REAL DEFAULT 0,
+        FOREIGN KEY (compra_id)   REFERENCES stock_compras(id),
+        FOREIGN KEY (producto_id) REFERENCES stock_productos(id)
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_ventas (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha       TEXT DEFAULT (date('now','localtime')),
+        paciente_id INTEGER,
+        notas       TEXT,
+        total       REAL DEFAULT 0,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id)
+    )''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS stock_ventas_lineas (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        venta_id        INTEGER NOT NULL,
+        producto_id     INTEGER NOT NULL,
+        cantidad        REAL NOT NULL,
+        precio_unitario REAL DEFAULT 0,
+        FOREIGN KEY (venta_id)    REFERENCES stock_ventas(id),
+        FOREIGN KEY (producto_id) REFERENCES stock_productos(id)
+    )''')
     conn.commit()
     conn.close()
 
@@ -134,6 +193,7 @@ def index():
 # ─── PACIENTES ────────────────────────────────────────────────────────────────
 
 @app.route('/api/pacientes', methods=['GET'])
+@login_required
 def get_pacientes():
     conn = get_db()
     rows = conn.execute('SELECT * FROM pacientes ORDER BY nombre COLLATE NOCASE').fetchall()
@@ -147,6 +207,7 @@ def get_pacientes():
 
 
 @app.route('/api/pacientes', methods=['POST'])
+@login_required
 def create_paciente():
     d = request.json
     conn = get_db()
@@ -169,6 +230,7 @@ def create_paciente():
 
 
 @app.route('/api/pacientes/<int:pid>', methods=['PUT'])
+@login_required
 def update_paciente(pid):
     d = request.json
     conn = get_db()
@@ -193,6 +255,7 @@ def update_paciente(pid):
 
 
 @app.route('/api/pacientes/<int:pid>', methods=['DELETE'])
+@login_required
 def delete_paciente(pid):
     conn = get_db()
     p = conn.execute('SELECT nombre FROM pacientes WHERE id=?', (pid,)).fetchone()
@@ -228,6 +291,7 @@ def _rev_vals(d):
 
 
 @app.route('/api/pacientes/<int:pid>/revisiones', methods=['GET'])
+@login_required
 def get_revisiones(pid):
     conn = get_db()
     rows = conn.execute(
@@ -238,6 +302,7 @@ def get_revisiones(pid):
 
 
 @app.route('/api/pacientes/<int:pid>/revisiones', methods=['POST'])
+@login_required
 def create_revision(pid):
     d    = request.json
     cols = ', '.join(REV_FIELDS)
@@ -254,6 +319,7 @@ def create_revision(pid):
 
 
 @app.route('/api/revisiones/<int:rid>', methods=['PUT'])
+@login_required
 def update_revision(rid):
     d    = request.json
     sets = ', '.join(f'{f}=?' for f in REV_FIELDS)
@@ -266,6 +332,7 @@ def update_revision(rid):
 
 
 @app.route('/api/revisiones/<int:rid>', methods=['DELETE'])
+@login_required
 def delete_revision(rid):
     conn = get_db()
     conn.execute('DELETE FROM revisiones WHERE id=?', (rid,))
@@ -277,6 +344,7 @@ def delete_revision(rid):
 # ─── FOTOS ────────────────────────────────────────────────────────────────────
 
 @app.route('/api/pacientes/<int:pid>/fotos', methods=['GET'])
+@login_required
 def get_fotos(pid):
     conn = get_db()
     fotos = conn.execute(
@@ -287,6 +355,7 @@ def get_fotos(pid):
 
 
 @app.route('/api/pacientes/<int:pid>/fotos', methods=['POST'])
+@login_required
 def upload_foto(pid):
     file = request.files.get('foto')
     nota = request.form.get('nota', '').strip()
@@ -313,6 +382,7 @@ def upload_foto(pid):
 
 
 @app.route('/api/fotos/<int:fid>', methods=['DELETE'])
+@login_required
 def delete_foto(fid):
     conn = get_db()
     f = conn.execute('SELECT * FROM fotos WHERE id=?', (fid,)).fetchone()
@@ -327,6 +397,7 @@ def delete_foto(fid):
 
 
 @app.route('/fotos/<path:filename>')
+@login_required
 def serve_foto(filename):
     return send_from_directory(FOTOS_DIR, filename)
 
@@ -334,6 +405,7 @@ def serve_foto(filename):
 # ─── EXPORTAR EXCEL ───────────────────────────────────────────────────────────
 
 @app.route('/api/exportar-excel')
+@login_required
 def exportar_excel():
     conn = get_db()
     pac_id = request.args.get('id', type=int)
@@ -428,6 +500,7 @@ def exportar_excel():
 # ─── EXPORTAR EXCEL REVISIÓN ─────────────────────────────────────────────────
 
 @app.route('/api/exportar-revision/<int:rid>')
+@login_required
 def exportar_revision(rid):
     conn = get_db()
     r = conn.execute(
@@ -520,6 +593,244 @@ def exportar_revision(rid):
     return send_file(buf,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True, download_name=nombre_archivo)
+
+
+# ─── STOCK ───────────────────────────────────────────────────────────────────
+
+@app.route('/api/stock/almacen')
+@login_required
+def stock_almacen():
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT p.id, p.nombre, p.unidad, p.precio_coste, p.precio_venta, p.stock_minimo,
+               c.nombre as categoria, pr.nombre as proveedor_nombre,
+               COALESCE((SELECT SUM(cl.cantidad) FROM stock_compras_lineas cl WHERE cl.producto_id=p.id),0) -
+               COALESCE((SELECT SUM(vl.cantidad) FROM stock_ventas_lineas  vl WHERE vl.producto_id=p.id),0) as stock_actual
+        FROM stock_productos p
+        LEFT JOIN stock_categorias c  ON c.id  = p.categoria_id
+        LEFT JOIN stock_proveedores pr ON pr.id = p.proveedor_id
+        WHERE p.activo=1 ORDER BY p.nombre COLLATE NOCASE
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/stock/productos', methods=['GET'])
+@login_required
+def get_stock_productos():
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT p.*, c.nombre as categoria, pr.nombre as proveedor_nombre
+        FROM stock_productos p
+        LEFT JOIN stock_categorias c  ON c.id  = p.categoria_id
+        LEFT JOIN stock_proveedores pr ON pr.id = p.proveedor_id
+        WHERE p.activo=1 ORDER BY p.nombre COLLATE NOCASE
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/stock/productos', methods=['POST'])
+@login_required
+def create_stock_producto():
+    d = request.json
+    conn = get_db()
+    cur = conn.execute(
+        '''INSERT INTO stock_productos (nombre, categoria_id, proveedor_id, precio_coste, precio_venta, unidad, stock_minimo)
+           VALUES (?,?,?,?,?,?,?)''',
+        (d['nombre'].strip(), d.get('categoria_id') or None, d.get('proveedor_id') or None,
+         d.get('precio_coste') or 0, d.get('precio_venta') or 0,
+         d.get('unidad') or 'ud', d.get('stock_minimo') or 0)
+    )
+    conn.commit()
+    p = conn.execute('SELECT * FROM stock_productos WHERE id=?', (cur.lastrowid,)).fetchone()
+    conn.close()
+    return jsonify(dict(p)), 201
+
+
+@app.route('/api/stock/productos/<int:pid>', methods=['PUT'])
+@login_required
+def update_stock_producto(pid):
+    d = request.json
+    conn = get_db()
+    conn.execute(
+        '''UPDATE stock_productos SET nombre=?, categoria_id=?, proveedor_id=?,
+           precio_coste=?, precio_venta=?, unidad=?, stock_minimo=? WHERE id=?''',
+        (d['nombre'].strip(), d.get('categoria_id') or None, d.get('proveedor_id') or None,
+         d.get('precio_coste') or 0, d.get('precio_venta') or 0,
+         d.get('unidad') or 'ud', d.get('stock_minimo') or 0, pid)
+    )
+    conn.commit()
+    p = conn.execute('SELECT * FROM stock_productos WHERE id=?', (pid,)).fetchone()
+    conn.close()
+    return jsonify(dict(p))
+
+
+@app.route('/api/stock/productos/<int:pid>', methods=['DELETE'])
+@login_required
+def delete_stock_producto(pid):
+    conn = get_db()
+    conn.execute('UPDATE stock_productos SET activo=0 WHERE id=?', (pid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/stock/categorias', methods=['GET', 'POST'])
+@login_required
+def stock_categorias():
+    conn = get_db()
+    if request.method == 'POST':
+        d = request.json
+        cur = conn.execute('INSERT INTO stock_categorias (nombre) VALUES (?)', (d['nombre'].strip(),))
+        conn.commit()
+        c = conn.execute('SELECT * FROM stock_categorias WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(c)), 201
+    rows = conn.execute('SELECT * FROM stock_categorias ORDER BY nombre COLLATE NOCASE').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/stock/proveedores', methods=['GET', 'POST'])
+@login_required
+def stock_proveedores():
+    conn = get_db()
+    if request.method == 'POST':
+        d = request.json
+        cur = conn.execute(
+            'INSERT INTO stock_proveedores (nombre, telefono, email, notas) VALUES (?,?,?,?)',
+            (d['nombre'].strip(), d.get('telefono') or None, d.get('email') or None, d.get('notas') or None)
+        )
+        conn.commit()
+        p = conn.execute('SELECT * FROM stock_proveedores WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(p)), 201
+    rows = conn.execute('SELECT * FROM stock_proveedores ORDER BY nombre COLLATE NOCASE').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/stock/proveedores/<int:pid>', methods=['PUT', 'DELETE'])
+@login_required
+def stock_proveedor(pid):
+    conn = get_db()
+    if request.method == 'DELETE':
+        conn.execute('DELETE FROM stock_proveedores WHERE id=?', (pid,))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+    d = request.json
+    conn.execute(
+        'UPDATE stock_proveedores SET nombre=?, telefono=?, email=?, notas=? WHERE id=?',
+        (d['nombre'].strip(), d.get('telefono') or None, d.get('email') or None, d.get('notas') or None, pid)
+    )
+    conn.commit()
+    p = conn.execute('SELECT * FROM stock_proveedores WHERE id=?', (pid,)).fetchone()
+    conn.close()
+    return jsonify(dict(p))
+
+
+@app.route('/api/stock/compras', methods=['GET', 'POST'])
+@login_required
+def stock_compras():
+    conn = get_db()
+    if request.method == 'POST':
+        d      = request.json
+        lineas = d.get('lineas', [])
+        total  = sum(l.get('cantidad', 0) * l.get('precio_unitario', 0) for l in lineas)
+        cur    = conn.execute(
+            'INSERT INTO stock_compras (fecha, proveedor_id, notas, total) VALUES (?,?,?,?)',
+            (d.get('fecha') or None, d.get('proveedor_id') or None, d.get('notas') or None, total)
+        )
+        cid = cur.lastrowid
+        for l in lineas:
+            conn.execute(
+                'INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)',
+                (cid, l['producto_id'], l['cantidad'], l.get('precio_unitario') or 0)
+            )
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True, 'id': cid}), 201
+    compras = conn.execute('''
+        SELECT c.*, pr.nombre as proveedor_nombre
+        FROM stock_compras c
+        LEFT JOIN stock_proveedores pr ON pr.id=c.proveedor_id
+        ORDER BY c.fecha DESC, c.id DESC
+    ''').fetchall()
+    result = []
+    for c in compras:
+        lineas = conn.execute('''
+            SELECT l.*, p.nombre as producto_nombre, p.unidad
+            FROM stock_compras_lineas l
+            JOIN stock_productos p ON p.id=l.producto_id
+            WHERE l.compra_id=?
+        ''', (c['id'],)).fetchall()
+        result.append({**dict(c), 'lineas': [dict(l) for l in lineas]})
+    conn.close()
+    return jsonify(result)
+
+
+@app.route('/api/stock/compras/<int:cid>', methods=['DELETE'])
+@login_required
+def delete_stock_compra(cid):
+    conn = get_db()
+    conn.execute('DELETE FROM stock_compras_lineas WHERE compra_id=?', (cid,))
+    conn.execute('DELETE FROM stock_compras WHERE id=?', (cid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/stock/ventas', methods=['GET', 'POST'])
+@login_required
+def stock_ventas():
+    conn = get_db()
+    if request.method == 'POST':
+        d      = request.json
+        lineas = d.get('lineas', [])
+        total  = sum(l.get('cantidad', 0) * l.get('precio_unitario', 0) for l in lineas)
+        cur    = conn.execute(
+            'INSERT INTO stock_ventas (fecha, paciente_id, notas, total) VALUES (?,?,?,?)',
+            (d.get('fecha') or None, d.get('paciente_id') or None, d.get('notas') or None, total)
+        )
+        vid = cur.lastrowid
+        for l in lineas:
+            conn.execute(
+                'INSERT INTO stock_ventas_lineas (venta_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)',
+                (vid, l['producto_id'], l['cantidad'], l.get('precio_unitario') or 0)
+            )
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True, 'id': vid}), 201
+    ventas = conn.execute('''
+        SELECT v.*, p.nombre as paciente_nombre
+        FROM stock_ventas v
+        LEFT JOIN pacientes p ON p.id=v.paciente_id
+        ORDER BY v.fecha DESC, v.id DESC
+    ''').fetchall()
+    result = []
+    for v in ventas:
+        lineas = conn.execute('''
+            SELECT l.*, p.nombre as producto_nombre, p.unidad
+            FROM stock_ventas_lineas l
+            JOIN stock_productos p ON p.id=l.producto_id
+            WHERE l.venta_id=?
+        ''', (v['id'],)).fetchall()
+        result.append({**dict(v), 'lineas': [dict(l) for l in lineas]})
+    conn.close()
+    return jsonify(result)
+
+
+@app.route('/api/stock/ventas/<int:vid>', methods=['DELETE'])
+@login_required
+def delete_stock_venta(vid):
+    conn = get_db()
+    conn.execute('DELETE FROM stock_ventas_lineas WHERE venta_id=?', (vid,))
+    conn.execute('DELETE FROM stock_ventas WHERE id=?', (vid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
 
 
 # ─── ARRANQUE ─────────────────────────────────────────────────────────────────
