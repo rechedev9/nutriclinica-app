@@ -71,10 +71,10 @@ func (s *Store) IntegrityCheck() error {
 
 // OrphanRow describe una fila que viola una restricción de clave foránea.
 type OrphanRow struct {
-	Table     string
-	RowID     int64
-	Parent    string
-	FKID      int64
+	Table  string
+	RowID  int64
+	Parent string
+	FKID   int64
 }
 
 // ForeignKeyCheck devuelve las filas huérfanas detectadas por

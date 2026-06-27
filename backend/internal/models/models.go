@@ -86,31 +86,31 @@ type Foto struct {
 
 // AlmacenRow es una fila de /api/stock/almacen con stock_actual calculado.
 type AlmacenRow struct {
-	ID              int64    `json:"id"`
-	Nombre          string   `json:"nombre"`
-	Unidad          *string  `json:"unidad"`
-	PrecioCoste     float64  `json:"precio_coste"`
-	PrecioVenta     float64  `json:"precio_venta"`
-	StockMinimo     float64  `json:"stock_minimo"`
-	Categoria       *string  `json:"categoria"`
-	ProveedorNombre *string  `json:"proveedor_nombre"`
-	StockActual     float64  `json:"stock_actual"`
+	ID              int64   `json:"id"`
+	Nombre          string  `json:"nombre"`
+	Unidad          *string `json:"unidad"`
+	PrecioCoste     float64 `json:"precio_coste"`
+	PrecioVenta     float64 `json:"precio_venta"`
+	StockMinimo     float64 `json:"stock_minimo"`
+	Categoria       *string `json:"categoria"`
+	ProveedorNombre *string `json:"proveedor_nombre"`
+	StockActual     float64 `json:"stock_actual"`
 }
 
 // Producto refleja stock_productos con join de categoría y proveedor.
 type Producto struct {
-	ID              int64    `json:"id"`
-	Nombre          string   `json:"nombre"`
-	CategoriaID     *int64   `json:"categoria_id"`
-	ProveedorID     *int64   `json:"proveedor_id"`
-	PrecioCoste     float64  `json:"precio_coste"`
-	PrecioVenta     float64  `json:"precio_venta"`
-	Unidad          *string  `json:"unidad"`
-	StockMinimo     float64  `json:"stock_minimo"`
-	Activo          int      `json:"activo"`
-	Creado          *string  `json:"creado"`
-	Categoria       *string  `json:"categoria,omitempty"`
-	ProveedorNombre *string  `json:"proveedor_nombre,omitempty"`
+	ID              int64   `json:"id"`
+	Nombre          string  `json:"nombre"`
+	CategoriaID     *int64  `json:"categoria_id"`
+	ProveedorID     *int64  `json:"proveedor_id"`
+	PrecioCoste     float64 `json:"precio_coste"`
+	PrecioVenta     float64 `json:"precio_venta"`
+	Unidad          *string `json:"unidad"`
+	StockMinimo     float64 `json:"stock_minimo"`
+	Activo          int     `json:"activo"`
+	Creado          *string `json:"creado"`
+	Categoria       *string `json:"categoria,omitempty"`
+	ProveedorNombre *string `json:"proveedor_nombre,omitempty"`
 }
 
 // ProductoInput es el cuerpo de creación/edición de producto.
