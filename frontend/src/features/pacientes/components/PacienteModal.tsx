@@ -141,7 +141,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={create.isPending || update.isPending}>
+          <Button type="submit" isLoading={create.isPending || update.isPending}>
             {isEdit ? 'Guardar cambios' : 'Crear paciente'}
           </Button>
         </div>

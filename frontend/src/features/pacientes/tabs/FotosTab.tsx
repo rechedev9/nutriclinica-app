@@ -87,8 +87,8 @@ export function FotosTab() {
             onChange={(e) => setNota(e.target.value)}
           />
           <div className="flex gap-2">
-            <Button onClick={subir} disabled={upload.isPending}>
-              {upload.isPending ? 'Subiendo…' : 'Subir'}
+            <Button onClick={subir} isLoading={upload.isPending}>
+              Subir
             </Button>
             <Button variant="ghost" onClick={() => setPending([])}>
               Cancelar

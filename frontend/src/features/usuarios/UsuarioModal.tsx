@@ -64,7 +64,11 @@ export function UsuarioModal({ open, onClose, usuario }: Props) {
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={disabled || create.isPending || update.isPending}>
+          <Button
+            onClick={submit}
+            disabled={disabled}
+            isLoading={create.isPending || update.isPending || setPwd.isPending}
+          >
             {isEdit ? 'Guardar' : 'Crear'}
           </Button>
         </div>

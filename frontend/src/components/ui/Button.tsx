@@ -8,6 +8,7 @@ type Size = 'md' | 'sm'
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
+  isLoading?: boolean
 }
 
 const variants: Record<Variant, string> = {
@@ -23,19 +24,32 @@ const sizes: Record<Size, string> = {
 }
 
 export const Button = forwardRef<HTMLButtonElement, Props>(function Button(
-  { variant = 'primary', size = 'md', className, ...props },
+  { variant = 'primary', size = 'md', isLoading = false, className, children, disabled, ...props },
   ref,
 ) {
   return (
     <button
       ref={ref}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+        'relative inline-flex items-center justify-center rounded-lg font-semibold transition-colors disabled:cursor-not-allowed',
+        // Cuando NO carga, atenúa el disabled normal; al cargar el botón se ve activo con spinner.
+        !isLoading && 'disabled:opacity-50',
         variants[variant],
         sizes[size],
         className,
       )}
       {...props}
-    />
+    >
+      {isLoading && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          {/* Spinner en el color del texto del botón; no desplaza el contenido. */}
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80" />
+        </span>
+      )}
+      {/* El contenido conserva su espacio (invisible mantiene el ancho) para no descuadrar. */}
+      <span className={cn('inline-flex items-center gap-2', isLoading && 'invisible')}>{children}</span>
+    </button>
   )
 })

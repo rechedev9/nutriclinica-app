@@ -100,7 +100,7 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={create.isPending || update.isPending}>
+          <Button type="submit" isLoading={create.isPending || update.isPending}>
             {isEdit ? 'Guardar cambios' : 'Crear revisión'}
           </Button>
         </div>

@@ -60,7 +60,7 @@ export function CompraModal({ open, onClose }: { open: boolean; onClose: () => v
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={create.isPending}>
+          <Button onClick={submit} isLoading={create.isPending}>
             Registrar compra
           </Button>
         </div>

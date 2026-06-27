@@ -105,7 +105,8 @@ export function ProductoModal({ open, onClose, producto }: Props) {
           <Button
             type="button"
             variant="outline"
-            disabled={!nuevaCat.trim() || createCat.isPending}
+            disabled={!nuevaCat.trim()}
+            isLoading={createCat.isPending}
             onClick={async () => {
               await createCat.mutateAsync(nuevaCat.trim())
               setNuevaCat('')
@@ -134,7 +135,9 @@ export function ProductoModal({ open, onClose, producto }: Props) {
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">{isEdit ? 'Guardar' : 'Crear'}</Button>
+          <Button type="submit" isLoading={create.isPending || update.isPending}>
+            {isEdit ? 'Guardar' : 'Crear'}
+          </Button>
         </div>
       </form>
     </Modal>

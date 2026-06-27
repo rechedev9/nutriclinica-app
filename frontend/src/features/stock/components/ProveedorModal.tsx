@@ -63,7 +63,9 @@ export function ProveedorModal({ open, onClose, proveedor }: Props) {
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">{isEdit ? 'Guardar' : 'Crear'}</Button>
+          <Button type="submit" isLoading={create.isPending || update.isPending}>
+            {isEdit ? 'Guardar' : 'Crear'}
+          </Button>
         </div>
       </form>
     </Modal>

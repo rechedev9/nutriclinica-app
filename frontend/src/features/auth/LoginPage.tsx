@@ -57,8 +57,8 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && <p className="text-sm text-danger">{error}</p>}
-          <Button type="submit" disabled={login.isPending} className="mt-2 py-2.5">
-            {login.isPending ? 'Entrando…' : 'Entrar'}
+          <Button type="submit" isLoading={login.isPending} className="mt-2 py-2.5">
+            Entrar
           </Button>
         </div>
       </form>

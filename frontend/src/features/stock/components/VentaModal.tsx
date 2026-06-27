@@ -61,7 +61,7 @@ export function VentaModal({ open, onClose }: { open: boolean; onClose: () => vo
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={create.isPending}>
+          <Button onClick={submit} isLoading={create.isPending}>
             Registrar venta
           </Button>
         </div>

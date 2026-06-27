@@ -110,7 +110,7 @@ Dentro de una transacción no escribas la respuesta: devuelve el error para hace
 - Respeta los tokens de diseño de `tailwind.config.ts` (paleta `primary`/`surface`, radios `rounded-card`/`rounded-lg`, sombras `card`/`md`, fuente Hanken Grotesk).
 El redondeo es deliberado en este diseño: usa los radios del theme, no valores sueltos.
 - Iconos: SVG inline coherente con los componentes existentes; no añadas una librería de iconos.
-- En botones, indica la carga deshabilitando el botón y manteniendo el layout estable; no metas elementos que descuadren.
+- En botones, indica la carga con la prop `isLoading` del componente `Button` (muestra un spinner en el color del texto, deshabilita y conserva el ancho); no cambies el texto del botón a mano ni añadas elementos que descuadren.
 - Nunca dejes texto en inglés visible para el usuario: todas las cadenas de UI van en español.
 No hay capa de i18n (app monolingüe), así que escribe el español directamente (sin envoltorios de traducción).
 
