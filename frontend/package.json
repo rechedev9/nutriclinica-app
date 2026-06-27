@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd ../backend && go run ./cmd/nutriclinica --no-browser --data-dir ..",
+    "dev:full": "concurrently -k -n backend,frontend -c blue.bold,green.bold \"pnpm dev:backend\" \"pnpm dev\"",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -29,6 +31,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
+    "concurrently": "^9.0.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
