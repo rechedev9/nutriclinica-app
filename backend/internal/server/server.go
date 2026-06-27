@@ -26,9 +26,10 @@ func New(st *store.Store, sessions *auth.Manager, fotosDir string, spa fs.FS) *S
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 
-	// --- Auth (sin requireAuth) ---
-	mux.HandleFunc("POST /login", s.handleLogin)
-	mux.HandleFunc("GET /logout", s.handleLogout)
+	// --- Auth (sin requireAuth). Bajo /api para no colisionar con las rutas
+	// de cliente del SPA (/login, /logout son rutas de React Router). ---
+	mux.HandleFunc("POST /api/login", s.handleLogin)
+	mux.HandleFunc("POST /api/logout", s.handleLogout)
 	mux.HandleFunc("GET /api/me", s.requireAuth(s.handleMe))
 	mux.HandleFunc("POST /api/me/password", s.requireAuth(s.handleMyPassword))
 

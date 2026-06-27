@@ -31,7 +31,7 @@ Backend (from `backend/`):
 - Flags: `--data-dir <path>`, `--port N`, `--no-browser`, `--fix-orphans`.
 
 Frontend (from `frontend/`, uses **pnpm**):
-- `pnpm install` then `pnpm dev` — Vite dev server on :5173, proxies `/api`, `/fotos`, `/login`, `/logout` to the Go backend on :5001 (run the backend separately).
+- `pnpm install` then `pnpm dev` — Vite dev server on :5173, proxies `/api` and `/fotos` to the Go backend on :5001 (**run the backend separately first**, or proxied requests 500 with ECONNREFUSED). `/login` and `/logout` are SPA client routes; auth lives under `/api` (`POST /api/login`, `POST /api/logout`, `GET /api/me`).
 - `pnpm build` — typecheck (`tsc --noEmit`) + build the SPA into `backend/web/dist` (where Go embeds it).
 - `pnpm test` — Vitest (the clinical calc golden tests live in `src/lib/calc/__tests__`). Single file: `pnpm vitest run src/lib/calc`; single case: `pnpm vitest run -t "calcIMC"`.
 - pnpm gotcha (pnpm 11+): build-script approval lives in `frontend/pnpm-workspace.yaml` (`allowBuilds: esbuild: true`), not in `package.json`.

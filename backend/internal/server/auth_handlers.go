@@ -35,7 +35,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	_ = s.sessions.Logout(w, r)
-	http.Redirect(w, r, "/login", http.StatusFound)
+	writeJSON(w, http.StatusOK, ok(nil))
 }
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {

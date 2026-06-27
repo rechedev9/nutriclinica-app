@@ -16,7 +16,16 @@ export function useLogin() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: { usuario: string; password: string }) =>
-      api<{ ok: boolean; usuario: string; rol: string }>('POST', '/login', body),
+      api<{ ok: boolean; usuario: string; rol: string }>('POST', '/api/login', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.me }),
+  })
+}
+
+export function useLogout() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api('POST', '/api/logout'),
+    // Al cerrar sesión se vacía toda la caché de datos del usuario.
+    onSuccess: () => qc.clear(),
   })
 }

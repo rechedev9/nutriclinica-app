@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
 // El build se emite a backend/web/dist para que Go lo embeba (embed.FS).
-// En desarrollo, el dev server hace proxy de /api, /fotos, /login, /logout al
-// backend Go (mismo origen → cookies de sesión).
+// En desarrollo, el dev server hace proxy de /api y /fotos al backend Go
+// (mismo origen → cookies de sesión). /login y /logout NO se proxean: son
+// rutas de cliente del SPA; el auth vive bajo /api (/api/login, /api/logout).
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -17,8 +18,6 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:5001',
       '/fotos': 'http://localhost:5001',
-      '/login': 'http://localhost:5001',
-      '/logout': 'http://localhost:5001',
     },
   },
   build: {

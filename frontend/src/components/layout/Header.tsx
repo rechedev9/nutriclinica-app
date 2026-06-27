@@ -1,7 +1,16 @@
-import { useMe } from '@/features/auth/useAuth'
+import { useNavigate } from 'react-router-dom'
+import { useMe, useLogout } from '@/features/auth/useAuth'
 
 export function Header() {
   const { data: me } = useMe()
+  const logout = useLogout()
+  const navigate = useNavigate()
+
+  async function onLogout() {
+    await logout.mutateAsync()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <header className="flex h-[58px] shrink-0 items-center justify-between bg-primary px-6 text-white shadow-[0_2px_8px_rgba(15,123,146,0.3)]">
       <div className="flex items-center gap-2.5">
@@ -21,9 +30,10 @@ export function Header() {
             {me.usuario}
           </span>
         )}
-        <a
-          href="/logout"
-          className="flex items-center gap-1.5 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-semibold text-white/80 transition-colors hover:bg-white/15"
+        <button
+          onClick={onLogout}
+          disabled={logout.isPending}
+          className="flex items-center gap-1.5 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-semibold text-white/80 transition-colors hover:bg-white/15 disabled:opacity-60"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -31,7 +41,7 @@ export function Header() {
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Salir
-        </a>
+        </button>
       </div>
     </header>
   )
