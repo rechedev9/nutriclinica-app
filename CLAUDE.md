@@ -25,14 +25,15 @@ dist/       cross-compiled release binaries — gitignored
 ## Commands
 
 Backend (from `backend/`):
-- `go build ./...` — compile. `go test ./...` — tests. `go vet ./...` — vet.
+- `go build ./...` — compile. `go test ./...` — tests. `go vet ./...` — vet. `gofmt -l .` lists unformatted files; `gofmt -w .` fixes them (keep the tree gofmt-clean).
+- Single test: `go test ./internal/naming -run TestCarpeta` (the only package with tests today is `internal/naming`).
 - Run against real data: `go run ./cmd/nutriclinica` (serves http://127.0.0.1:5001, opens browser).
 - Flags: `--data-dir <path>`, `--port N`, `--no-browser`, `--fix-orphans`.
 
 Frontend (from `frontend/`, uses **pnpm**):
 - `pnpm install` then `pnpm dev` — Vite dev server on :5173, proxies `/api`, `/fotos`, `/login`, `/logout` to the Go backend on :5001 (run the backend separately).
-- `pnpm build` — typecheck + build the SPA into `backend/web/dist` (where Go embeds it).
-- `pnpm test` — Vitest (the clinical calc golden tests live in `src/lib/calc/__tests__`).
+- `pnpm build` — typecheck (`tsc --noEmit`) + build the SPA into `backend/web/dist` (where Go embeds it).
+- `pnpm test` — Vitest (the clinical calc golden tests live in `src/lib/calc/__tests__`). Single file: `pnpm vitest run src/lib/calc`; single case: `pnpm vitest run -t "calcIMC"`.
 - pnpm gotcha (pnpm 11+): build-script approval lives in `frontend/pnpm-workspace.yaml` (`allowBuilds: esbuild: true`), not in `package.json`.
 
 Full release build: `pwsh build/build.ps1` (or `build/build.sh`) builds the SPA and cross-compiles `win-amd64`, `mac-arm64`, `mac-amd64` into `dist/`.
@@ -69,5 +70,6 @@ React Router models the navigation: the NavRail and patient tabs are **routes** 
 ## Data, auth, and conventions
 
 - `bbdd/` and `fotos/` hold real patient PII and are gitignored. The Go schema is designed to open the existing `pacientes.db` non-destructively; if FK orphans exist from the old FK-off era, the server logs them and `--fix-orphans` cleans them after a `VACUUM INTO` backup.
+- Git remotes: `origin` is the owner's **private** repo (`rechedev9/nutriclinica`) — push here; `upstream` is the original `granrafael/nutriclinica` it derived from. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
 - Keep new code in Spanish (identifiers, UI strings, comments) to match the codebase.
 - Backend: add a route in the matching `handlers/*.go` and a method in the matching `store/*.go`. Frontend: add a feature file/hook alongside the existing ones; don't reach for global state when the URL or a parent's local state suffices.
