@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+
+# No pedir confirmación interactiva al purgar/recrear node_modules
+# (pnpm 11 aborta sin TTY, p. ej. al lanzar dev:full en segundo plano)
+confirmModulesPurge: false
