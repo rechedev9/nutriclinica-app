@@ -19,7 +19,7 @@ func (s *Server) handleListRevisiones(w http.ResponseWriter, r *http.Request) {
 	}
 	revs, err := s.st.Revisiones(pid)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, revs)
@@ -39,7 +39,7 @@ func (s *Server) handleCreateRevision(w http.ResponseWriter, r *http.Request) {
 	normalizeRevision(&rev)
 	created, err := s.st.CreateRevision(pid, &rev)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, created)
@@ -59,7 +59,7 @@ func (s *Server) handleUpdateRevision(w http.ResponseWriter, r *http.Request) {
 	normalizeRevision(&rev)
 	updated, err := s.st.UpdateRevision(id, &rev)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if updated == nil {
@@ -76,7 +76,7 @@ func (s *Server) handleDeleteRevision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.st.DeleteRevision(id); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, ok(nil))

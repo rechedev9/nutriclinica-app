@@ -28,7 +28,7 @@ func NewManager(secretKeyPath string) (*Manager, error) {
 		Path:     "/",
 		MaxAge:   12 * 60 * 60, // 12 horas
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		Secure:   false, // localhost por http
 	}
 	return &Manager{store: store}, nil
@@ -56,8 +56,11 @@ type SessionUser struct {
 }
 
 // Login marca la sesión como autenticada y guarda los datos del usuario.
+// Usa store.New (no Get) para emitir una sesión nueva e ignorar cualquier
+// cookie previa: así se evita la fijación de sesión (un identificador elegido
+// antes del login no sobrevive a la autenticación).
 func (m *Manager) Login(w http.ResponseWriter, r *http.Request, u SessionUser) error {
-	sess, _ := m.store.Get(r, sessionName)
+	sess, _ := m.store.New(r, sessionName)
 	sess.Values["logged_in"] = true
 	sess.Values["user_id"] = u.ID
 	sess.Values["usuario"] = u.Usuario

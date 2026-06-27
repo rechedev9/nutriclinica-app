@@ -8,6 +8,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// dummyHash es un hash bcrypt válido (coste 12) que se compara cuando el
+// usuario no existe, para igualar el coste temporal del login y evitar el canal
+// lateral de tiempo que permitiría enumerar usuarios.
+var dummyHash []byte
+
+func init() {
+	dummyHash, _ = bcrypt.GenerateFromPassword([]byte("nutriclinica-usuario-inexistente"), 12)
+}
+
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Usuario  string `json:"usuario"`
@@ -19,15 +28,21 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := s.st.UsuarioByName(body.Usuario)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
-	if u == nil || bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(body.Password)) != nil {
+	// Comparar siempre un bcrypt (el real o el dummy) para que el tiempo de
+	// respuesta no revele si el usuario existe.
+	hash := dummyHash
+	if u != nil {
+		hash = []byte(u.PasswordHash)
+	}
+	if bcrypt.CompareHashAndPassword(hash, []byte(body.Password)) != nil || u == nil {
 		writeError(w, http.StatusUnauthorized, "Usuario o contraseña incorrectos")
 		return
 	}
 	if err := s.sessions.Login(w, r, auth.SessionUser{ID: u.ID, Usuario: u.Usuario, Rol: u.Rol}); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "usuario": u.Usuario, "rol": u.Rol})
@@ -53,13 +68,13 @@ func (s *Server) handleMyPassword(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "JSON inválido")
 		return
 	}
-	if body.Nueva == "" {
-		writeError(w, http.StatusBadRequest, "La nueva contraseña no puede estar vacía")
+	if msg := validarPassword(body.Nueva); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 	hash, err := s.st.PasswordHash(u.ID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(body.Actual)) != nil {
@@ -68,11 +83,11 @@ func (s *Server) handleMyPassword(w http.ResponseWriter, r *http.Request) {
 	}
 	newHash, err := bcrypt.GenerateFromPassword([]byte(body.Nueva), 12)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if err := s.st.SetPassword(u.ID, string(newHash)); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, ok(nil))

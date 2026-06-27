@@ -39,7 +39,7 @@ func normalizePaciente(in *models.PacienteInput) {
 func (s *Server) handleListPacientes(w http.ResponseWriter, r *http.Request) {
 	ps, err := s.st.Pacientes()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, ps)
@@ -58,7 +58,7 @@ func (s *Server) handleCreatePaciente(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := s.st.CreatePaciente(in)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, p)
@@ -82,7 +82,7 @@ func (s *Server) handleUpdatePaciente(w http.ResponseWriter, r *http.Request) {
 	}
 	p, err := s.st.UpdatePaciente(id, in)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if p == nil {
@@ -100,7 +100,7 @@ func (s *Server) handleDeletePaciente(w http.ResponseWriter, r *http.Request) {
 	}
 	nombre, err := s.st.DeletePaciente(id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	// Borrar la carpeta de fotos del paciente (best-effort, tras el commit).

@@ -3,10 +3,12 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/url"
 
-	_ "modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite"
+	sqlite3lib "modernc.org/sqlite/lib"
 )
 
 // Store envuelve la conexión a la base de datos.
@@ -36,6 +38,16 @@ func Open(dbPath string) (*Store, error) {
 
 // Close cierra la base de datos.
 func (s *Store) Close() error { return s.DB.Close() }
+
+// IsUniqueViolation indica si err corresponde a una violación de restricción
+// UNIQUE de SQLite (código 2067), sin depender de comparar el texto del error.
+func IsUniqueViolation(err error) bool {
+	var se *sqlite3.Error
+	if errors.As(err, &se) {
+		return se.Code() == sqlite3lib.SQLITE_CONSTRAINT_UNIQUE
+	}
+	return false
+}
 
 // VerifyPragmas comprueba que WAL y foreign_keys están activos en la conexión.
 func (s *Store) VerifyPragmas() error {

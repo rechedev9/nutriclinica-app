@@ -4,6 +4,7 @@ package server
 import (
 	"io/fs"
 	"net/http"
+	"time"
 
 	"nutriclinica/internal/auth"
 	"nutriclinica/internal/store"
@@ -11,15 +12,23 @@ import (
 
 // Server agrupa las dependencias de los handlers.
 type Server struct {
-	st       *store.Store
-	sessions *auth.Manager
-	fotosDir string
-	spa      fs.FS // sistema de ficheros del SPA embebido (puede ser nil en dev)
+	st           *store.Store
+	sessions     *auth.Manager
+	fotosDir     string
+	spa          fs.FS // sistema de ficheros del SPA embebido (puede ser nil en dev)
+	loginLimiter *rateLimiter
 }
 
 // New crea un Server.
 func New(st *store.Store, sessions *auth.Manager, fotosDir string, spa fs.FS) *Server {
-	return &Server{st: st, sessions: sessions, fotosDir: fotosDir, spa: spa}
+	return &Server{
+		st:       st,
+		sessions: sessions,
+		fotosDir: fotosDir,
+		spa:      spa,
+		// Máx. 10 intentos de login por IP cada minuto.
+		loginLimiter: newRateLimiter(10, time.Minute),
+	}
 }
 
 // Handler construye el http.Handler con todas las rutas y middleware global.
@@ -28,7 +37,7 @@ func (s *Server) Handler() http.Handler {
 
 	// --- Auth (sin requireAuth). Bajo /api para no colisionar con las rutas
 	// de cliente del SPA (/login, /logout son rutas de React Router). ---
-	mux.HandleFunc("POST /api/login", s.handleLogin)
+	mux.HandleFunc("POST /api/login", limitMW(s.loginLimiter, s.handleLogin))
 	mux.HandleFunc("POST /api/logout", s.handleLogout)
 	mux.HandleFunc("GET /api/me", s.requireAuth(s.handleMe))
 	mux.HandleFunc("POST /api/me/password", s.requireAuth(s.handleMyPassword))
@@ -84,5 +93,5 @@ func (s *Server) Handler() http.Handler {
 	// --- SPA + estáticos (fallback) ---
 	mux.HandleFunc("/", s.handleSPA)
 
-	return loggingMW(recoverMW(mux))
+	return loggingMW(securityHeadersMW(recoverMW(mux)))
 }

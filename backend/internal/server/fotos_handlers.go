@@ -21,7 +21,7 @@ func (s *Server) handleListFotos(w http.ResponseWriter, r *http.Request) {
 	}
 	fotos, err := s.st.Fotos(pid)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, fotos)
@@ -44,9 +44,23 @@ func (s *Server) handleUploadFoto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// Validar que el contenido real es una imagen (accept="image/*" del HTML es
+	// solo una pista del navegador, no una garantía). Se inspeccionan los
+	// primeros bytes y se rebobina el lector para no perder datos.
+	sniff := make([]byte, 512)
+	n, _ := io.ReadFull(file, sniff)
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		serverError(w, err)
+		return
+	}
+	if !strings.HasPrefix(http.DetectContentType(sniff[:n]), "image/") {
+		writeError(w, http.StatusBadRequest, "El archivo no es una imagen")
+		return
+	}
+
 	nombre, err := s.st.PacienteNombre(pid)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if nombre == "" {
@@ -66,18 +80,21 @@ func (s *Server) handleUploadFoto(w http.ResponseWriter, r *http.Request) {
 	filenameRel := carpeta + "/" + fname
 
 	dir := filepath.Join(s.fotosDir, carpeta)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		serverError(w, err)
 		return
 	}
-	dst, err := os.Create(filepath.Join(dir, fname))
+	fullPath := filepath.Join(dir, fname)
+	// 0600: las fotos contienen PII, no deben ser legibles por otros usuarios.
+	dst, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if _, err := io.Copy(dst, file); err != nil {
 		dst.Close()
-		writeError(w, http.StatusInternalServerError, err.Error())
+		_ = os.Remove(fullPath)
+		serverError(w, err)
 		return
 	}
 	dst.Close()
@@ -88,7 +105,9 @@ func (s *Server) handleUploadFoto(w http.ResponseWriter, r *http.Request) {
 	}
 	foto, err := s.st.CreateFoto(pid, filenameRel, nota)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		// Si el INSERT falla, no dejar el archivo huérfano en disco.
+		_ = os.Remove(fullPath)
+		serverError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, foto)
@@ -102,16 +121,19 @@ func (s *Server) handleDeleteFoto(w http.ResponseWriter, r *http.Request) {
 	}
 	foto, err := s.st.Foto(id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if foto != nil {
-		rel := filepath.FromSlash(foto.Filename)
-		_ = os.Remove(filepath.Join(s.fotosDir, rel))
+		// Borrar primero el registro (operación verificable) y luego el archivo
+		// best-effort: así un fallo del DELETE no deja el archivo perdido con la
+		// BD aún apuntándolo.
 		if err := s.st.DeleteFoto(id); err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			serverError(w, err)
 			return
 		}
+		rel := filepath.FromSlash(foto.Filename)
+		_ = os.Remove(filepath.Join(s.fotosDir, rel))
 	}
 	writeJSON(w, http.StatusOK, ok(nil))
 }
@@ -119,14 +141,24 @@ func (s *Server) handleDeleteFoto(w http.ResponseWriter, r *http.Request) {
 // handleServeFoto sirve un archivo de la carpeta de fotos.
 func (s *Server) handleServeFoto(w http.ResponseWriter, r *http.Request) {
 	rel := r.PathValue("path")
-	// Evitar path traversal.
-	clean := filepath.Clean("/" + rel)
-	full := filepath.Join(s.fotosDir, filepath.FromSlash(clean))
-	if !strings.HasPrefix(full, filepath.Clean(s.fotosDir)) {
+	full := filepath.Join(s.fotosDir, filepath.FromSlash(filepath.Clean("/"+rel)))
+	if !dentroDe(s.fotosDir, full) {
 		writeError(w, http.StatusBadRequest, "Ruta inválida")
 		return
 	}
 	http.ServeFile(w, r, full)
+}
+
+// dentroDe comprueba que target no escapa del directorio base. Usa filepath.Rel
+// y rechaza cualquier resultado que empiece por ".." (cubre también el caso de
+// Windows, cuyo sistema de ficheros es case-insensitive y donde un HasPrefix
+// sensible a mayúsculas podría dar un falso negativo).
+func dentroDe(base, target string) bool {
+	rel, err := filepath.Rel(filepath.Clean(base), filepath.Clean(target))
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 func randHex(n int) string {

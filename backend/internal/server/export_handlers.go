@@ -46,12 +46,12 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 		fmt.Sscan(idStr, &id)
 		p, err := s.st.Paciente(id)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			serverError(w, err)
 			return
 		}
 		if p != nil {
 			if err := s.fillCountsPublic(p); err != nil {
-				writeError(w, http.StatusInternalServerError, err.Error())
+				serverError(w, err)
 				return
 			}
 			pacientes = []models.Paciente{*p}
@@ -61,7 +61,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 		var err error
 		pacientes, err = s.st.Pacientes()
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			serverError(w, err)
 			return
 		}
 	}
@@ -122,7 +122,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 		fmt.Sscan(idStr, &id)
 		rs, err := s.st.Revisiones(id)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			serverError(w, err)
 			return
 		}
 		for _, rv := range rs {
@@ -131,7 +131,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 	} else {
 		rc, err := s.st.RevisionesConNombre()
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			serverError(w, err)
 			return
 		}
 		for _, x := range rc {
@@ -171,7 +171,7 @@ func (s *Server) handleExportRevision(w http.ResponseWriter, r *http.Request) {
 	}
 	rev, err := s.st.Revision(id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if rev == nil {
@@ -180,7 +180,7 @@ func (s *Server) handleExportRevision(w http.ResponseWriter, r *http.Request) {
 	}
 	pac, err := s.st.Paciente(rev.PacienteID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		serverError(w, err)
 		return
 	}
 	if pac == nil {
