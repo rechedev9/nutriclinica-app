@@ -45,7 +45,7 @@ export function AlmacenTab() {
       </div>
 
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold">Almacén — productos</h3>
+        <h3 className="text-lg font-bold">Productos</h3>
         <Button
           onClick={() => {
             setEditing(undefined)

@@ -81,7 +81,7 @@ export function FotosTab() {
         <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 text-sm font-semibold">{pending.length} archivo(s) listo(s) para subir</div>
           <input
-            className="mb-3 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 outline-none focus:border-primary focus:bg-surface"
+            className="mb-3 w-full rounded-lg border border-border bg-app px-3 py-2 outline-none focus:border-primary focus:bg-surface"
             placeholder="Nota (opcional, se aplica a todas)"
             value={nota}
             onChange={(e) => setNota(e.target.value)}

@@ -69,7 +69,7 @@ export function FichaTab() {
                           : '#a16207',
                   }}
                 >
-                  {imc.val} — {imc.etiq}
+                  {imc.val} · {imc.etiq}
                 </span>
               ) : (
                 ''

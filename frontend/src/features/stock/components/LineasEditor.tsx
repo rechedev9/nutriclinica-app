@@ -31,7 +31,7 @@ export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
       {lineas.map((l, i) => (
         <div key={i} className="grid grid-cols-[1fr_80px_100px_36px] items-center gap-2 max-md:grid-cols-2">
           <Select value={l.producto_id} onChange={(e) => onProducto(i, Number(e.target.value))}>
-            <option value={0}>— Producto —</option>
+            <option value={0}>Producto…</option>
             {productos.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nombre}

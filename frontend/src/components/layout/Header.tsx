@@ -21,9 +21,8 @@ export function Header() {
           <path d="M8 14s1.5 2 4 2 4-2 4-2" />
         </svg>
         <span className="text-xl font-bold">NutriClínica</span>
-        <span className="hidden text-sm font-normal opacity-70 sm:inline">
-          — Gestión de pacientes en nutrición
-        </span>
+        <span className="mx-1 hidden h-4 w-px bg-white/25 sm:inline-block" aria-hidden="true" />
+        <span className="hidden text-sm font-medium text-white/70 sm:inline">Gestión de pacientes</span>
       </div>
       <div className="flex items-center gap-3">
         <ThemeToggle />
