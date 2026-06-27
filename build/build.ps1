@@ -32,5 +32,26 @@ foreach ($t in $targets) {
 Remove-Item Env:GOOS, Env:GOARCH, Env:CGO_ENABLED -ErrorAction SilentlyContinue
 Pop-Location
 
-Write-Host "==> Listo. Binarios en $dist" -ForegroundColor Green
-Get-ChildItem $dist | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
+Write-Host '==> Ensamblando carpetas distribuibles...' -ForegroundColor Cyan
+
+# Windows: ejecutable + icono + creador de acceso directo + LEEME.
+$win = "$dist/NutriClinica-Windows"
+New-Item -ItemType Directory -Force $win | Out-Null
+Copy-Item "$dist/NutriClinica-win-amd64.exe" "$win/NutriClinica.exe" -Force
+Copy-Item "$root/icono_nutri.ico" "$win/icono_nutri.ico" -Force
+Copy-Item "$root/deploy/Crear acceso directo.bat" $win -Force
+Copy-Item "$root/deploy/crear-acceso-directo.ps1" $win -Force
+Copy-Item "$root/deploy/LEEME.txt" $win -Force
+
+# macOS: binarios (arm64 + amd64) + lanzador .command + LEEME.
+$mac = "$dist/NutriClinica-macOS"
+New-Item -ItemType Directory -Force $mac | Out-Null
+Copy-Item "$dist/NutriClinica-mac-arm64" $mac -Force
+Copy-Item "$dist/NutriClinica-mac-amd64" $mac -Force
+Copy-Item "$root/deploy/NutriClinica.command" $mac -Force
+Copy-Item "$root/deploy/LEEME.txt" $mac -Force
+
+Write-Host "==> Listo." -ForegroundColor Green
+Write-Host "    Binarios sueltos:        $dist" -ForegroundColor Gray
+Write-Host "    Carpeta Windows lista:   $win" -ForegroundColor Gray
+Write-Host "    Carpeta macOS lista:     $mac" -ForegroundColor Gray

@@ -37,8 +37,9 @@ Frontend (from `frontend/`, uses **pnpm**):
 - `pnpm test` — Vitest (the clinical calc golden tests live in `src/lib/calc/__tests__`). Single file: `pnpm vitest run src/lib/calc`; single case: `pnpm vitest run -t "calcIMC"`.
 - pnpm gotcha (pnpm 11+): build-script approval lives in `frontend/pnpm-workspace.yaml` (`allowBuilds: esbuild: true`), not in `package.json`.
 
-Full release build: `pwsh build/build.ps1` (or `build/build.sh`) builds the SPA and cross-compiles `win-amd64`, `mac-arm64`, `mac-amd64` into `dist/`.
+Full release build: `pwsh build/build.ps1` (or `build/build.sh`) builds the SPA, cross-compiles `win-amd64`, `mac-arm64`, `mac-amd64` into `dist/`, and assembles ready-to-distribute folders `dist/NutriClinica-Windows/` and `dist/NutriClinica-macOS/`.
 Cross-compilation needs no C toolchain because the SQLite driver is pure-Go.
+The distributable folders bundle the binary plus the launchers in `deploy/`: on Windows the end user double-clicks `Crear acceso directo.bat` (runs `crear-acceso-directo.ps1`) to drop a `NutriClínica` shortcut on the Desktop pointing at `NutriClinica.exe` with `icono_nutri.ico`; on macOS they use `NutriClinica.command`. The app is portable: `bbdd/` and `fotos/` are created next to the binary, so to migrate data the user copies those folders into the install dir.
 
 Login during development: `admin` / `admin` or `Jose` / `Jose123` (seeded on first run).
 

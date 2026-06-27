@@ -1,0 +1,39 @@
+NutriClínica - Cómo instalar y crear el acceso directo
+========================================================
+
+Esta carpeta es portable: contiene la aplicación en un solo ejecutable que abre
+el navegador automáticamente. Tus datos (base de datos y fotos) se guardan en las
+subcarpetas "bbdd" y "fotos" que se crean junto al ejecutable.
+
+------------------------------------------------------------
+WINDOWS
+------------------------------------------------------------
+1. Copia toda esta carpeta donde quieras (por ejemplo C:\NutriClinica).
+2. (Opcional) Si ya tenías datos, copia tus carpetas "bbdd" y "fotos" aquí dentro.
+3. Haz doble clic en "Crear acceso directo.bat".
+   Aparecerá un icono "NutriClínica" en el escritorio.
+4. Haz doble clic en ese icono para abrir la aplicación.
+
+Nota: la primera vez Windows (SmartScreen) puede avisar de que es una app sin
+firmar. Pulsa "Más información" y "Ejecutar de todas formas".
+
+------------------------------------------------------------
+macOS
+------------------------------------------------------------
+1. Copia esta carpeta donde quieras.
+2. Para tenerlo a mano, arrastra "NutriClinica.command" al Escritorio (o crea un
+   alias con clic derecho > Crear alias y muévelo al Escritorio).
+3. Haz doble clic en "NutriClinica.command" para abrir la aplicación.
+
+Nota: la primera vez macOS (Gatekeeper) puede bloquear la app por no estar firmada.
+Haz clic derecho sobre el archivo > Abrir, y confirma. El lanzador también intenta
+quitar el bloqueo automáticamente.
+
+------------------------------------------------------------
+Acceso (usuarios iniciales)
+------------------------------------------------------------
+   admin / admin       (administrador)
+   Jose  / Jose123
+
+Cambia estas contraseñas desde la propia aplicación (sección Usuarios) antes de
+usarla con datos reales.

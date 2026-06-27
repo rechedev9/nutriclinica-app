@@ -26,5 +26,27 @@ build windows amd64 NutriClinica-win-amd64.exe
 build darwin  arm64 NutriClinica-mac-arm64
 build darwin  amd64 NutriClinica-mac-amd64
 
-echo "==> Listo. Binarios en $DIST"
-ls -lh "$DIST"
+echo "==> Ensamblando carpetas distribuibles..."
+
+# Windows: ejecutable + icono + creador de acceso directo + LEEME.
+WIN="$DIST/NutriClinica-Windows"
+mkdir -p "$WIN"
+cp "$DIST/NutriClinica-win-amd64.exe" "$WIN/NutriClinica.exe"
+cp "$ROOT/icono_nutri.ico" "$WIN/icono_nutri.ico"
+cp "$ROOT/deploy/Crear acceso directo.bat" "$WIN/"
+cp "$ROOT/deploy/crear-acceso-directo.ps1" "$WIN/"
+cp "$ROOT/deploy/LEEME.txt" "$WIN/"
+
+# macOS: binarios (arm64 + amd64) + lanzador .command + LEEME.
+MAC="$DIST/NutriClinica-macOS"
+mkdir -p "$MAC"
+cp "$DIST/NutriClinica-mac-arm64" "$MAC/"
+cp "$DIST/NutriClinica-mac-amd64" "$MAC/"
+cp "$ROOT/deploy/NutriClinica.command" "$MAC/"
+chmod +x "$MAC/NutriClinica.command" "$MAC/NutriClinica-mac-arm64" "$MAC/NutriClinica-mac-amd64"
+cp "$ROOT/deploy/LEEME.txt" "$MAC/"
+
+echo "==> Listo."
+echo "    Binarios sueltos:      $DIST"
+echo "    Carpeta Windows lista: $WIN"
+echo "    Carpeta macOS lista:   $MAC"
