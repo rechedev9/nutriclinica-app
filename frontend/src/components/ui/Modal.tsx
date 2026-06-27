@@ -17,7 +17,7 @@ export function Modal({ open, onClose, title, children, className }: Props) {
         <Dialog.Overlay className="fixed inset-0 z-50 animate-fadeIn bg-black/40" />
         <Dialog.Content
           className={cn(
-            'fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2 animate-slideUp overflow-y-auto rounded-card bg-white p-6 shadow-md outline-none',
+            'fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2 animate-slideUp overflow-y-auto rounded-card bg-surface p-6 shadow-md outline-none',
             className,
           )}
         >

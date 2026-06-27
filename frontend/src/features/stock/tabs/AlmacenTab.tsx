@@ -9,7 +9,7 @@ import type { Producto } from '@/types'
 
 function Kpi({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
   return (
-    <div className="rounded-card bg-white p-4 shadow-card">
+    <div className="rounded-card bg-surface p-4 shadow-card">
       <div className="text-[13px] text-ink-muted">{label}</div>
       <div className={cn('mt-1 text-2xl font-extrabold', danger && 'text-danger')}>{value}</div>
     </div>
@@ -59,7 +59,7 @@ export function AlmacenTab() {
       {rows.length === 0 ? (
         <div className="py-8 text-center text-sm text-ink-muted">No hay productos. Crea el primero.</div>
       ) : (
-        <div className="overflow-x-auto rounded-card bg-white shadow-card">
+        <div className="overflow-x-auto rounded-card bg-surface shadow-card">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-ink-muted">

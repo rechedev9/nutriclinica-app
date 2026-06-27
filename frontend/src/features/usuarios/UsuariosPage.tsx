@@ -41,7 +41,7 @@ export function UsuariosPage() {
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-card bg-white shadow-card">
+      <div className="overflow-x-auto rounded-card bg-surface shadow-card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-ink-muted">

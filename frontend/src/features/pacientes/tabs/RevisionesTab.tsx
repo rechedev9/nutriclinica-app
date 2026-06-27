@@ -24,7 +24,7 @@ function RevisionCard({
   const medidas = ALL_MEDIDAS.filter((m) => rev[m.key] != null)
 
   return (
-    <div className="rounded-card bg-white shadow-card">
+    <div className="rounded-card bg-surface shadow-card">
       <div className="flex items-center gap-3 p-4">
         <button onClick={() => setOpen((o) => !o)} className="flex flex-1 items-center gap-3 text-left">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-light text-primary">

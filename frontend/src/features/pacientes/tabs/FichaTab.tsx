@@ -15,7 +15,7 @@ function Campo({ label, value }: { label: string; value: React.ReactNode }) {
 
 function Seccion({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-card bg-white p-5 shadow-card">
+    <div className="rounded-card bg-surface p-5 shadow-card">
       <div className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-muted">{title}</div>
       {children}
     </div>

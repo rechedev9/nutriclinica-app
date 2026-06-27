@@ -29,7 +29,7 @@ export function LoginPage() {
     >
       <form
         onSubmit={onSubmit}
-        className="w-[min(400px,92vw)] rounded-card bg-white p-8 shadow-md"
+        className="w-[min(400px,92vw)] rounded-card bg-surface p-8 shadow-md"
       >
         <div className="mb-6 flex items-center gap-2">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0F7B92" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -44,14 +44,14 @@ export function LoginPage() {
         <div className="flex flex-col gap-3">
           <input
             autoFocus
-            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 outline-none focus:border-primary focus:bg-white"
+            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 outline-none focus:border-primary focus:bg-surface"
             placeholder="Usuario"
             value={usuario}
             onChange={(e) => setUsuario(e.target.value)}
           />
           <input
             type="password"
-            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 outline-none focus:border-primary focus:bg-white"
+            className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 outline-none focus:border-primary focus:bg-surface"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

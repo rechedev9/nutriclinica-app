@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useMe, useLogout } from '@/features/auth/useAuth'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 export function Header() {
   const { data: me } = useMe()
@@ -25,6 +26,7 @@ export function Header() {
         </span>
       </div>
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         {me && (
           <span className="text-[13px] font-semibold uppercase tracking-wider text-white/60">
             {me.usuario}

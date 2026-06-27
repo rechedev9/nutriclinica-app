@@ -1,7 +1,11 @@
 import type { Config } from 'tailwindcss'
 
-// Tokens trasladados del :root de la SPA original para conservar el look.
+// Tokens semánticos como variables CSS (claro/oscuro). La marca (primary) y los
+// colores vivos (avatares, semáforos) se mantienen fijos en ambos temas.
+const v = (name: string) => `rgb(var(${name}) / <alpha-value>)`
+
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
@@ -9,16 +13,17 @@ export default {
         primary: {
           DEFAULT: '#0F7B92',
           dark: '#0a6577',
-          light: '#E6F3F6',
+          light: v('--primary-light'),
         },
+        app: v('--app'),
         surface: {
-          DEFAULT: '#ffffff',
-          2: '#F5F8FA',
+          DEFAULT: v('--surface'),
+          2: v('--surface-2'),
         },
-        border: '#E8EDF2',
+        border: v('--border'),
         ink: {
-          DEFAULT: '#0F1B2D',
-          muted: '#647084',
+          DEFAULT: v('--ink'),
+          muted: v('--ink-muted'),
         },
         danger: '#ef4444',
         success: '#0E9F6E',

@@ -59,7 +59,7 @@ export function FotosTab() {
         onClick={() => inputRef.current?.click()}
         className={cn(
           'flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed p-8 text-center transition-colors',
-          dragOver ? 'border-primary bg-primary-light' : 'border-border bg-white',
+          dragOver ? 'border-primary bg-primary-light' : 'border-border bg-surface',
         )}
       >
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-primary">
@@ -78,10 +78,10 @@ export function FotosTab() {
       </div>
 
       {pending.length > 0 && (
-        <div className="rounded-card bg-white p-4 shadow-card">
+        <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 text-sm font-semibold">{pending.length} archivo(s) listo(s) para subir</div>
           <input
-            className="mb-3 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 outline-none focus:border-primary focus:bg-white"
+            className="mb-3 w-full rounded-lg border border-border bg-surface-2 px-3 py-2 outline-none focus:border-primary focus:bg-surface"
             placeholder="Nota (opcional, se aplica a todas)"
             value={nota}
             onChange={(e) => setNota(e.target.value)}

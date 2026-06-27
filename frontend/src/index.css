@@ -9,13 +9,33 @@
 @tailwind utilities;
 
 @layer base {
+  /* Tokens semánticos (canal RGB para soportar opacidad de Tailwind). */
+  :root {
+    --app: 238 241 246; /* #EEF1F6 */
+    --surface: 255 255 255; /* #ffffff */
+    --surface-2: 245 248 250; /* #F5F8FA */
+    --border: 232 237 242; /* #E8EDF2 */
+    --ink: 15 27 45; /* #0F1B2D */
+    --ink-muted: 100 112 132; /* #647084 */
+    --primary-light: 230 243 246; /* #E6F3F6 */
+  }
+  .dark {
+    --app: 11 18 32; /* #0B1220 */
+    --surface: 17 28 46; /* #111C2E */
+    --surface-2: 28 40 64; /* #1C2840 */
+    --border: 36 48 66; /* #243042 */
+    --ink: 229 237 245; /* #E5EDF5 */
+    --ink-muted: 147 164 186; /* #93A4BA */
+    --primary-light: 15 49 60; /* #0F313C (teal oscuro para item activo) */
+  }
+
   html,
   body,
   #root {
     height: 100%;
   }
   body {
-    @apply bg-[#EEF1F6] font-sans text-ink antialiased;
+    @apply bg-app font-sans text-ink antialiased;
   }
 }
 
@@ -35,6 +55,17 @@
   @page {
     size: A4 portrait;
     margin: 14mm 12mm;
+  }
+  /* El informe PDF siempre sale en claro, aunque el modo oscuro esté activo. */
+  :root,
+  .dark {
+    --app: 238 241 246;
+    --surface: 255 255 255;
+    --surface-2: 245 248 250;
+    --border: 232 237 242;
+    --ink: 15 27 45;
+    --ink-muted: 100 112 132;
+    --primary-light: 230 243 246;
   }
   .print-hide {
     display: none !important;

@@ -25,11 +25,11 @@ export function VentasTab() {
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <div className="rounded-card bg-white p-4 shadow-card">
+        <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="text-[13px] text-ink-muted">Ventas</div>
           <div className="mt-1 text-2xl font-extrabold">{rows.length}</div>
         </div>
-        <div className="rounded-card bg-white p-4 shadow-card">
+        <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="text-[13px] text-ink-muted">Total ingresado</div>
           <div className="mt-1 text-2xl font-extrabold">{totalIngresado.toFixed(2)} €</div>
         </div>
@@ -44,7 +44,7 @@ export function VentasTab() {
         <div className="py-8 text-center text-sm text-ink-muted">Sin ventas registradas.</div>
       ) : (
         rows.map((v) => (
-          <div key={v.id} className="rounded-card bg-white shadow-card">
+          <div key={v.id} className="rounded-card bg-surface shadow-card">
             <div className="flex items-center gap-3 p-4">
               <button onClick={() => setExpanded(expanded === v.id ? null : v.id)} className="flex flex-1 items-center gap-3 text-left">
                 <div className="flex-1">

@@ -26,7 +26,7 @@ function KpiCard({
   sub?: React.ReactNode
 }) {
   return (
-    <div className="rounded-card bg-white p-4 shadow-card">
+    <div className="rounded-card bg-surface p-4 shadow-card">
       <div className="text-[13px] text-ink-muted">{label}</div>
       <div className="mt-1 text-2xl font-extrabold">
         {value}
@@ -131,7 +131,7 @@ export function AnalisisTab() {
       </div>
 
       {/* Tabla de evolución */}
-      <div className="overflow-x-auto rounded-card bg-white p-4 shadow-card">
+      <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
         <div className="mb-2 text-sm font-bold">Evolución</div>
         <table className="w-full text-sm">
           <thead>
@@ -161,7 +161,7 @@ export function AnalisisTab() {
       </div>
 
       {/* Gráfico peso + grasa */}
-      <div className="rounded-card bg-white p-4 shadow-card">
+      <div className="rounded-card bg-surface p-4 shadow-card">
         <div className="mb-1 text-sm font-bold">Evolución del peso y la masa grasa</div>
         <div className="mb-3 text-[13px] text-ink-muted">kg · % grasa (Durnin-Womersley)</div>
         <div className="h-[280px]">
@@ -170,7 +170,7 @@ export function AnalisisTab() {
       </div>
 
       {/* Perímetros */}
-      <div className="rounded-card bg-white p-4 shadow-card">
+      <div className="rounded-card bg-surface p-4 shadow-card">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div className="text-sm font-bold">Evolución de medidas</div>
           <div className="flex flex-wrap gap-1.5 print-hide">
@@ -208,7 +208,7 @@ export function AnalisisTab() {
 
       {/* Pliegues última revisión */}
       {derived.pliegues.data.length > 0 && (
-        <div className="rounded-card bg-white p-4 shadow-card">
+        <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="mb-3 text-sm font-bold">Pliegues cutáneos (última revisión)</div>
           <div className="h-[280px]">
             <ChartPliegues {...derived.pliegues} />

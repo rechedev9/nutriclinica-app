@@ -57,7 +57,7 @@ export function PacienteDetail() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden max-md:overflow-visible">
-      <div className="flex shrink-0 items-center gap-3.5 border-b border-border bg-white px-6 py-4 max-md:flex-wrap print-hide">
+      <div className="flex shrink-0 items-center gap-3.5 border-b border-border bg-surface px-6 py-4 max-md:flex-wrap print-hide">
         <Avatar nombre={paciente.nombre} className="h-[52px] w-[52px] text-xl shadow-[0_6px_16px_-4px_rgba(15,123,146,.45)]" />
         <div className="flex-1">
           <div className="text-[22px] font-bold">{paciente.nombre}</div>
@@ -81,7 +81,7 @@ export function PacienteDetail() {
         </div>
       </div>
 
-      <div className="flex gap-1 border-b border-border bg-white px-4 max-md:overflow-x-auto no-scrollbar print-hide">
+      <div className="flex gap-1 border-b border-border bg-surface px-4 max-md:overflow-x-auto no-scrollbar print-hide">
         {tabs.map((t) => (
           <NavLink
             key={t.to}

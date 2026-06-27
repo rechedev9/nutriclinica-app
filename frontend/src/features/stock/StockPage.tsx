@@ -11,7 +11,7 @@ const tabs = [
 export function StockPage() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden max-md:overflow-visible">
-      <div className="flex gap-1 border-b border-border bg-white px-6 max-md:overflow-x-auto no-scrollbar">
+      <div className="flex gap-1 border-b border-border bg-surface px-6 max-md:overflow-x-auto no-scrollbar">
         {tabs.map((t) => (
           <NavLink
             key={t.to}
@@ -27,7 +27,7 @@ export function StockPage() {
           </NavLink>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto bg-[#EEF1F6] max-md:overflow-visible">
+      <div className="flex-1 overflow-y-auto bg-app max-md:overflow-visible">
         <Outlet />
       </div>
     </div>

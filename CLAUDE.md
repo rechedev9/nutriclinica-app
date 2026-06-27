@@ -111,6 +111,7 @@ Dentro de una transacción no escribas la respuesta: devuelve el error para hace
 ### UI y estilo
 - Respeta los tokens de diseño de `tailwind.config.ts` (paleta `primary`/`surface`, radios `rounded-card`/`rounded-lg`, sombras `card`/`md`, fuente Hanken Grotesk).
 El redondeo es deliberado en este diseño: usa los radios del theme, no valores sueltos.
+- **Modo claro/oscuro** con `darkMode: 'class'`. Los tokens semánticos (`app`, `surface`, `surface-2`, `border`, `ink`, `ink-muted`, `primary-light`) son **variables CSS** definidas en `src/index.css` (`:root` y `.dark`), así que `bg-surface`/`text-ink`/`border-border` se adaptan solos. Usa siempre estos tokens para superficies y texto; nunca `bg-white` ni hex literales (rompen el dark). El tema lo gestiona `src/lib/theme/ThemeProvider.tsx` (preferencia `light`/`dark`/`system` en `localStorage('nutri-theme')`, con script anti-flash en `index.html`). Los gráficos Chart.js toman sus colores de `src/lib/chart/useChartTheme.ts` (grid/ticks/leyenda/tooltip) e incluyen el tema en las deps de `useMemo(options)`.
 - Iconos: SVG inline coherente con los componentes existentes; no añadas una librería de iconos.
 - En botones, indica la carga con la prop `isLoading` del componente `Button` (muestra un spinner en el color del texto, deshabilita y conserva el ancho); no cambies el texto del botón a mano ni añadas elementos que descuadren.
 - Nunca dejes texto en inglés visible para el usuario: todas las cadenas de UI van en español.

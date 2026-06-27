@@ -38,7 +38,7 @@ export function ProveedoresTab() {
       {rows.length === 0 ? (
         <div className="py-8 text-center text-sm text-ink-muted">Sin proveedores.</div>
       ) : (
-        <div className="overflow-x-auto rounded-card bg-white shadow-card">
+        <div className="overflow-x-auto rounded-card bg-surface shadow-card">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-ink-muted">

@@ -34,7 +34,7 @@ export function PacienteSidebar({ pacientes, loading, activeId, onNew }: Props) 
             <path d="m21 21-4.35-4.35" />
           </svg>
           <input
-            className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-white"
+            className="w-full rounded-lg border border-border bg-surface-2 py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-surface"
             placeholder="Buscar paciente…"
             value={q}
             onChange={(e) => setQ(e.target.value)}

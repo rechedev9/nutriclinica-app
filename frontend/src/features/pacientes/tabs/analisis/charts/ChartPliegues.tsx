@@ -1,5 +1,6 @@
 import { Bar } from 'react-chartjs-2'
 import { useMemo } from 'react'
+import { useChartTheme, tooltipPlugin } from '@/lib/chart/useChartTheme'
 
 export function ChartPliegues({
   labels,
@@ -10,6 +11,8 @@ export function ChartPliegues({
   data: number[]
   colors: string[]
 }) {
+  const t = useChartTheme()
+
   const chartData = useMemo(
     () => ({
       labels,
@@ -32,15 +35,17 @@ export function ChartPliegues({
     () => ({
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: false }, tooltip: tooltipPlugin(t) },
       scales: {
+        x: { grid: { display: false, drawBorder: false }, ticks: { color: t.ticks } },
         y: {
           beginAtZero: true,
-          ticks: { callback: (v: string | number) => `${v} mm` },
+          grid: { color: t.grid, drawBorder: false },
+          ticks: { color: t.ticks, callback: (v: string | number) => `${v} mm` },
         },
       },
     }),
-    [],
+    [t],
   )
 
   return <Bar data={chartData} options={options} />
