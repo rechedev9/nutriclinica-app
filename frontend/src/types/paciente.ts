@@ -17,6 +17,8 @@ export interface Paciente {
   talla: number | null
   grupo_sanguineo: string | null
   creado: string | null
+  consentimiento: number
+  consentimiento_fecha: string | null
   num_fotos: number
   num_revisiones: number
 }
@@ -36,4 +38,5 @@ export interface PacienteInput {
   peso?: number | null
   talla?: number | null
   grupo_sanguineo?: string | null
+  consentimiento?: number
 }

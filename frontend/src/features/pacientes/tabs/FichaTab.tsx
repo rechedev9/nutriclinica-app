@@ -39,6 +39,18 @@ export function FichaTab() {
           />
           <Campo label="Teléfono" value={p.telefono} />
           <Campo label="Email" value={p.email} />
+          <Campo
+            label="Consentimiento RGPD"
+            value={
+              p.consentimiento === 1 ? (
+                <span className="text-success">
+                  ✓ Otorgado{p.consentimiento_fecha ? ` · ${fmtFecha(p.consentimiento_fecha.slice(0, 10))}` : ''}
+                </span>
+              ) : (
+                <span className="text-danger">Pendiente</span>
+              )
+            }
+          />
         </div>
       </Seccion>
 

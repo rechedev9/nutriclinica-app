@@ -2,18 +2,33 @@ package store
 
 import (
 	"database/sql"
+	"time"
 
 	"nutriclinica/internal/models"
 )
 
+// nowStr devuelve la fecha-hora actual en el formato de datetime('now') de
+// SQLite, para sellar el momento del consentimiento.
+func nowStr() string { return time.Now().Format("2006-01-02 15:04:05") }
+
+// consInt normaliza el consentimiento recibido (*int) a 0/1.
+func consInt(p *int) int {
+	if p != nil && *p == 1 {
+		return 1
+	}
+	return 0
+}
+
 const pacienteCols = `id, nombre, fecha_nac, sexo, dni, telefono, email, objetivo,
-	actividad_fisica, intolerancias, patologias, notas, peso, talla, grupo_sanguineo, creado`
+	actividad_fisica, intolerancias, patologias, notas, peso, talla, grupo_sanguineo, creado,
+	consentimiento, consentimiento_fecha`
 
 func scanPaciente(row scanner) (*models.Paciente, error) {
 	var p models.Paciente
 	err := row.Scan(&p.ID, &p.Nombre, &p.FechaNac, &p.Sexo, &p.DNI, &p.Telefono,
 		&p.Email, &p.Objetivo, &p.ActividadFisica, &p.Intolerancias, &p.Patologias,
-		&p.Notas, &p.Peso, &p.Talla, &p.GrupoSanguineo, &p.Creado)
+		&p.Notas, &p.Peso, &p.Talla, &p.GrupoSanguineo, &p.Creado,
+		&p.Consentimiento, &p.ConsentFecha)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +60,7 @@ func (s *Store) Pacientes() ([]models.Paciente, error) {
 		if err := rows.Scan(&p.ID, &p.Nombre, &p.FechaNac, &p.Sexo, &p.DNI, &p.Telefono,
 			&p.Email, &p.Objetivo, &p.ActividadFisica, &p.Intolerancias, &p.Patologias,
 			&p.Notas, &p.Peso, &p.Talla, &p.GrupoSanguineo, &p.Creado,
+			&p.Consentimiento, &p.ConsentFecha,
 			&p.NumFotos, &p.NumRevisiones); err != nil {
 			return nil, err
 		}
@@ -75,14 +91,21 @@ func (s *Store) fillCounts(p *models.Paciente) error {
 
 // CreatePaciente inserta un paciente y devuelve el creado con contadores a 0.
 func (s *Store) CreatePaciente(in models.PacienteInput) (*models.Paciente, error) {
+	cons := consInt(in.Consentimiento)
+	var consFecha *string
+	if cons == 1 {
+		f := nowStr()
+		consFecha = &f
+	}
 	res, err := s.DB.Exec(
 		`INSERT INTO pacientes
 		 (nombre, fecha_nac, sexo, dni, telefono, email, objetivo, actividad_fisica,
-		  intolerancias, patologias, notas, peso, talla, grupo_sanguineo)
-		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		  intolerancias, patologias, notas, peso, talla, grupo_sanguineo,
+		  consentimiento, consentimiento_fecha)
+		 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		in.Nombre, in.FechaNac, in.Sexo, in.DNI, in.Telefono, in.Email, in.Objetivo,
 		in.ActividadFisica, in.Intolerancias, in.Patologias, in.Notas, in.Peso, in.Talla,
-		in.GrupoSanguineo,
+		in.GrupoSanguineo, cons, consFecha,
 	)
 	if err != nil {
 		return nil, err
@@ -96,13 +119,30 @@ func (s *Store) CreatePaciente(in models.PacienteInput) (*models.Paciente, error
 
 // UpdatePaciente actualiza un paciente y lo devuelve con contadores.
 func (s *Store) UpdatePaciente(id int64, in models.PacienteInput) (*models.Paciente, error) {
+	// Sellar la fecha del consentimiento: si se otorga ahora (y no constaba),
+	// se estampa el momento; si ya estaba otorgado, se conserva la fecha
+	// original; si se revoca, se limpia.
+	cons := consInt(in.Consentimiento)
+	var consFecha *string
+	if cons == 1 {
+		var actualCons int
+		var actualFecha *string
+		_ = s.DB.QueryRow(`SELECT consentimiento, consentimiento_fecha FROM pacientes WHERE id=?`, id).
+			Scan(&actualCons, &actualFecha)
+		if actualCons == 1 && actualFecha != nil {
+			consFecha = actualFecha
+		} else {
+			f := nowStr()
+			consFecha = &f
+		}
+	}
 	_, err := s.DB.Exec(
 		`UPDATE pacientes SET nombre=?, fecha_nac=?, sexo=?, dni=?, telefono=?, email=?,
 		 objetivo=?, actividad_fisica=?, intolerancias=?, patologias=?, notas=?, peso=?,
-		 talla=?, grupo_sanguineo=? WHERE id=?`,
+		 talla=?, grupo_sanguineo=?, consentimiento=?, consentimiento_fecha=? WHERE id=?`,
 		in.Nombre, in.FechaNac, in.Sexo, in.DNI, in.Telefono, in.Email, in.Objetivo,
 		in.ActividadFisica, in.Intolerancias, in.Patologias, in.Notas, in.Peso, in.Talla,
-		in.GrupoSanguineo, id,
+		in.GrupoSanguineo, cons, consFecha, id,
 	)
 	if err != nil {
 		return nil, err

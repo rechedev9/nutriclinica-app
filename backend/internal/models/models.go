@@ -22,6 +22,8 @@ type Paciente struct {
 	Talla           *float64 `json:"talla"`
 	GrupoSanguineo  *string  `json:"grupo_sanguineo"`
 	Creado          *string  `json:"creado"`
+	Consentimiento  int      `json:"consentimiento"`
+	ConsentFecha    *string  `json:"consentimiento_fecha"`
 	NumFotos        int      `json:"num_fotos"`
 	NumRevisiones   int      `json:"num_revisiones"`
 }
@@ -42,6 +44,7 @@ type PacienteInput struct {
 	Peso            *float64 `json:"peso"`
 	Talla           *float64 `json:"talla"`
 	GrupoSanguineo  *string  `json:"grupo_sanguineo"`
+	Consentimiento  *int     `json:"consentimiento"`
 }
 
 // Revision refleja una fila de la tabla revisiones (23 campos + ids).
