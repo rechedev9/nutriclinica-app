@@ -56,7 +56,7 @@ export function AnalisisTab() {
 
   const grasaFn = useMemo(
     () => (r: Revision) =>
-      calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supraespinal, edad, sexo),
+      calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, sexo),
     [edad, sexo],
   )
 
