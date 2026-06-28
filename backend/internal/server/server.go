@@ -83,6 +83,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/stock/ventas", s.requireAuth(s.handleCreateVenta))
 	mux.HandleFunc("DELETE /api/stock/ventas/{id}", s.requireAuth(s.handleDeleteVenta))
 
+	// --- Auditoría (solo admin, RGPD) ---
+	mux.HandleFunc("GET /api/auditoria", s.requireAdmin(s.handleListAuditoria))
+
 	// --- Usuarios (solo admin) ---
 	mux.HandleFunc("GET /api/usuarios", s.requireAdmin(s.handleListUsuarios))
 	mux.HandleFunc("POST /api/usuarios", s.requireAdmin(s.handleCreateUsuario))
@@ -93,5 +96,5 @@ func (s *Server) Handler() http.Handler {
 	// --- SPA + estáticos (fallback) ---
 	mux.HandleFunc("/", s.handleSPA)
 
-	return loggingMW(securityHeadersMW(recoverMW(mux)))
+	return loggingMW(securityHeadersMW(recoverMW(s.auditMW(mux))))
 }

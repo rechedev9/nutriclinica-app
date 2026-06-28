@@ -27,6 +27,7 @@ const ComprasTab = lazyNamed(() => import('@/features/stock/tabs/ComprasTab'), '
 const VentasTab = lazyNamed(() => import('@/features/stock/tabs/VentasTab'), 'VentasTab')
 const ProveedoresTab = lazyNamed(() => import('@/features/stock/tabs/ProveedoresTab'), 'ProveedoresTab')
 const UsuariosPage = lazyNamed(() => import('@/features/usuarios/UsuariosPage'), 'UsuariosPage')
+const AuditoriaPage = lazyNamed(() => import('@/features/auditoria/AuditoriaPage'), 'AuditoriaPage')
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
             ],
           },
           { path: 'usuarios', element: <UsuariosPage /> },
+          { path: 'auditoria', element: <AuditoriaPage /> },
         ],
       },
     ],

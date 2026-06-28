@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -33,6 +34,49 @@ func (s *Server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r)
 	}
+}
+
+// statusRecorder captura el código de estado para el registro de auditoría.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+// auditMW registra en audit_log las operaciones que modifican o exportan datos
+// (RGPD): POST/PUT/DELETE bajo /api y las descargas de Excel. Las lecturas
+// normales no se anotan. El fallo al registrar no interrumpe la petición.
+func (s *Server) auditMW(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		if !esAuditable(r) {
+			return
+		}
+		usuario := ""
+		if u, ok := s.sessions.Current(r); ok {
+			usuario = u.Usuario
+		}
+		if err := s.st.RegistrarAuditoria(usuario, r.Method, r.URL.Path, rec.status); err != nil {
+			log.Printf("auditoría: no se pudo registrar %s %s: %v", r.Method, r.URL.Path, err)
+		}
+	})
+}
+
+// esAuditable decide si la petición debe quedar en el registro: mutaciones de
+// la API o exportaciones de datos a Excel.
+func esAuditable(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodPost, http.MethodPut, http.MethodDelete:
+		return strings.HasPrefix(r.URL.Path, "/api/")
+	case http.MethodGet:
+		return strings.HasPrefix(r.URL.Path, "/api/exportar")
+	}
+	return false
 }
 
 // recoverMW convierte panics en 500 JSON.

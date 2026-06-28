@@ -201,6 +201,18 @@ type VentaInput struct {
 	Lineas     []LineaInput `json:"lineas"`
 }
 
+// --- Auditoría (RGPD) ---
+
+// AuditEntry es una fila del registro de auditoría.
+type AuditEntry struct {
+	ID      int64   `json:"id"`
+	Fecha   *string `json:"fecha"`
+	Usuario *string `json:"usuario"`
+	Metodo  string  `json:"metodo"`
+	Ruta    string  `json:"ruta"`
+	Estado  int     `json:"estado"`
+}
+
 // --- Usuarios ---
 
 // Usuario refleja la tabla usuarios SIN el hash de contraseña.

@@ -87,3 +87,24 @@ func TestAlmacenYLineas(t *testing.T) {
 		t.Errorf("la línea debería traer el nombre del producto")
 	}
 }
+
+func TestAuditoria(t *testing.T) {
+	st := abrirTest(t)
+	if err := st.RegistrarAuditoria("admin", "POST", "/api/pacientes", 201); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.RegistrarAuditoria("Jose", "DELETE", "/api/pacientes/3", 200); err != nil {
+		t.Fatal(err)
+	}
+	entradas, err := st.Auditoria(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entradas) != 2 {
+		t.Fatalf("se esperaban 2 entradas, hay %d", len(entradas))
+	}
+	// Más recientes primero.
+	if entradas[0].Metodo != "DELETE" || entradas[0].Ruta != "/api/pacientes/3" {
+		t.Errorf("la primera entrada debería ser el DELETE más reciente, es %+v", entradas[0])
+	}
+}

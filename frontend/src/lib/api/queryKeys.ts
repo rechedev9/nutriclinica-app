@@ -5,6 +5,7 @@ export const qk = {
   revisiones: (pid: number) => ['pacientes', pid, 'revisiones'] as const,
   fotos: (pid: number) => ['pacientes', pid, 'fotos'] as const,
   usuarios: ['usuarios'] as const,
+  auditoria: ['auditoria'] as const,
   stock: {
     almacen: ['stock', 'almacen'] as const,
     productos: ['stock', 'productos'] as const,
