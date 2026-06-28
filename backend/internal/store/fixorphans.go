@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
@@ -12,6 +13,10 @@ func (s *Store) FixOrphans(dbPath string) error {
 	backup := fmt.Sprintf("%s.bak-%d", dbPath, time.Now().Unix())
 	if _, err := s.DB.Exec(`VACUUM INTO ?`, backup); err != nil {
 		return fmt.Errorf("creando backup %s: %w", backup, err)
+	}
+	// El backup contiene PII: restringir permisos a solo el propietario.
+	if err := os.Chmod(backup, 0o600); err != nil {
+		log.Printf("AVISO: no se pudieron restringir los permisos del backup %s: %v", backup, err)
 	}
 	log.Printf("Backup creado en %s", backup)
 

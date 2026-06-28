@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -301,9 +302,29 @@ func (s *Server) fillCountsPublic(p *models.Paciente) error {
 
 func sendXLSX(w http.ResponseWriter, f *excelize.File, filename string) {
 	w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	w.Header().Set("Content-Disposition", contentDisposition(filename))
 	if _, err := f.WriteTo(w); err != nil {
 		// La cabecera ya pudo enviarse; loguear implícito por el recover.
 		return
 	}
+}
+
+// contentDisposition construye la cabecera saneando el nombre: el parámetro
+// legacy filename solo lleva ASCII seguro (sin separadores de ruta, comillas ni
+// caracteres de control que romperían/inyectarían la cabecera) y filename*
+// codifica el nombre completo en UTF-8 para conservar los acentos (José...).
+func contentDisposition(name string) string {
+	seguro := strings.Map(func(r rune) rune {
+		if r < 0x20 || strings.ContainsRune(`/\:*?"<>|`, r) {
+			return '_'
+		}
+		return r
+	}, name)
+	ascii := strings.Map(func(r rune) rune {
+		if r > 0x7e {
+			return '_'
+		}
+		return r
+	}, seguro)
+	return fmt.Sprintf("attachment; filename=%q; filename*=UTF-8''%s", ascii, url.PathEscape(seguro))
 }
