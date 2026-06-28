@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Paciente } from '@/types'
 import { Avatar } from '@/components/ui/Avatar'
@@ -23,7 +23,13 @@ function meta(p: Paciente): string {
 export function PacienteSidebar({ pacientes, loading, activeId, onNew }: Props) {
   const [q, setQ] = useState('')
   const navigate = useNavigate()
-  const filtered = pacientes.filter((p) => p.nombre.toLowerCase().includes(q.toLowerCase()))
+  // useDeferredValue mantiene el input fluido: el filtrado (y el re-render de la
+  // lista) usa un valor diferido en vez de recalcularse en cada pulsación.
+  const deferredQ = useDeferredValue(q)
+  const filtered = useMemo(() => {
+    const term = deferredQ.toLowerCase()
+    return pacientes.filter((p) => p.nombre.toLowerCase().includes(term))
+  }, [pacientes, deferredQ])
 
   return (
     <div className="flex w-[300px] shrink-0 flex-col border-r border-border bg-surface max-md:w-full">

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import type { LineaInput, Producto } from '@/types'
 import { Select, Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
@@ -10,13 +11,25 @@ interface Props {
 }
 
 export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
+  // Claves estables por fila (no el índice): así borrar una línea intermedia no
+  // reutiliza el estado/foco de la fila contigua. Se sincronizan con add/remove
+  // y se reconstruyen solo si la longitud cambia por fuera (reset del modal).
+  const keys = useRef<string[]>([])
+  const counter = useRef(0)
+  const nuevaKey = () => `l${(counter.current += 1)}`
+  if (keys.current.length !== lineas.length) {
+    keys.current = lineas.map((_, i) => keys.current[i] ?? nuevaKey())
+  }
+
   function update(i: number, patch: Partial<LineaInput>) {
     onChange(lineas.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
   }
   function add() {
+    keys.current = [...keys.current, nuevaKey()]
     onChange([...lineas, { producto_id: 0, cantidad: 1, precio_unitario: 0 }])
   }
   function remove(i: number) {
+    keys.current = keys.current.filter((_, idx) => idx !== i)
     onChange(lineas.filter((_, idx) => idx !== i))
   }
   function onProducto(i: number, productoId: number) {
@@ -29,7 +42,7 @@ export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
   return (
     <div className="flex flex-col gap-2">
       {lineas.map((l, i) => (
-        <div key={i} className="grid grid-cols-[1fr_80px_100px_36px] items-center gap-2 max-md:grid-cols-2">
+        <div key={keys.current[i]} className="grid grid-cols-[1fr_80px_100px_36px] items-center gap-2 max-md:grid-cols-2">
           <Select value={l.producto_id} onChange={(e) => onProducto(i, Number(e.target.value))}>
             <option value={0}>Producto…</option>
             {productos.map((p) => (

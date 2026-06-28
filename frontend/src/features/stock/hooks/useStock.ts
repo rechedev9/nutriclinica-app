@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
+import { api, mensajeError } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import type {
@@ -38,7 +38,7 @@ export function useCreateProducto() {
       invalidate(qc, [qk.stock.productos, qk.stock.almacen])
       toast.success('Producto creado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -51,7 +51,7 @@ export function useUpdateProducto() {
       invalidate(qc, [qk.stock.productos, qk.stock.almacen])
       toast.success('Producto actualizado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -63,7 +63,7 @@ export function useDeleteProducto() {
       invalidate(qc, [qk.stock.productos, qk.stock.almacen])
       toast.success('Producto eliminado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -72,7 +72,7 @@ export function useCreateCategoria() {
   return useMutation({
     mutationFn: (nombre: string) => api<Categoria>('POST', '/api/stock/categorias', { nombre }),
     onSuccess: () => invalidate(qc, [qk.stock.categorias]),
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -88,7 +88,7 @@ export function useCreateProveedor() {
       invalidate(qc, [qk.stock.proveedores])
       toast.success('Proveedor creado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -101,7 +101,7 @@ export function useUpdateProveedor() {
       invalidate(qc, [qk.stock.proveedores])
       toast.success('Proveedor actualizado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -113,7 +113,7 @@ export function useDeleteProveedor() {
       invalidate(qc, [qk.stock.proveedores])
       toast.success('Proveedor eliminado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -129,7 +129,7 @@ export function useCreateCompra() {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra registrada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -141,7 +141,7 @@ export function useDeleteCompra() {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra eliminada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -157,7 +157,7 @@ export function useCreateVenta() {
       invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
       toast.success('Venta registrada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -169,6 +169,6 @@ export function useDeleteVenta() {
       invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
       toast.success('Venta eliminada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }

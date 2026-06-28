@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, uploadFoto } from '@/lib/api/client'
+import { api, uploadFoto, mensajeError } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import type { Foto } from '@/types'
@@ -20,7 +20,7 @@ export function useUploadFoto(pid: number) {
       qc.invalidateQueries({ queryKey: qk.fotos(pid) })
       qc.invalidateQueries({ queryKey: qk.pacientes })
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -33,6 +33,6 @@ export function useDeleteFoto(pid: number) {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Foto eliminada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }

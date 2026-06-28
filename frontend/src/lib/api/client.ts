@@ -9,6 +9,14 @@ export class ApiError extends Error {
   }
 }
 
+// mensajeError devuelve un texto apto para mostrar al usuario. Para un ApiError
+// usa el mensaje curado del servidor (ya genérico en los 500); para cualquier
+// otro error (red, parseo) devuelve un texto neutro y no expone detalles JS.
+export function mensajeError(e: unknown): string {
+  if (e instanceof ApiError) return e.message
+  return 'Ha ocurrido un error. Inténtalo de nuevo.'
+}
+
 async function parseError(res: Response): Promise<string> {
   try {
     const data = await res.json()

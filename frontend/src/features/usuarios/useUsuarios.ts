@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
+import { api, mensajeError } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import type { Usuario, UsuarioInput } from '@/types'
@@ -15,7 +15,7 @@ export function useCreateUsuario() {
       qc.invalidateQueries({ queryKey: qk.usuarios })
       toast.success('Usuario creado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -28,7 +28,7 @@ export function useUpdateUsuario() {
       qc.invalidateQueries({ queryKey: qk.usuarios })
       toast.success('Usuario actualizado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -37,7 +37,7 @@ export function useSetPassword() {
     mutationFn: ({ id, password }: { id: number; password: string }) =>
       api('POST', `/api/usuarios/${id}/password`, { password }),
     onSuccess: () => toast.success('Contraseña actualizada'),
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -49,6 +49,6 @@ export function useDeleteUsuario() {
       qc.invalidateQueries({ queryKey: qk.usuarios })
       toast.success('Usuario eliminado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }

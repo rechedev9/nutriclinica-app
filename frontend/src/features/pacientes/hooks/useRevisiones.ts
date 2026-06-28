@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
+import { api, mensajeError } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import type { Revision, RevisionInput } from '@/types'
@@ -21,7 +21,7 @@ export function useCreateRevision(pid: number) {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Revisión guardada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -34,7 +34,7 @@ export function useUpdateRevision(pid: number) {
       qc.invalidateQueries({ queryKey: qk.revisiones(pid) })
       toast.success('Revisión actualizada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -47,6 +47,6 @@ export function useDeleteRevision(pid: number) {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Revisión eliminada')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }

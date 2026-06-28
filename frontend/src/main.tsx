@@ -6,16 +6,21 @@ import { Toaster } from 'sonner'
 import { queryClient } from '@/lib/api/queryClient'
 import { router } from '@/router'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
-import '@/lib/chart/chartSetup'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootEl = document.getElementById('root')
+if (!rootEl) throw new Error('No se encontró el elemento #root')
+
+ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-        <Toaster position="top-right" richColors />
-      </QueryClientProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+          <Toaster position="top-right" richColors />
+        </QueryClientProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 )

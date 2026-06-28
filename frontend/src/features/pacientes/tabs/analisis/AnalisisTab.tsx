@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+// Registro de Chart.js junto a la pestaña que lo usa: así Chart.js queda en el
+// chunk diferido de Análisis y no se carga en el bundle inicial.
+import '@/lib/chart/chartSetup'
 import { usePacienteContext } from '../context'
 import { useRevisiones } from '../../hooks/useRevisiones'
 import { CenteredSpinner } from '@/components/ui/Spinner'

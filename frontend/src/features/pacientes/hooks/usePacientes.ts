@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
+import { api, mensajeError } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import type { Paciente, PacienteInput } from '@/types'
@@ -19,7 +19,7 @@ export function useCreatePaciente() {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente creado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -32,7 +32,7 @@ export function useUpdatePaciente() {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente actualizado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
 
@@ -44,6 +44,6 @@ export function useDeletePaciente() {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente eliminado')
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(mensajeError(e)),
   })
 }
