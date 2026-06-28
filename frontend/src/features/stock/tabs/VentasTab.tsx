@@ -3,6 +3,7 @@ import { useVentas, useDeleteVenta } from '../hooks/useStock'
 import { VentaModal } from '../components/VentaModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 
@@ -41,7 +42,17 @@ export function VentasTab() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="py-8 text-center text-sm text-ink-muted">Sin ventas registradas.</div>
+        <EmptyState
+          icon={
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          }
+          title="Sin ventas registradas"
+          subtitle="Registra las ventas de productos a tus pacientes o ventas libres."
+          action={<Button onClick={() => setOpen(true)}>+ Nueva venta</Button>}
+        />
       ) : (
         rows.map((v) => (
           <div key={v.id} className="rounded-card bg-surface shadow-card">

@@ -3,6 +3,7 @@ import { useProveedores, useDeleteProveedor } from '../hooks/useStock'
 import { ProveedorModal } from '../components/ProveedorModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import type { Proveedor } from '@/types'
 
@@ -21,22 +22,30 @@ export function ProveedoresTab() {
     if (ok) await del.mutateAsync(id)
   }
 
+  function nuevo() {
+    setEditing(undefined)
+    setOpen(true)
+  }
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Proveedores</h3>
-        <Button
-          onClick={() => {
-            setEditing(undefined)
-            setOpen(true)
-          }}
-        >
-          + Nuevo proveedor
-        </Button>
+        <Button onClick={nuevo}>+ Nuevo proveedor</Button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="py-8 text-center text-sm text-ink-muted">Sin proveedores.</div>
+        <EmptyState
+          icon={
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+              <path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01" />
+            </svg>
+          }
+          title="Sin proveedores"
+          subtitle="Añade tus proveedores para asociarlos a las compras y tener su contacto a mano."
+          action={<Button onClick={nuevo}>+ Nuevo proveedor</Button>}
+        />
       ) : (
         <div className="overflow-x-auto rounded-card bg-surface shadow-card">
           <table className="w-full text-sm">
@@ -50,10 +59,26 @@ export function ProveedoresTab() {
             </thead>
             <tbody>
               {rows.map((p) => (
-                <tr key={p.id} className="border-b border-border last:border-0">
+                <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
                   <td className="p-3 font-semibold">{p.nombre}</td>
-                  <td className="p-3 text-ink-muted">{p.telefono ?? '—'}</td>
-                  <td className="p-3 text-ink-muted">{p.email ?? '—'}</td>
+                  <td className="p-3">
+                    {p.telefono ? (
+                      <a href={`tel:${p.telefono}`} className="text-primary hover:underline">
+                        {p.telefono}
+                      </a>
+                    ) : (
+                      <span className="text-ink-muted">—</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {p.email ? (
+                      <a href={`mailto:${p.email}`} className="text-primary hover:underline">
+                        {p.email}
+                      </a>
+                    ) : (
+                      <span className="text-ink-muted">—</span>
+                    )}
+                  </td>
                   <td className="p-3 text-right">
                     <Button
                       variant="ghost"

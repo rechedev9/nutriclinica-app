@@ -3,6 +3,7 @@ import { useCompras, useDeleteCompra } from '../hooks/useStock'
 import { CompraModal } from '../components/CompraModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 
@@ -41,7 +42,17 @@ export function ComprasTab() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="py-8 text-center text-sm text-ink-muted">Sin compras registradas.</div>
+        <EmptyState
+          icon={
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+          }
+          title="Sin compras registradas"
+          subtitle="Registra tus compras a proveedores para que el stock se actualice solo."
+          action={<Button onClick={() => setOpen(true)}>+ Nueva compra</Button>}
+        />
       ) : (
         rows.map((c) => (
           <div key={c.id} className="rounded-card bg-surface shadow-card">

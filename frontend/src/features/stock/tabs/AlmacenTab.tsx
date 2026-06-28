@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { useAlmacen, useProductos, useDeleteProducto } from '../hooks/useStock'
 import { ProductoModal } from '../components/ProductoModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/cn'
 import type { Producto } from '@/types'
@@ -16,6 +17,20 @@ function Kpi({ label, value, danger }: { label: string; value: string; danger?: 
   )
 }
 
+// estadoStock clasifica un producto por su stock frente al mínimo.
+function estadoStock(actual: number, minimo: number): { label: string; cls: string } {
+  if (actual <= 0) return { label: 'Agotado', cls: 'bg-danger/10 text-danger' }
+  if (actual <= minimo) return { label: 'Stock bajo', cls: 'bg-amber-500/10 text-amber-500' }
+  return { label: 'En stock', cls: 'bg-success/10 text-success' }
+}
+
+const cajaIcono = (
+  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <path d="m3.27 6.96 8.73 5.05 8.73-5.05M12 22.08V12" />
+  </svg>
+)
+
 export function AlmacenTab() {
   const { data: almacen, isLoading } = useAlmacen()
   const { data: productos = [] } = useProductos()
@@ -23,12 +38,28 @@ export function AlmacenTab() {
   const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Producto | undefined>()
+  const [q, setQ] = useState('')
+  const deferredQ = useDeferredValue(q)
+
+  const rows = useMemo(() => almacen ?? [], [almacen])
+  const filtradas = useMemo(() => {
+    const term = deferredQ.trim().toLowerCase()
+    if (!term) return rows
+    return rows.filter(
+      (p) => p.nombre.toLowerCase().includes(term) || (p.categoria ?? '').toLowerCase().includes(term),
+    )
+  }, [rows, deferredQ])
 
   if (isLoading) return <CenteredSpinner />
-  const rows = almacen ?? []
+
   const sinStock = rows.filter((p) => p.stock_actual <= p.stock_minimo).length
   const valCoste = rows.reduce((s, p) => s + Math.max(0, p.stock_actual) * p.precio_coste, 0)
   const valVenta = rows.reduce((s, p) => s + Math.max(0, p.stock_actual) * p.precio_venta, 0)
+
+  function nuevo() {
+    setEditing(undefined)
+    setModalOpen(true)
+  }
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar producto?', confirmText: 'Eliminar', danger: true })
@@ -39,25 +70,41 @@ export function AlmacenTab() {
     <div className="flex flex-col gap-4 p-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi label="Productos" value={String(rows.length)} />
-        <Kpi label="Alertas mínimo" value={String(sinStock)} danger={sinStock > 0} />
+        <Kpi label="Alertas de mínimo" value={String(sinStock)} danger={sinStock > 0} />
         <Kpi label="Valor a coste" value={`${valCoste.toFixed(2)} €`} />
         <Kpi label="Valor a venta" value={`${valVenta.toFixed(2)} €`} />
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-bold">Productos</h3>
-        <Button
-          onClick={() => {
-            setEditing(undefined)
-            setModalOpen(true)
-          }}
-        >
-          + Nuevo producto
-        </Button>
+        <div className="flex items-center gap-2">
+          {rows.length > 0 && (
+            <div className="relative">
+              <svg className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-surface"
+                placeholder="Buscar producto…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+            </div>
+          )}
+          <Button onClick={nuevo}>+ Nuevo producto</Button>
+        </div>
       </div>
 
       {rows.length === 0 ? (
-        <div className="py-8 text-center text-sm text-ink-muted">No hay productos. Crea el primero.</div>
+        <EmptyState
+          icon={cajaIcono}
+          title="Tu almacén está vacío"
+          subtitle="Da de alta tus productos para controlar stock, costes y márgenes."
+          action={<Button onClick={nuevo}>+ Nuevo producto</Button>}
+        />
+      ) : filtradas.length === 0 ? (
+        <p className="py-10 text-center text-sm text-ink-muted">Ningún producto coincide con «{q}».</p>
       ) : (
         <div className="overflow-x-auto rounded-card bg-surface shadow-card">
           <table className="w-full text-sm">
@@ -65,24 +112,30 @@ export function AlmacenTab() {
               <tr className="border-b border-border text-left text-ink-muted">
                 <th className="p-3 font-semibold">Producto</th>
                 <th className="p-3 font-semibold">Categoría</th>
-                <th className="p-3 font-semibold">Stock</th>
-                <th className="p-3 font-semibold">Coste</th>
-                <th className="p-3 font-semibold">Venta</th>
+                <th className="p-3 font-semibold">Estado</th>
+                <th className="p-3 text-right font-semibold">Stock</th>
+                <th className="p-3 text-right font-semibold">Coste</th>
+                <th className="p-3 text-right font-semibold">Venta</th>
                 <th className="p-3"></th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((p) => {
-                const bajo = p.stock_actual <= p.stock_minimo
+              {filtradas.map((p) => {
+                const est = estadoStock(p.stock_actual, p.stock_minimo)
                 return (
-                  <tr key={p.id} className="border-b border-border last:border-0">
+                  <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
                     <td className="p-3 font-semibold">{p.nombre}</td>
                     <td className="p-3 text-ink-muted">{p.categoria ?? '—'}</td>
-                    <td className={cn('p-3 font-bold', bajo && 'text-danger')}>
-                      {p.stock_actual} {p.unidad}
+                    <td className="p-3">
+                      <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold', est.cls)}>
+                        {est.label}
+                      </span>
                     </td>
-                    <td className="p-3">{p.precio_coste.toFixed(2)} €</td>
-                    <td className="p-3">{p.precio_venta.toFixed(2)} €</td>
+                    <td className="p-3 text-right font-bold tabular-nums">
+                      {p.stock_actual} <span className="font-normal text-ink-muted">{p.unidad ?? 'ud'}</span>
+                    </td>
+                    <td className="p-3 text-right tabular-nums">{p.precio_coste.toFixed(2)} €</td>
+                    <td className="p-3 text-right tabular-nums">{p.precio_venta.toFixed(2)} €</td>
                     <td className="p-3 text-right">
                       <Button
                         variant="ghost"
