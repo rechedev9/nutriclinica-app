@@ -200,49 +200,50 @@ export function AnalisisTab() {
         </table>
       </div>
 
-      {/* Gráfico peso + grasa */}
-      <div className="rounded-card bg-surface p-4 shadow-card">
-        <div className="mb-1 text-sm font-bold">Evolución del peso y la masa grasa</div>
-        <div className="mb-3 text-[13px] text-ink-muted">kg · % grasa (Durnin-Womersley)</div>
-        <div className="h-[280px]">
-          <ChartPesoGrasa {...derived.pesoGrasa} />
-        </div>
-      </div>
-
-      {/* Perímetros */}
-      <div className="rounded-card bg-surface p-4 shadow-card">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <div className="text-sm font-bold">Evolución de medidas</div>
-          <div className="flex flex-wrap gap-1.5 print-hide">
-            {ALL_MEDIDAS.map((m) => (
-              <button
-                key={m.key}
-                onClick={() =>
-                  setActivas((prev) => {
-                    const next = new Set(prev)
-                    next.has(m.key) ? next.delete(m.key) : next.add(m.key)
-                    return next
-                  })
-                }
-                className={cn(
-                  'rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
-                  activas.has(m.key) ? 'border-transparent text-white' : 'border-border text-ink-muted',
-                )}
-                style={activas.has(m.key) ? { background: m.color } : undefined}
-              >
-                {m.short}
-              </button>
-            ))}
+      {/* Gráficos: peso+grasa y perímetros en la misma fila */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-card bg-surface p-4 shadow-card">
+          <div className="mb-1 text-sm font-bold">Evolución del peso y la masa grasa</div>
+          <div className="mb-3 text-[13px] text-ink-muted">kg · % grasa (Durnin-Womersley)</div>
+          <div className="h-[240px]">
+            <ChartPesoGrasa {...derived.pesoGrasa} />
           </div>
         </div>
-        <div className="h-[300px]">
-          {derived.perim.series.length > 0 ? (
-            <ChartPerimetros labels={derived.perim.labels} series={derived.perim.series} />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-ink-muted">
-              Selecciona alguna medida.
+
+        <div className="rounded-card bg-surface p-4 shadow-card">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-sm font-bold">Evolución de medidas</div>
+            <div className="flex flex-wrap gap-1.5 print-hide">
+              {ALL_MEDIDAS.map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() =>
+                    setActivas((prev) => {
+                      const next = new Set(prev)
+                      next.has(m.key) ? next.delete(m.key) : next.add(m.key)
+                      return next
+                    })
+                  }
+                  className={cn(
+                    'rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors',
+                    activas.has(m.key) ? 'border-transparent text-white' : 'border-border text-ink-muted',
+                  )}
+                  style={activas.has(m.key) ? { background: m.color } : undefined}
+                >
+                  {m.short}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
+          <div className="h-[240px]">
+            {derived.perim.series.length > 0 ? (
+              <ChartPerimetros labels={derived.perim.labels} series={derived.perim.series} />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-ink-muted">
+                Selecciona alguna medida.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

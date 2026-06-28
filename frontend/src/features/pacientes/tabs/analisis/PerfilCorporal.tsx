@@ -16,19 +16,19 @@ interface Punto {
 }
 
 const FRONTAL: Punto[] = [
-  { key: 'per_hombros', label: 'Hombros',  textX: 52,  y: 97,  anchor: 'end',   bodyX: 300 },
-  { key: 'per_cintura', label: 'Cintura',  textX: 52,  y: 169, anchor: 'end',   bodyX: 338 },
-  { key: 'per_muslo',   label: 'Muslo',    textX: 52,  y: 249, anchor: 'end',   bodyX: 320 },
-  { key: 'per_pecho',   label: 'Pecho',    textX: 680, y: 108, anchor: 'start', bodyX: 399 },
-  { key: 'per_gemelo',  label: 'Gemelo',   textX: 680, y: 338, anchor: 'start', bodyX: 447 },
+  { key: 'per_hombros', label: 'Hombros',  textX: 155, y: 97,  anchor: 'end',   bodyX: 300 },
+  { key: 'per_cintura', label: 'Cintura',  textX: 155, y: 169, anchor: 'end',   bodyX: 338 },
+  { key: 'per_muslo',   label: 'Muslo',    textX: 155, y: 249, anchor: 'end',   bodyX: 320 },
+  { key: 'per_pecho',   label: 'Pecho',    textX: 620, y: 108, anchor: 'start', bodyX: 399 },
+  { key: 'per_gemelo',  label: 'Gemelo',   textX: 620, y: 338, anchor: 'start', bodyX: 447 },
 ]
 
 const POSTERIOR: Punto[] = [
-  { key: 'per_hombros', label: 'Espalda',    textX: 52,  y: 97,  anchor: 'end',   bodyX: 364 },
-  { key: 'per_caderas', label: 'Caderas',    textX: 52,  y: 184, anchor: 'end',   bodyX: 331 },
-  { key: 'per_muslo',   label: 'Femoral',    textX: 52,  y: 260, anchor: 'end',   bodyX: 356 },
-  { key: 'per_caderas', label: 'Glúteo',     textX: 680, y: 207, anchor: 'start', bodyX: 397 },
-  { key: 'per_gemelo',  label: 'Pantorrilla', textX: 680, y: 338, anchor: 'start', bodyX: 452 },
+  { key: 'per_hombros', label: 'Espalda',     textX: 155, y: 97,  anchor: 'end',   bodyX: 364 },
+  { key: 'per_caderas', label: 'Caderas',     textX: 155, y: 184, anchor: 'end',   bodyX: 331 },
+  { key: 'per_muslo',   label: 'Femoral',     textX: 155, y: 260, anchor: 'end',   bodyX: 356 },
+  { key: 'per_caderas', label: 'Glúteo',      textX: 620, y: 207, anchor: 'start', bodyX: 397 },
+  { key: 'per_gemelo',  label: 'Pantorrilla', textX: 620, y: 338, anchor: 'start', bodyX: 452 },
 ]
 
 function animarTextos(svg: SVGSVGElement, duration = 1800) {
@@ -72,7 +72,7 @@ function PanelSVG({
           const delta = prev != null ? Math.round(((val - (prev[p.key] as number ?? val)) * 10)) / 10 : null
           const hasDelta = delta != null && delta !== 0
           const mejora = delta != null && delta < 0
-          const lineX1 = p.anchor === 'end' ? p.textX + 8 : p.textX - 8
+          const lineX1 = p.anchor === 'end' ? p.textX + 16 : p.textX - 16
 
           return (
             <g key={`${p.key}-${i}`}>
