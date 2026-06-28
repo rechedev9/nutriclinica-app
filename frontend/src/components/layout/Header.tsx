@@ -22,19 +22,19 @@ export function Header() {
         </svg>
         <span className="text-xl font-bold">NutriClínica</span>
         <span className="mx-1 hidden h-4 w-px bg-white/25 sm:inline-block" aria-hidden="true" />
-        <span className="hidden text-sm font-medium text-white/70 sm:inline">Gestión de pacientes</span>
+        <span className="hidden text-sm font-medium text-white/90 sm:inline">Gestión de pacientes</span>
       </div>
       <div className="flex items-center gap-3">
         <ThemeToggle />
         {me && (
-          <span className="text-[13px] font-semibold uppercase tracking-wider text-white/60">
+          <span className="text-[13px] font-semibold uppercase tracking-wider text-white/90">
             {me.usuario}
           </span>
         )}
         <button
           onClick={onLogout}
           disabled={logout.isPending}
-          className="flex items-center gap-1.5 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-semibold text-white/80 transition-colors hover:bg-white/15 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-lg border border-white/40 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/15 disabled:opacity-60"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
