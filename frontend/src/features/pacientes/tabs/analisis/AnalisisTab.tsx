@@ -15,25 +15,30 @@ import type { Revision } from '@/types'
 import { ChartPesoGrasa } from './charts/ChartPesoGrasa'
 import { ChartPerimetros, type Serie } from './charts/ChartPerimetros'
 import { ChartPliegues } from './charts/ChartPliegues'
+import { PerfilCorporal } from './PerfilCorporal'
+import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 
 function KpiCard({
   label,
-  value,
+  rawValue,
   unit,
   sub,
+  decimals = 1,
 }: {
   label: string
-  value: string
+  rawValue: number | null
   unit?: string
   sub?: React.ReactNode
+  decimals?: number
 }) {
+  const animated = useCountUp(rawValue, decimals)
   return (
     <div className="rounded-card bg-surface p-4 shadow-card">
       <div className="text-[13px] text-ink-muted">{label}</div>
       <div className="mt-1 text-2xl font-extrabold">
-        {value}
-        {unit && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
+        {animated}
+        {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
       </div>
       {sub && <div className="mt-1 text-[13px]">{sub}</div>}
     </div>
@@ -115,12 +120,13 @@ export function AnalisisTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        <KpiCard label="Peso actual" value={last.peso != null ? String(last.peso) : '—'} unit="kg" />
-        <KpiCard label="IMC" value={imcLast ? String(imcLast.val) : '—'} sub={imcLast?.etiq} />
+        <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} />
+        <KpiCard label="IMC" rawValue={imcLast?.val ?? null} sub={imcLast?.etiq} decimals={1} />
         <KpiCard
           label="% Grasa"
-          value={grasaLast != null ? String(grasaLast) : '—'}
+          rawValue={grasaLast}
           unit="%"
+          decimals={1}
           sub={
             clase && (
               <span className="rounded px-1.5 py-0.5" style={{ background: clase.bg, color: clase.color }}>
@@ -129,9 +135,40 @@ export function AnalisisTab() {
             )
           }
         />
-        <KpiCard label="Peso graso" value={pesoGraso(last.peso, grasaLast)?.toString() ?? '—'} unit="kg" />
-        <KpiCard label="Peso magro" value={pesoMagro(last.peso, grasaLast)?.toString() ?? '—'} unit="kg" />
+        <KpiCard label="Peso graso" rawValue={pesoGraso(last.peso, grasaLast)} unit="kg" decimals={1} />
+        <KpiCard label="Peso magro" rawValue={pesoMagro(last.peso, grasaLast)} unit="kg" decimals={1} />
       </div>
+
+      {/* Composición corporal */}
+      {grasaLast != null && last.peso != null && (() => {
+        const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
+        const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
+        const total = pGraso + pMagro
+        const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
+        return (
+          <div className="rounded-card bg-surface p-4 shadow-card">
+            <div className="mb-3 text-sm font-bold">Composición corporal</div>
+            <div className="overflow-hidden rounded-full h-5" style={{ background: '#fde68a' }}>
+              <div
+                className="h-full rounded-full transition-all duration-[1800ms] ease-out"
+                style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
+              />
+            </div>
+            <div className="mt-3 flex justify-between text-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#0F7B92' }} />
+                <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
+                <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
+                <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
+                <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#fbbf24' }} />
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Tabla de evolución */}
       <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
@@ -218,6 +255,12 @@ export function AnalisisTab() {
           </div>
         </div>
       )}
+
+      {/* Perfil corporal con siluetas */}
+      <PerfilCorporal
+        last={derived.last}
+        prev={derived.asc.length >= 2 ? derived.asc[derived.asc.length - 2]! : null}
+      />
     </div>
   )
 }
