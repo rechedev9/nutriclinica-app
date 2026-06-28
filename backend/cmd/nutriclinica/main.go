@@ -37,7 +37,7 @@ func main() {
 	}
 	log.Printf("Directorio de datos: %s", paths.DataDir)
 
-	st, err := store.Open(paths.DBPath)
+	st, err := store.Open(paths.DBPath, nil)
 	if err != nil {
 		log.Fatalf("abriendo base de datos: %v", err)
 	}

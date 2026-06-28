@@ -10,7 +10,7 @@ import (
 // abrirTest crea una BD SQLite temporal migrada para pruebas.
 func abrirTest(t *testing.T) *Store {
 	t.Helper()
-	st, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	st, err := Open(filepath.Join(t.TempDir(), "test.db"), nil)
 	if err != nil {
 		t.Fatalf("abriendo BD de prueba: %v", err)
 	}

@@ -3,12 +3,15 @@ package store
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
-	sqlite3 "modernc.org/sqlite"
-	sqlite3lib "modernc.org/sqlite/lib"
+	"github.com/ncruces/go-sqlite3"
+	_ "github.com/ncruces/go-sqlite3/driver"       // registra el driver "sqlite3" (pure-Go, wasm)
+	_ "github.com/ncruces/go-sqlite3/vfs/adiantum" // registra el VFS "adiantum" (cifrado en reposo)
 )
 
 // Store envuelve la conexión a la base de datos.
@@ -19,12 +22,26 @@ type Store struct {
 // Open abre la base de datos SQLite en dbPath con WAL, foreign keys y
 // busy_timeout activados. Limita el pool a una sola conexión (app de un
 // usuario): serializa escrituras y mantiene los pragmas consistentes.
-func Open(dbPath string) (*Store, error) {
-	dsn := fmt.Sprintf(
-		"file:%s?_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)&_pragma=busy_timeout(5000)",
-		url.PathEscape(dbPath),
-	)
-	db, err := sql.Open("sqlite", dsn)
+//
+// Si dek no es nil, la BD se abre cifrada en reposo con el VFS Adiantum usando
+// esa clave de datos de 32 bytes; en ese caso WAL exige locking exclusivo (no
+// hay memoria compartida con el VFS de cifrado), lo cual es correcto en esta
+// app de un solo proceso.
+func Open(dbPath string, dek []byte) (*Store, error) {
+	params := []string{
+		"_pragma=busy_timeout(5000)",
+		"_pragma=foreign_keys(ON)",
+		"_pragma=journal_mode(WAL)",
+	}
+	if dek != nil {
+		params = append([]string{
+			"vfs=adiantum",
+			"hexkey=" + hex.EncodeToString(dek),
+		}, params...)
+		params = append(params, "_pragma=locking_mode(EXCLUSIVE)")
+	}
+	dsn := "file:" + url.PathEscape(dbPath) + "?" + strings.Join(params, "&")
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +57,11 @@ func Open(dbPath string) (*Store, error) {
 func (s *Store) Close() error { return s.DB.Close() }
 
 // IsUniqueViolation indica si err corresponde a una violación de restricción
-// UNIQUE de SQLite (código 2067), sin depender de comparar el texto del error.
+// UNIQUE de SQLite, sin depender de comparar el texto del error.
 func IsUniqueViolation(err error) bool {
 	var se *sqlite3.Error
 	if errors.As(err, &se) {
-		return se.Code() == sqlite3lib.SQLITE_CONSTRAINT_UNIQUE
+		return se.ExtendedCode() == sqlite3.CONSTRAINT_UNIQUE
 	}
 	return false
 }
