@@ -4,7 +4,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { PacientesPage } from '@/features/pacientes/PacientesPage'
-import { WelcomeEmpty } from '@/features/pacientes/WelcomeEmpty'
+import { PacientesOverview } from '@/features/pacientes/PacientesOverview'
 import { PacienteDetail } from '@/features/pacientes/PacienteDetail'
 import { FichaTab } from '@/features/pacientes/tabs/FichaTab'
 import { RevisionesTab } from '@/features/pacientes/tabs/RevisionesTab'
@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
             path: 'pacientes',
             element: <PacientesPage />,
             children: [
-              { index: true, element: <WelcomeEmpty /> },
+              { index: true, element: <PacientesOverview /> },
               {
                 path: ':id',
                 element: <PacienteDetail />,
