@@ -19,7 +19,7 @@ func (s *Server) handleListFotos(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	fotos, err := s.st.Fotos(pid)
+	fotos, err := s.db().Fotos(pid)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -58,7 +58,7 @@ func (s *Server) handleUploadFoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nombre, err := s.st.PacienteNombre(pid)
+	nombre, err := s.db().PacienteNombre(pid)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -103,7 +103,7 @@ func (s *Server) handleUploadFoto(w http.ResponseWriter, r *http.Request) {
 	if v := strings.TrimSpace(r.FormValue("nota")); v != "" {
 		nota = &v
 	}
-	foto, err := s.st.CreateFoto(pid, filenameRel, nota)
+	foto, err := s.db().CreateFoto(pid, filenameRel, nota)
 	if err != nil {
 		// Si el INSERT falla, no dejar el archivo huérfano en disco.
 		_ = os.Remove(fullPath)
@@ -119,7 +119,7 @@ func (s *Server) handleDeleteFoto(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	foto, err := s.st.Foto(id)
+	foto, err := s.db().Foto(id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -128,7 +128,7 @@ func (s *Server) handleDeleteFoto(w http.ResponseWriter, r *http.Request) {
 		// Borrar primero el registro (operación verificable) y luego el archivo
 		// best-effort: así un fallo del DELETE no deja el archivo perdido con la
 		// BD aún apuntándolo.
-		if err := s.st.DeleteFoto(id); err != nil {
+		if err := s.db().DeleteFoto(id); err != nil {
 			serverError(w, err)
 			return
 		}

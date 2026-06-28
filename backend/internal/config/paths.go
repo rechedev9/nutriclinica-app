@@ -13,6 +13,7 @@ type Paths struct {
 	DBPath    string // bbdd/pacientes.db
 	FotosDir  string // fotos/
 	SecretKey string // bbdd/secret.key
+	VaultKey  string // bbdd/keyvault.json (sobre de la clave de cifrado)
 }
 
 // Resolve decide el directorio de datos según esta prioridad:
@@ -44,6 +45,7 @@ func Resolve(explicit string) (Paths, error) {
 		DBPath:    filepath.Join(dataDir, "bbdd", "pacientes.db"),
 		FotosDir:  filepath.Join(dataDir, "fotos"),
 		SecretKey: filepath.Join(dataDir, "bbdd", "secret.key"),
+		VaultKey:  filepath.Join(dataDir, "bbdd", "keyvault.json"),
 	}
 	// 0700: estos directorios contienen PII (BBDD y fotos), no deben ser
 	// accesibles por otros usuarios del sistema.

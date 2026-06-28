@@ -4,36 +4,84 @@ package server
 import (
 	"io/fs"
 	"net/http"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"nutriclinica/internal/auth"
 	"nutriclinica/internal/store"
 )
 
-// Server agrupa las dependencias de los handlers.
-type Server struct {
-	st           *store.Store
-	sessions     *auth.Manager
-	fotosDir     string
-	spa          fs.FS // sistema de ficheros del SPA embebido (puede ser nil en dev)
-	loginLimiter *rateLimiter
+// Config agrupa las dependencias para construir el Server.
+type Config struct {
+	Sessions  *auth.Manager
+	FotosDir  string
+	SPA       fs.FS  // SPA embebido (puede ser nil en dev)
+	DBPath    string // ruta del fichero de BD
+	VaultPath string // ruta del fichero de claves (cifrado)
+	Cifrado   bool   // si true, arranca bloqueado hasta recibir la contraseña maestra
+	// Abrir abre (y migra) el store con la clave de datos dada; con dek=nil abre
+	// sin cifrar. La provee main para no acoplar el server a la secuencia de
+	// arranque (verify/integrity/orphans/migrate).
+	Abrir func(dek []byte) (*store.Store, error)
 }
 
-// New crea un Server.
-func New(st *store.Store, sessions *auth.Manager, fotosDir string, spa fs.FS) *Server {
-	return &Server{
-		st:       st,
-		sessions: sessions,
-		fotosDir: fotosDir,
-		spa:      spa,
-		// Máx. 10 intentos de login por IP cada minuto.
-		loginLimiter: newRateLimiter(10, time.Minute),
+// Server agrupa las dependencias de los handlers. El store vive en un puntero
+// atómico porque en modo cifrado no existe hasta que el usuario desbloquea.
+type Server struct {
+	st           atomic.Pointer[store.Store]
+	sessions     *auth.Manager
+	fotosDir     string
+	spa          fs.FS
+	loginLimiter *rateLimiter
+
+	dbPath    string
+	vaultPath string
+	abrir     func(dek []byte) (*store.Store, error)
+	mu        sync.Mutex // serializa configurar/unlock
+}
+
+// New crea un Server. En modo no cifrado abre el store de inmediato.
+func New(cfg Config) (*Server, error) {
+	s := &Server{
+		sessions:     cfg.Sessions,
+		fotosDir:     cfg.FotosDir,
+		spa:          cfg.SPA,
+		dbPath:       cfg.DBPath,
+		vaultPath:    cfg.VaultPath,
+		abrir:        cfg.Abrir,
+		loginLimiter: newRateLimiter(10, time.Minute), // máx. 10 logins/min por IP
 	}
+	if !cfg.Cifrado {
+		st, err := cfg.Abrir(nil)
+		if err != nil {
+			return nil, err
+		}
+		s.st.Store(st)
+	}
+	return s, nil
+}
+
+// db devuelve el store actual (nil si la BD está bloqueada).
+func (s *Server) db() *store.Store { return s.st.Load() }
+
+// Close cierra el store si está abierto (para el apagado ordenado).
+func (s *Server) Close() error {
+	if st := s.db(); st != nil {
+		return st.Close()
+	}
+	return nil
 }
 
 // Handler construye el http.Handler con todas las rutas y middleware global.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+
+	// --- Ciclo de vida del cifrado (sin auth ni gate): estado, configuración
+	// inicial y desbloqueo con la contraseña maestra. ---
+	mux.HandleFunc("GET /api/estado", s.handleEstado)
+	mux.HandleFunc("POST /api/configurar", limitMW(s.loginLimiter, s.handleConfigurar))
+	mux.HandleFunc("POST /api/unlock", limitMW(s.loginLimiter, s.handleUnlock))
 
 	// --- Auth (sin requireAuth). Bajo /api para no colisionar con las rutas
 	// de cliente del SPA (/login, /logout son rutas de React Router). ---
@@ -96,5 +144,5 @@ func (s *Server) Handler() http.Handler {
 	// --- SPA + estáticos (fallback) ---
 	mux.HandleFunc("/", s.handleSPA)
 
-	return loggingMW(securityHeadersMW(recoverMW(s.auditMW(mux))))
+	return loggingMW(securityHeadersMW(recoverMW(s.gateMW(s.auditMW(mux)))))
 }

@@ -14,7 +14,7 @@ func (s *Server) handleListAuditoria(w http.ResponseWriter, r *http.Request) {
 			limite = n
 		}
 	}
-	entradas, err := s.st.Auditoria(limite)
+	entradas, err := s.db().Auditoria(limite)
 	if err != nil {
 		serverError(w, err)
 		return

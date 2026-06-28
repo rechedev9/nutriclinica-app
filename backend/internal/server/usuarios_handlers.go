@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) handleListUsuarios(w http.ResponseWriter, r *http.Request) {
-	us, err := s.st.Usuarios()
+	us, err := s.db().Usuarios()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -43,7 +43,7 @@ func (s *Server) handleCreateUsuario(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	u, err := s.st.CreateUsuario(in.Usuario, string(hash), rol)
+	u, err := s.db().CreateUsuario(in.Usuario, string(hash), rol)
 	if err != nil {
 		if store.IsUniqueViolation(err) {
 			writeError(w, http.StatusConflict, "Ese nombre de usuario ya existe")
@@ -77,7 +77,7 @@ func (s *Server) handleUpdateUsuario(w http.ResponseWriter, r *http.Request) {
 	if in.Rol == "" {
 		in.Rol = "user"
 	}
-	u, err := s.st.UpdateUsuario(id, in.Usuario, in.Rol)
+	u, err := s.db().UpdateUsuario(id, in.Usuario, in.Rol)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -91,7 +91,7 @@ func (s *Server) handleDeleteUsuario(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	n, err := s.st.CountUsuarios()
+	n, err := s.db().CountUsuarios()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -100,7 +100,7 @@ func (s *Server) handleDeleteUsuario(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "No se puede borrar el último usuario")
 		return
 	}
-	if err := s.st.DeleteUsuario(id); err != nil {
+	if err := s.db().DeleteUsuario(id); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -129,7 +129,7 @@ func (s *Server) handleSetPassword(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	if err := s.st.SetPassword(id, string(hash)); err != nil {
+	if err := s.db().SetPassword(id, string(hash)); err != nil {
 		serverError(w, err)
 		return
 	}

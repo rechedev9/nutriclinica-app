@@ -26,7 +26,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "JSON inválido")
 		return
 	}
-	u, err := s.st.UsuarioByName(body.Usuario)
+	u, err := s.db().UsuarioByName(body.Usuario)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -72,7 +72,7 @@ func (s *Server) handleMyPassword(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
-	hash, err := s.st.PasswordHash(u.ID)
+	hash, err := s.db().PasswordHash(u.ID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -86,7 +86,7 @@ func (s *Server) handleMyPassword(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	if err := s.st.SetPassword(u.ID, string(newHash)); err != nil {
+	if err := s.db().SetPassword(u.ID, string(newHash)); err != nil {
 		serverError(w, err)
 		return
 	}

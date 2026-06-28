@@ -37,7 +37,7 @@ func normalizePaciente(in *models.PacienteInput) {
 }
 
 func (s *Server) handleListPacientes(w http.ResponseWriter, r *http.Request) {
-	ps, err := s.st.Pacientes()
+	ps, err := s.db().Pacientes()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -56,7 +56,7 @@ func (s *Server) handleCreatePaciente(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
 		return
 	}
-	p, err := s.st.CreatePaciente(in)
+	p, err := s.db().CreatePaciente(in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -80,7 +80,7 @@ func (s *Server) handleUpdatePaciente(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
 		return
 	}
-	p, err := s.st.UpdatePaciente(id, in)
+	p, err := s.db().UpdatePaciente(id, in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -98,7 +98,7 @@ func (s *Server) handleDeletePaciente(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	nombre, err := s.st.DeletePaciente(id)
+	nombre, err := s.db().DeletePaciente(id)
 	if err != nil {
 		serverError(w, err)
 		return

@@ -10,7 +10,7 @@ import (
 // --- Almacén ---
 
 func (s *Server) handleAlmacen(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.st.Almacen()
+	rows, err := s.db().Almacen()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -21,7 +21,7 @@ func (s *Server) handleAlmacen(w http.ResponseWriter, r *http.Request) {
 // --- Productos ---
 
 func (s *Server) handleListProductos(w http.ResponseWriter, r *http.Request) {
-	ps, err := s.st.Productos()
+	ps, err := s.db().Productos()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -40,7 +40,7 @@ func (s *Server) handleCreateProducto(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
 		return
 	}
-	p, err := s.st.CreateProducto(in)
+	p, err := s.db().CreateProducto(in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -60,7 +60,7 @@ func (s *Server) handleUpdateProducto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in.Nombre = strings.TrimSpace(in.Nombre)
-	p, err := s.st.UpdateProducto(id, in)
+	p, err := s.db().UpdateProducto(id, in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -74,7 +74,7 @@ func (s *Server) handleDeleteProducto(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	if err := s.st.SoftDeleteProducto(id); err != nil {
+	if err := s.db().SoftDeleteProducto(id); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -84,7 +84,7 @@ func (s *Server) handleDeleteProducto(w http.ResponseWriter, r *http.Request) {
 // --- Categorías ---
 
 func (s *Server) handleListCategorias(w http.ResponseWriter, r *http.Request) {
-	cs, err := s.st.Categorias()
+	cs, err := s.db().Categorias()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -105,7 +105,7 @@ func (s *Server) handleCreateCategoria(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
 		return
 	}
-	c, err := s.st.CreateCategoria(in.Nombre)
+	c, err := s.db().CreateCategoria(in.Nombre)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -116,7 +116,7 @@ func (s *Server) handleCreateCategoria(w http.ResponseWriter, r *http.Request) {
 // --- Proveedores ---
 
 func (s *Server) handleListProveedores(w http.ResponseWriter, r *http.Request) {
-	ps, err := s.st.Proveedores()
+	ps, err := s.db().Proveedores()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -142,7 +142,7 @@ func (s *Server) handleCreateProveedor(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
 		return
 	}
-	p, err := s.st.CreateProveedor(in)
+	p, err := s.db().CreateProveedor(in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -162,7 +162,7 @@ func (s *Server) handleUpdateProveedor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeProveedor(&in)
-	p, err := s.st.UpdateProveedor(id, in)
+	p, err := s.db().UpdateProveedor(id, in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -176,7 +176,7 @@ func (s *Server) handleDeleteProveedor(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	if err := s.st.DeleteProveedor(id); err != nil {
+	if err := s.db().DeleteProveedor(id); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -186,7 +186,7 @@ func (s *Server) handleDeleteProveedor(w http.ResponseWriter, r *http.Request) {
 // --- Compras ---
 
 func (s *Server) handleListCompras(w http.ResponseWriter, r *http.Request) {
-	cs, err := s.st.Compras()
+	cs, err := s.db().Compras()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -202,7 +202,7 @@ func (s *Server) handleCreateCompra(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Notas = emptyToNil(in.Notas)
 	in.Fecha = emptyToNil(in.Fecha)
-	id, err := s.st.CreateCompra(in)
+	id, err := s.db().CreateCompra(in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -216,7 +216,7 @@ func (s *Server) handleDeleteCompra(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	if err := s.st.DeleteCompra(id); err != nil {
+	if err := s.db().DeleteCompra(id); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -226,7 +226,7 @@ func (s *Server) handleDeleteCompra(w http.ResponseWriter, r *http.Request) {
 // --- Ventas ---
 
 func (s *Server) handleListVentas(w http.ResponseWriter, r *http.Request) {
-	vs, err := s.st.Ventas()
+	vs, err := s.db().Ventas()
 	if err != nil {
 		serverError(w, err)
 		return
@@ -242,7 +242,7 @@ func (s *Server) handleCreateVenta(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Notas = emptyToNil(in.Notas)
 	in.Fecha = emptyToNil(in.Fecha)
-	id, err := s.st.CreateVenta(in)
+	id, err := s.db().CreateVenta(in)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -256,7 +256,7 @@ func (s *Server) handleDeleteVenta(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	if err := s.st.DeleteVenta(id); err != nil {
+	if err := s.db().DeleteVenta(id); err != nil {
 		serverError(w, err)
 		return
 	}

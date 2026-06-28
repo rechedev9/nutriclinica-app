@@ -17,7 +17,7 @@ func (s *Server) handleListRevisiones(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	revs, err := s.st.Revisiones(pid)
+	revs, err := s.db().Revisiones(pid)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -37,7 +37,7 @@ func (s *Server) handleCreateRevision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeRevision(&rev)
-	created, err := s.st.CreateRevision(pid, &rev)
+	created, err := s.db().CreateRevision(pid, &rev)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -57,7 +57,7 @@ func (s *Server) handleUpdateRevision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeRevision(&rev)
-	updated, err := s.st.UpdateRevision(id, &rev)
+	updated, err := s.db().UpdateRevision(id, &rev)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -75,7 +75,7 @@ func (s *Server) handleDeleteRevision(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	if err := s.st.DeleteRevision(id); err != nil {
+	if err := s.db().DeleteRevision(id); err != nil {
 		serverError(w, err)
 		return
 	}

@@ -45,7 +45,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 	if idStr != "" {
 		var id int64
 		fmt.Sscan(idStr, &id)
-		p, err := s.st.Paciente(id)
+		p, err := s.db().Paciente(id)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -60,7 +60,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		var err error
-		pacientes, err = s.st.Pacientes()
+		pacientes, err = s.db().Pacientes()
 		if err != nil {
 			serverError(w, err)
 			return
@@ -121,7 +121,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 	if idStr != "" && len(pacientes) > 0 {
 		var id int64
 		fmt.Sscan(idStr, &id)
-		rs, err := s.st.Revisiones(id)
+		rs, err := s.db().Revisiones(id)
 		if err != nil {
 			serverError(w, err)
 			return
@@ -130,7 +130,7 @@ func (s *Server) handleExportExcel(w http.ResponseWriter, r *http.Request) {
 			revs = append(revs, revRow{rv, pacientes[0].Nombre})
 		}
 	} else {
-		rc, err := s.st.RevisionesConNombre()
+		rc, err := s.db().RevisionesConNombre()
 		if err != nil {
 			serverError(w, err)
 			return
@@ -170,7 +170,7 @@ func (s *Server) handleExportRevision(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	rev, err := s.st.Revision(id)
+	rev, err := s.db().Revision(id)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -179,7 +179,7 @@ func (s *Server) handleExportRevision(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "No encontrado")
 		return
 	}
-	pac, err := s.st.Paciente(rev.PacienteID)
+	pac, err := s.db().Paciente(rev.PacienteID)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -297,7 +297,7 @@ func floatOrEmpty(p *float64) any {
 
 // fillCountsPublic expone el relleno de contadores desde el handler de export.
 func (s *Server) fillCountsPublic(p *models.Paciente) error {
-	return s.st.FillCounts(p)
+	return s.db().FillCounts(p)
 }
 
 func sendXLSX(w http.ResponseWriter, f *excelize.File, filename string) {

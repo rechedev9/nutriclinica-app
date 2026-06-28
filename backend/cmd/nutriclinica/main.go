@@ -29,6 +29,7 @@ func main() {
 	port := flag.Int("port", 5001, "Puerto de escucha")
 	noBrowser := flag.Bool("no-browser", false, "No abrir el navegador al arrancar")
 	fixOrphans := flag.Bool("fix-orphans", false, "Limpiar filas huérfanas (hace backup antes)")
+	cifrar := flag.Bool("cifrar", false, "Cifrar la base de datos en reposo (pide contraseña maestra al abrir)")
 	flag.Parse()
 
 	paths, err := config.Resolve(*dataDir)
@@ -36,31 +37,6 @@ func main() {
 		log.Fatalf("resolviendo rutas de datos: %v", err)
 	}
 	log.Printf("Directorio de datos: %s", paths.DataDir)
-
-	st, err := store.Open(paths.DBPath, nil)
-	if err != nil {
-		log.Fatalf("abriendo base de datos: %v", err)
-	}
-	defer st.Close()
-
-	if err := st.VerifyPragmas(); err != nil {
-		log.Fatalf("pragmas SQLite: %v", err)
-	}
-	if err := st.IntegrityCheck(); err != nil {
-		log.Fatalf("integridad de la base de datos: %v", err)
-	}
-	if err := handleOrphans(st, paths.DBPath, *fixOrphans); err != nil {
-		log.Fatalf("comprobación de claves foráneas: %v", err)
-	}
-	if err := st.Migrate(); err != nil {
-		log.Fatalf("migrando esquema: %v", err)
-	}
-	if pendientes, err := st.UsuariosConPasswordPorDefecto(); err != nil {
-		log.Printf("AVISO: no se pudo comprobar las contraseñas por defecto: %v", err)
-	} else if len(pendientes) > 0 {
-		log.Printf("AVISO DE SEGURIDAD: los usuarios %v conservan su contraseña por defecto. "+
-			"Cámbiala en la app (sección Usuarios) antes de usar datos reales.", pendientes)
-	}
 
 	sessions, err := auth.NewManager(paths.SecretKey)
 	if err != nil {
@@ -74,7 +50,55 @@ func main() {
 		log.Printf("AVISO: SPA no embebido (placeholder). Usa el dev server de Vite o ejecuta el build.")
 	}
 
-	srv := server.New(st, sessions, paths.FotosDir, spa)
+	// abrir abre, verifica y migra el store con la clave dada (dek=nil => sin
+	// cifrar). En modo cifrado se invoca tras desbloquear; sin cifrar, al
+	// construir el servidor.
+	abrir := func(dek []byte) (*store.Store, error) {
+		st, err := store.Open(paths.DBPath, dek)
+		if err != nil {
+			return nil, err
+		}
+		if err := st.VerifyPragmas(); err != nil {
+			st.Close()
+			return nil, fmt.Errorf("pragmas SQLite: %w", err)
+		}
+		if err := st.IntegrityCheck(); err != nil {
+			st.Close()
+			return nil, fmt.Errorf("integridad de la base de datos: %w", err)
+		}
+		if err := handleOrphans(st, paths.DBPath, *fixOrphans); err != nil {
+			st.Close()
+			return nil, fmt.Errorf("comprobación de claves foráneas: %w", err)
+		}
+		if err := st.Migrate(); err != nil {
+			st.Close()
+			return nil, fmt.Errorf("migrando esquema: %w", err)
+		}
+		if pendientes, err := st.UsuariosConPasswordPorDefecto(); err != nil {
+			log.Printf("AVISO: no se pudo comprobar las contraseñas por defecto: %v", err)
+		} else if len(pendientes) > 0 {
+			log.Printf("AVISO DE SEGURIDAD: los usuarios %v conservan su contraseña por defecto. "+
+				"Cámbiala en la app (sección Usuarios) antes de usar datos reales.", pendientes)
+		}
+		return st, nil
+	}
+
+	srv, err := server.New(server.Config{
+		Sessions:  sessions,
+		FotosDir:  paths.FotosDir,
+		SPA:       spa,
+		DBPath:    paths.DBPath,
+		VaultPath: paths.VaultKey,
+		Cifrado:   *cifrar,
+		Abrir:     abrir,
+	})
+	if err != nil {
+		log.Fatalf("abriendo base de datos: %v", err)
+	}
+	defer srv.Close()
+	if *cifrar {
+		log.Printf("Cifrado en reposo ACTIVADO: se pedirá la contraseña maestra en el navegador.")
+	}
 
 	ln, addr := listen(*port)
 	url := "http://" + addr
