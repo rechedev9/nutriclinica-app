@@ -7,6 +7,7 @@ import { queryClient } from '@/lib/api/queryClient'
 import { router } from '@/router'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { CifradoGate } from '@/features/cifrado/CifradoGate'
 import './index.css'
 
 const rootEl = document.getElementById('root')
@@ -17,7 +18,9 @@ ReactDOM.createRoot(rootEl).render(
     <ErrorBoundary>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <CifradoGate>
+            <RouterProvider router={router} />
+          </CifradoGate>
           <Toaster position="top-right" richColors />
         </QueryClientProvider>
       </ThemeProvider>
