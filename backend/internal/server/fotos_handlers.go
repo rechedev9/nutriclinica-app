@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"nutriclinica/internal/crypto"
 	"nutriclinica/internal/naming"
 )
 
@@ -85,19 +87,24 @@ func (s *Server) handleUploadFoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fullPath := filepath.Join(dir, fname)
-	// 0600: las fotos contienen PII, no deben ser legibles por otros usuarios.
-	dst, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	contenido, err := io.ReadAll(file)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	if _, err := io.Copy(dst, file); err != nil {
-		dst.Close()
-		_ = os.Remove(fullPath)
+	// Cifrar en reposo si la BD va cifrada (s.fotoKey != nil).
+	if s.fotoKey != nil {
+		contenido, err = crypto.CifrarFichero(s.fotoKey, contenido)
+		if err != nil {
+			serverError(w, err)
+			return
+		}
+	}
+	// 0600: las fotos contienen PII, no deben ser legibles por otros usuarios.
+	if err := os.WriteFile(fullPath, contenido, 0o600); err != nil {
 		serverError(w, err)
 		return
 	}
-	dst.Close()
 
 	var nota *string
 	if v := strings.TrimSpace(r.FormValue("nota")); v != "" {
@@ -138,7 +145,8 @@ func (s *Server) handleDeleteFoto(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ok(nil))
 }
 
-// handleServeFoto sirve un archivo de la carpeta de fotos.
+// handleServeFoto sirve un archivo de la carpeta de fotos, descifrándolo al
+// vuelo si está cifrado en reposo.
 func (s *Server) handleServeFoto(w http.ResponseWriter, r *http.Request) {
 	rel := r.PathValue("path")
 	full := filepath.Join(s.fotosDir, filepath.FromSlash(filepath.Clean("/"+rel)))
@@ -146,7 +154,63 @@ func (s *Server) handleServeFoto(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Ruta inválida")
 		return
 	}
-	http.ServeFile(w, r, full)
+	// Sin clave de fotos (modo no cifrado): servir el fichero tal cual.
+	if s.fotoKey == nil {
+		http.ServeFile(w, r, full)
+		return
+	}
+	data, err := os.ReadFile(full)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	// Ficheros antiguos sin cifrar (aún no migrados): servir tal cual.
+	if !crypto.EstaCifradoFichero(data) {
+		http.ServeFile(w, r, full)
+		return
+	}
+	plano, err := crypto.DescifrarFichero(s.fotoKey, data)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	info, err := os.Stat(full)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	// ServeContent fija el Content-Type por la extensión del nombre y soporta
+	// caché condicional.
+	http.ServeContent(w, r, filepath.Base(full), info.ModTime(), bytes.NewReader(plano))
+}
+
+// cifrarFotosExistentes cifra en sitio las fotos que aún estén en claro (sin la
+// marca). Es idempotente: las ya cifradas se saltan. Si el directorio no existe
+// todavía, no hace nada.
+func cifrarFotosExistentes(dir string, key []byte) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil
+	}
+	return filepath.WalkDir(dir, func(ruta string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		data, err := os.ReadFile(ruta)
+		if err != nil {
+			return err
+		}
+		if crypto.EstaCifradoFichero(data) {
+			return nil
+		}
+		enc, err := crypto.CifrarFichero(key, data)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(ruta, enc, 0o600)
+	})
 }
 
 // dentroDe comprueba que target no escapa del directorio base. Usa filepath.Rel

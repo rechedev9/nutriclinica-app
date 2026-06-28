@@ -60,12 +60,22 @@ func (s *Server) handleConfigurar(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	fotoKey, err := crypto.DerivarClaveFotos(dek)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	// Si hay una BD en claro previa, cifrarla con la nueva clave antes de abrir.
 	if existeFichero(s.dbPath) {
 		if err := store.CifrarBaseExistente(s.dbPath, dek); err != nil {
 			serverError(w, err)
 			return
 		}
+	}
+	// Cifrar las fotos en claro que ya hubiera en disco.
+	if err := cifrarFotosExistentes(s.fotosDir, fotoKey); err != nil {
+		serverError(w, err)
+		return
 	}
 	st, err := s.abrir(dek)
 	if err != nil {
@@ -83,6 +93,7 @@ func (s *Server) handleConfigurar(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	s.fotoKey = fotoKey
 	s.st.Store(st)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "recovery_key": recovery})
 }
@@ -122,11 +133,17 @@ func (s *Server) handleUnlock(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	fotoKey, err := crypto.DerivarClaveFotos(dek)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	st, err := s.abrir(dek)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
+	s.fotoKey = fotoKey
 	s.st.Store(st)
 	writeJSON(w, http.StatusOK, ok(nil))
 }

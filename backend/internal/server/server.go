@@ -39,6 +39,7 @@ type Server struct {
 	vaultPath string
 	abrir     func(dek []byte) (*store.Store, error)
 	mu        sync.Mutex // serializa configurar/unlock
+	fotoKey   []byte     // clave de cifrado de fotos (nil si la BD no va cifrada)
 }
 
 // New crea un Server. En modo no cifrado abre el store de inmediato.
