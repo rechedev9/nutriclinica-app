@@ -27,7 +27,7 @@ foreach ($t in $targets) {
   $env:GOOS = $t.os
   $env:GOARCH = $t.arch
   $env:CGO_ENABLED = '0'
-  go build -ldflags '-s -w' -o "$dist/$($t.out)" ./cmd/nutriclinica
+  go build -trimpath -ldflags '-s -w' -o "$dist/$($t.out)" ./cmd/nutriclinica
 }
 Remove-Item Env:GOOS, Env:GOARCH, Env:CGO_ENABLED -ErrorAction SilentlyContinue
 Pop-Location

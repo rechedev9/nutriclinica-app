@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"embed"
 	"fmt"
 	"strings"
@@ -141,6 +142,27 @@ func (s *Store) seedUsuarios() error {
 		}
 	}
 	return nil
+}
+
+// UsuariosConPasswordPorDefecto devuelve los usuarios semilla que todavía
+// conservan su contraseña por defecto (admin/admin, Jose/Jose123). Permite
+// avisar en el arranque para que se cambien antes de usar datos reales.
+func (s *Store) UsuariosConPasswordPorDefecto() ([]string, error) {
+	var pendientes []string
+	for _, u := range usuariosSeed {
+		var hash string
+		err := s.DB.QueryRow(`SELECT password_hash FROM usuarios WHERE usuario=?`, u.usuario).Scan(&hash)
+		if err == sql.ErrNoRows {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if bcrypt.CompareHashAndPassword([]byte(hash), []byte(u.password)) == nil {
+			pendientes = append(pendientes, u.usuario)
+		}
+	}
+	return pendientes, nil
 }
 
 func (s *Store) setUserVersion(v int) error {

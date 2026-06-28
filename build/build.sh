@@ -19,7 +19,7 @@ build() {
   local os="$1" arch="$2" out="$3"
   echo "    -> $os/$arch"
   GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 \
-    go build -ldflags '-s -w' -o "$DIST/$out" ./cmd/nutriclinica
+    go build -trimpath -ldflags '-s -w' -o "$DIST/$out" ./cmd/nutriclinica
 }
 
 build windows amd64 NutriClinica-win-amd64.exe
