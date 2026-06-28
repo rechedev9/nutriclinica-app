@@ -111,7 +111,10 @@ func (s *Store) CreateProducto(in models.ProductoInput) (*models.Producto, error
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return s.producto(id)
 }
 
@@ -158,7 +161,10 @@ func (s *Store) CreateCategoria(nombre string) (*models.Categoria, error) {
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return &models.Categoria{ID: id, Nombre: nombre}, nil
 }
 
@@ -197,7 +203,10 @@ func (s *Store) CreateProveedor(in models.ProveedorInput) (*models.Proveedor, er
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return s.proveedor(id)
 }
 
@@ -311,7 +320,10 @@ func (s *Store) CreateCompra(in models.CompraInput) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	cid, _ := res.LastInsertId()
+	cid, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
 	for _, l := range in.Lineas {
 		if _, err := tx.Exec(
 			`INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)`,
@@ -393,7 +405,10 @@ func (s *Store) CreateVenta(in models.VentaInput) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	vid, _ := res.LastInsertId()
+	vid, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
 	for _, l := range in.Lineas {
 		if _, err := tx.Exec(
 			`INSERT INTO stock_ventas_lineas (venta_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)`,

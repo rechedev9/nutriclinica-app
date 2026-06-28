@@ -45,10 +45,12 @@ func Resolve(explicit string) (Paths, error) {
 		FotosDir:  filepath.Join(dataDir, "fotos"),
 		SecretKey: filepath.Join(dataDir, "bbdd", "secret.key"),
 	}
-	if err := os.MkdirAll(filepath.Dir(p.DBPath), 0o755); err != nil {
+	// 0700: estos directorios contienen PII (BBDD y fotos), no deben ser
+	// accesibles por otros usuarios del sistema.
+	if err := os.MkdirAll(filepath.Dir(p.DBPath), 0o700); err != nil {
 		return Paths{}, err
 	}
-	if err := os.MkdirAll(p.FotosDir, 0o755); err != nil {
+	if err := os.MkdirAll(p.FotosDir, 0o700); err != nil {
 		return Paths{}, err
 	}
 	return p, nil
@@ -61,13 +63,14 @@ func portableDir() (string, bool) {
 		return "", false
 	}
 	dir := filepath.Dir(exe)
-	// Comprobar escritura con un archivo temporal.
-	probe := filepath.Join(dir, ".write-probe")
-	f, err := os.OpenFile(probe, os.O_CREATE|os.O_WRONLY, 0o644)
+	// Comprobar escritura creando un temporal con nombre único (os.CreateTemp):
+	// evita dejar un .write-probe fijo si el proceso muere entre crear y borrar.
+	f, err := os.CreateTemp(dir, ".write-probe-*")
 	if err != nil {
 		return "", false
 	}
+	name := f.Name()
 	f.Close()
-	os.Remove(probe)
+	os.Remove(name)
 	return dir, true
 }

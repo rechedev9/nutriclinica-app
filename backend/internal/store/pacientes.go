@@ -87,7 +87,10 @@ func (s *Store) CreatePaciente(in models.PacienteInput) (*models.Paciente, error
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return s.Paciente(id)
 }
 

@@ -88,7 +88,10 @@ func (s *Store) CreateRevision(pid int64, r *models.Revision) (*models.Revision,
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return s.Revision(id)
 }
 

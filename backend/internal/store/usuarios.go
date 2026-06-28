@@ -60,7 +60,10 @@ func (s *Store) CreateUsuario(usuario, passwordHash, rol string) (*models.Usuari
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return s.usuario(id)
 }
 

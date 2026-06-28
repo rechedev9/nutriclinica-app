@@ -3,14 +3,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"nutriclinica/internal/auth"
@@ -51,6 +55,12 @@ func main() {
 	if err := st.Migrate(); err != nil {
 		log.Fatalf("migrando esquema: %v", err)
 	}
+	if pendientes, err := st.UsuariosConPasswordPorDefecto(); err != nil {
+		log.Printf("AVISO: no se pudo comprobar las contraseñas por defecto: %v", err)
+	} else if len(pendientes) > 0 {
+		log.Printf("AVISO DE SEGURIDAD: los usuarios %v conservan su contraseña por defecto. "+
+			"Cámbiala en la app (sección Usuarios) antes de usar datos reales.", pendientes)
+	}
 
 	sessions, err := auth.NewManager(paths.SecretKey)
 	if err != nil {
@@ -77,8 +87,23 @@ func main() {
 		}()
 	}
 
-	if err := http.Serve(ln, srv.Handler()); err != nil {
-		log.Fatalf("servidor: %v", err)
+	httpSrv := &http.Server{Handler: srv.Handler()}
+	go func() {
+		if err := httpSrv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("servidor: %v", err)
+		}
+	}()
+
+	// Esperar Ctrl+C / SIGTERM y cerrar de forma ordenada: primero el servidor
+	// HTTP (deja de aceptar conexiones), luego la BD (vacía el WAL).
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+	log.Println("Cerrando NutriClínica...")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("cierre del servidor: %v", err)
 	}
 }
 

@@ -54,7 +54,10 @@ func (s *Store) CreateFoto(pid int64, filename string, nota *string) (*models.Fo
 	if err != nil {
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
 	return s.Foto(id)
 }
 
