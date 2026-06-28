@@ -39,16 +39,23 @@ export function AlmacenTab() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Producto | undefined>()
   const [q, setQ] = useState('')
+  const [cat, setCat] = useState('')
   const deferredQ = useDeferredValue(q)
 
   const rows = useMemo(() => almacen ?? [], [almacen])
+  const categorias = useMemo(
+    () => [...new Set(rows.map((p) => p.categoria).filter((c): c is string => !!c))].sort(),
+    [rows],
+  )
   const filtradas = useMemo(() => {
     const term = deferredQ.trim().toLowerCase()
-    if (!term) return rows
-    return rows.filter(
-      (p) => p.nombre.toLowerCase().includes(term) || (p.categoria ?? '').toLowerCase().includes(term),
-    )
-  }, [rows, deferredQ])
+    return rows.filter((p) => {
+      const coincideTexto =
+        !term || p.nombre.toLowerCase().includes(term) || (p.categoria ?? '').toLowerCase().includes(term)
+      const coincideCat = !cat || p.categoria === cat
+      return coincideTexto && coincideCat
+    })
+  }, [rows, deferredQ, cat])
 
   if (isLoading) return <CenteredSpinner />
 
@@ -78,6 +85,20 @@ export function AlmacenTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-bold">Productos</h3>
         <div className="flex items-center gap-2">
+          {categorias.length > 0 && (
+            <select
+              className="rounded-lg border border-border bg-app py-2 pl-3 pr-8 text-[15px] outline-none focus:border-primary focus:bg-surface"
+              value={cat}
+              onChange={(e) => setCat(e.target.value)}
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          )}
           {rows.length > 0 && (
             <div className="relative">
               <svg className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -104,7 +125,7 @@ export function AlmacenTab() {
           action={<Button onClick={nuevo}>+ Nuevo producto</Button>}
         />
       ) : filtradas.length === 0 ? (
-        <p className="py-10 text-center text-sm text-ink-muted">Ningún producto coincide con «{q}».</p>
+        <p className="py-10 text-center text-sm text-ink-muted">Ningún producto coincide con el filtro.</p>
       ) : (
         <div className="overflow-x-auto rounded-card bg-surface shadow-card">
           <table className="w-full text-sm">
@@ -116,12 +137,17 @@ export function AlmacenTab() {
                 <th className="p-3 text-right font-semibold">Stock</th>
                 <th className="p-3 text-right font-semibold">Coste</th>
                 <th className="p-3 text-right font-semibold">Venta</th>
+                <th className="p-3 text-right font-semibold">Margen</th>
+                <th className="p-3 text-right font-semibold">Valor stock</th>
                 <th className="p-3"></th>
               </tr>
             </thead>
             <tbody>
               {filtradas.map((p) => {
                 const est = estadoStock(p.stock_actual, p.stock_minimo)
+                const margenU = p.precio_venta - p.precio_coste
+                const margenPct = p.precio_venta > 0 ? Math.round((margenU / p.precio_venta) * 100) : null
+                const valorStock = Math.max(0, p.stock_actual) * p.precio_coste
                 return (
                   <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
                     <td className="p-3 font-semibold">{p.nombre}</td>
@@ -136,6 +162,11 @@ export function AlmacenTab() {
                     </td>
                     <td className="p-3 text-right tabular-nums">{p.precio_coste.toFixed(2)} €</td>
                     <td className="p-3 text-right tabular-nums">{p.precio_venta.toFixed(2)} €</td>
+                    <td className={cn('p-3 text-right tabular-nums', margenU < 0 && 'text-danger')}>
+                      {margenU.toFixed(2)} €
+                      {margenPct != null && <span className="ml-1 text-[12px] text-ink-muted">({margenPct}%)</span>}
+                    </td>
+                    <td className="p-3 text-right font-semibold tabular-nums">{valorStock.toFixed(2)} €</td>
                     <td className="p-3 text-right">
                       <Button
                         variant="ghost"

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useVentas, useDeleteVenta } from '../hooks/useStock'
 import { VentaModal } from '../components/VentaModal'
 import { Button } from '@/components/ui/Button'
@@ -11,6 +12,7 @@ export function VentasTab() {
   const { data: ventas, isLoading } = useVentas()
   const del = useDeleteVenta()
   const confirm = useConfirm()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<number | null>(null)
 
@@ -61,7 +63,28 @@ export function VentasTab() {
                 <div className="flex-1">
                   <div className="font-semibold">{v.fecha ? fmtFecha(v.fecha) : 'Sin fecha'}</div>
                   <div className="text-[13px] text-ink-muted">
-                    {v.paciente_nombre ?? 'Venta libre'} · {v.lineas.length} línea(s)
+                    {v.paciente_id && v.paciente_nombre ? (
+                      <span
+                        role="link"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/pacientes/${v.paciente_id}`)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.stopPropagation()
+                            navigate(`/pacientes/${v.paciente_id}`)
+                          }
+                        }}
+                        className="cursor-pointer font-medium text-primary hover:underline"
+                      >
+                        {v.paciente_nombre}
+                      </span>
+                    ) : (
+                      'Venta libre'
+                    )}{' '}
+                    · {v.lineas.length} línea(s)
                   </div>
                 </div>
                 <div className="font-bold">{v.total.toFixed(2)} €</div>
