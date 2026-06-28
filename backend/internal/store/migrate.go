@@ -12,7 +12,7 @@ import (
 var schemaFS embed.FS
 
 // schemaVersion es la versión de esquema objetivo (PRAGMA user_version).
-const schemaVersion = 2
+const schemaVersion = 3
 
 // seedUser describe un usuario inicial.
 type seedUser struct {
@@ -59,6 +59,16 @@ func (s *Store) Migrate() error {
 			return err
 		}
 		version = 2
+	}
+
+	if version < 3 {
+		if err := s.applySQLFile("schema/0003_indices.sql"); err != nil {
+			return err
+		}
+		if err := s.setUserVersion(3); err != nil {
+			return err
+		}
+		version = 3
 	}
 
 	return nil

@@ -2,6 +2,8 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"nutriclinica/internal/models"
 )
@@ -10,14 +12,21 @@ import (
 
 // Almacen devuelve los productos activos con su stock_actual calculado.
 func (s *Store) Almacen() ([]models.AlmacenRow, error) {
+	// Se preagregan las cantidades de compras y ventas por producto en
+	// subconsultas y se unen por JOIN. Asi se calcula el stock con una sola
+	// pasada (en vez de dos subconsultas correlacionadas por fila) y sin el
+	// producto cartesiano que provocaria unir ambas tablas de lineas y agrupar.
 	rows, err := s.DB.Query(`
 		SELECT p.id, p.nombre, p.unidad, p.precio_coste, p.precio_venta, p.stock_minimo,
 		       c.nombre as categoria, pr.nombre as proveedor_nombre,
-		       COALESCE((SELECT SUM(cl.cantidad) FROM stock_compras_lineas cl WHERE cl.producto_id=p.id),0) -
-		       COALESCE((SELECT SUM(vl.cantidad) FROM stock_ventas_lineas  vl WHERE vl.producto_id=p.id),0) as stock_actual
+		       COALESCE(comp.tot, 0) - COALESCE(vent.tot, 0) as stock_actual
 		FROM stock_productos p
-		LEFT JOIN stock_categorias c  ON c.id  = p.categoria_id
+		LEFT JOIN stock_categorias c   ON c.id  = p.categoria_id
 		LEFT JOIN stock_proveedores pr ON pr.id = p.proveedor_id
+		LEFT JOIN (SELECT producto_id, SUM(cantidad) AS tot FROM stock_compras_lineas GROUP BY producto_id) comp
+		       ON comp.producto_id = p.id
+		LEFT JOIN (SELECT producto_id, SUM(cantidad) AS tot FROM stock_ventas_lineas GROUP BY producto_id) vent
+		       ON vent.producto_id = p.id
 		WHERE p.activo=1 ORDER BY p.nombre COLLATE NOCASE`)
 	if err != nil {
 		return nil, err
@@ -230,36 +239,59 @@ func (s *Store) Compras() ([]models.Compra, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	// Cargar líneas tras cerrar el cursor (una sola conexión: nada anidado).
+	// Cargar todas las líneas en una sola query (tras cerrar el cursor: una sola
+	// conexión, nada anidado) y repartirlas por compra. Evita el N+1.
+	ids := make([]int64, len(out))
 	for i := range out {
-		lineas, err := s.compraLineas(out[i].ID)
-		if err != nil {
-			return nil, err
-		}
-		out[i].Lineas = lineas
+		ids[i] = out[i].ID
+	}
+	porPadre, err := s.lineasPorPadre("stock_compras_lineas", "compra_id", ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range out {
+		out[i].Lineas = porPadre[out[i].ID]
 	}
 	return out, nil
 }
 
-func (s *Store) compraLineas(compraID int64) ([]models.Linea, error) {
-	rows, err := s.DB.Query(`
-		SELECT l.id, l.producto_id, l.cantidad, l.precio_unitario, p.nombre as producto_nombre, p.unidad
-		FROM stock_compras_lineas l
+// lineasPorPadre carga de golpe las líneas de varias compras/ventas y las
+// agrupa por el id del padre (compra_id o venta_id). tabla y col son literales
+// internos (no entran datos de usuario). Cada padre presente en ids recibe al
+// menos un slice vacío para que el JSON serialice [] y no null.
+func (s *Store) lineasPorPadre(tabla, col string, ids []int64) (map[int64][]models.Linea, error) {
+	res := make(map[int64][]models.Linea, len(ids))
+	for _, id := range ids {
+		res[id] = []models.Linea{}
+	}
+	if len(ids) == 0 {
+		return res, nil
+	}
+	ph := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		ph[i] = "?"
+		args[i] = id
+	}
+	q := fmt.Sprintf(`
+		SELECT l.%s, l.id, l.producto_id, l.cantidad, l.precio_unitario, p.nombre as producto_nombre, p.unidad
+		FROM %s l
 		JOIN stock_productos p ON p.id=l.producto_id
-		WHERE l.compra_id=?`, compraID)
+		WHERE l.%s IN (%s)`, col, tabla, col, strings.Join(ph, ","))
+	rows, err := s.DB.Query(q, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	out := []models.Linea{}
 	for rows.Next() {
+		var padreID int64
 		var l models.Linea
-		if err := rows.Scan(&l.ID, &l.ProductoID, &l.Cantidad, &l.PrecioUnitario, &l.ProductoNombre, &l.Unidad); err != nil {
+		if err := rows.Scan(&padreID, &l.ID, &l.ProductoID, &l.Cantidad, &l.PrecioUnitario, &l.ProductoNombre, &l.Unidad); err != nil {
 			return nil, err
 		}
-		out = append(out, l)
+		res[padreID] = append(res[padreID], l)
 	}
-	return out, rows.Err()
+	return res, rows.Err()
 }
 
 // CreateCompra inserta una compra con sus líneas en una transacción.
@@ -330,35 +362,18 @@ func (s *Store) Ventas() ([]models.Venta, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	ids := make([]int64, len(out))
 	for i := range out {
-		lineas, err := s.ventaLineas(out[i].ID)
-		if err != nil {
-			return nil, err
-		}
-		out[i].Lineas = lineas
+		ids[i] = out[i].ID
 	}
-	return out, nil
-}
-
-func (s *Store) ventaLineas(ventaID int64) ([]models.Linea, error) {
-	rows, err := s.DB.Query(`
-		SELECT l.id, l.producto_id, l.cantidad, l.precio_unitario, p.nombre as producto_nombre, p.unidad
-		FROM stock_ventas_lineas l
-		JOIN stock_productos p ON p.id=l.producto_id
-		WHERE l.venta_id=?`, ventaID)
+	porPadre, err := s.lineasPorPadre("stock_ventas_lineas", "venta_id", ids)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	out := []models.Linea{}
-	for rows.Next() {
-		var l models.Linea
-		if err := rows.Scan(&l.ID, &l.ProductoID, &l.Cantidad, &l.PrecioUnitario, &l.ProductoNombre, &l.Unidad); err != nil {
-			return nil, err
-		}
-		out = append(out, l)
+	for i := range out {
+		out[i].Lineas = porPadre[out[i].ID]
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 // CreateVenta inserta una venta con sus líneas en una transacción.
