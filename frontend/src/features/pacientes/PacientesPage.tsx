@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useParams } from 'react-router-dom'
-import { usePacientes } from './hooks/usePacientes'
-import { PacienteSidebar } from './components/PacienteSidebar'
+import { Outlet } from 'react-router-dom'
 import { PacienteModal } from './components/PacienteModal'
 
 // Contexto que la página comparte con sus rutas hijas (overview/detalle).
@@ -10,27 +8,15 @@ export interface PacientesOutletCtx {
 }
 
 export function PacientesPage() {
-  const { data: pacientes = [], isLoading } = usePacientes()
-  const { id } = useParams()
   const [modalOpen, setModalOpen] = useState(false)
   const onNew = () => setModalOpen(true)
 
+  // Sin barra lateral: la rejilla de la overview es la lista (a todo el ancho) y
+  // el detalle ocupa todo el espacio. Se vuelve a la lista desde el detalle o
+  // desde "Pacientes" en la navegación.
   return (
-    <div className="flex flex-1 overflow-hidden max-md:block">
-      {/* La barra lateral solo aparece con un paciente seleccionado (para
-          cambiar rápido). Sin selección, la rejilla de la overview hace de lista
-          a todo el ancho y no se duplica. */}
-      {id && (
-        <PacienteSidebar
-          pacientes={pacientes}
-          loading={isLoading}
-          activeId={Number(id)}
-          onNew={onNew}
-        />
-      )}
-      <div className="flex flex-1 flex-col overflow-hidden max-md:overflow-visible">
-        <Outlet context={{ onNew } satisfies PacientesOutletCtx} />
-      </div>
+    <div className="flex flex-1 flex-col overflow-hidden max-md:overflow-visible">
+      <Outlet context={{ onNew } satisfies PacientesOutletCtx} />
       <PacienteModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   )

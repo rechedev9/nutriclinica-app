@@ -57,8 +57,18 @@ export function PacienteDetail() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden max-md:overflow-visible">
-      <div className="flex shrink-0 items-center gap-3.5 border-b border-border bg-surface px-6 py-4 max-md:flex-wrap print-hide">
-        <Avatar nombre={paciente.nombre} className="h-[52px] w-[52px] text-xl shadow-[0_6px_16px_-4px_rgba(15,123,146,.45)]" />
+      <div className="flex shrink-0 flex-col gap-3 border-b border-border bg-surface px-6 py-4 print-hide">
+        <button
+          onClick={() => navigate('/pacientes')}
+          className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          Pacientes
+        </button>
+        <div className="flex items-center gap-3.5 max-md:flex-wrap">
+          <Avatar nombre={paciente.nombre} className="h-[52px] w-[52px] text-xl shadow-[0_6px_16px_-4px_rgba(15,123,146,.45)]" />
         <div className="flex-1">
           <div className="text-[22px] font-bold">{paciente.nombre}</div>
           <div className="text-sm text-ink-muted">
@@ -71,13 +81,14 @@ export function PacienteDetail() {
             {paciente.sexo && <Stat value={paciente.sexo} label="" />}
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-            Editar
-          </Button>
-          <Button variant="danger" size="sm" onClick={onDelete}>
-            Eliminar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              Editar
+            </Button>
+            <Button variant="danger" size="sm" onClick={onDelete}>
+              Eliminar
+            </Button>
+          </div>
         </div>
       </div>
 
