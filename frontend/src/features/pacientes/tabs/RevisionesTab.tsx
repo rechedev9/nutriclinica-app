@@ -71,7 +71,18 @@ function RevisionCard({
               )}
               {medidas.map((m) => (
                 <div key={m.key} className="text-sm">
-                  <div className="text-ink-muted">{m.short}</div>
+                  <div className="flex items-center gap-1 text-ink-muted">
+                    {m.grupo === 'pliegue' && (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" title="Medido con plicómetro">
+                        <path d="M3 8h13" />
+                        <path d="M3 16h13" />
+                        <path d="M16 8c3 0 3 8 0 8" />
+                        <line x1="3" y1="5" x2="3" y2="8" />
+                        <line x1="3" y1="16" x2="3" y2="19" />
+                      </svg>
+                    )}
+                    {m.short}
+                  </div>
                   <div className="font-semibold">
                     {rev[m.key]} {m.unit}
                   </div>
