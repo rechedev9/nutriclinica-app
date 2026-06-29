@@ -25,18 +25,27 @@ function KpiCard({
   unit,
   sub,
   decimals = 1,
+  icon,
 }: {
   label: string
   rawValue: number | null
   unit?: string
   sub?: React.ReactNode
   decimals?: number
+  icon?: React.ReactNode
 }) {
   const animated = useCountUp(rawValue, decimals)
   return (
     <div className="rounded-card bg-surface p-4 shadow-card">
-      <div className="text-[13px] text-ink-muted">{label}</div>
-      <div className="mt-1 text-2xl font-extrabold">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
+        {icon && (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
+            {icon}
+          </div>
+        )}
+      </div>
+      <div className="mt-2 text-2xl font-extrabold">
         {animated}
         {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
       </div>
@@ -97,16 +106,18 @@ export function AnalisisTab() {
   if (!derived) return <EmptyState title="Sin datos para analizar" subtitle="Añade revisiones para ver la evolución." />
 
   const { first, last } = derived
+  const prev = derived.asc.length >= 2 ? derived.asc[derived.asc.length - 2]! : null
   const grasaLast = grasaFn(last)
+  const grasaPrev = prev ? grasaFn(prev) : null
   const imcLast = calcIMC(last.peso, p.talla)
   const clase = clasificarGrasa(grasaLast, sexo)
 
   const filas = [
-    { label: 'Peso (kg)', f: first.peso, l: last.peso },
-    { label: 'IMC', f: calcIMC(first.peso, p.talla)?.val ?? null, l: imcLast?.val ?? null },
-    { label: '% Grasa', f: grasaFn(first), l: grasaLast },
-    { label: 'Peso graso (kg)', f: pesoGraso(first.peso, grasaFn(first)), l: pesoGraso(last.peso, grasaLast) },
-    { label: 'Peso magro (kg)', f: pesoMagro(first.peso, grasaFn(first)), l: pesoMagro(last.peso, grasaLast) },
+    { label: 'Peso (kg)', f: first.peso, a: prev?.peso ?? null, l: last.peso },
+    { label: 'IMC', f: calcIMC(first.peso, p.talla)?.val ?? null, a: prev ? (calcIMC(prev.peso, p.talla)?.val ?? null) : null, l: imcLast?.val ?? null },
+    { label: '% Grasa', f: grasaFn(first), a: grasaPrev, l: grasaLast },
+    { label: 'Peso graso (kg)', f: pesoGraso(first.peso, grasaFn(first)), a: prev ? pesoGraso(prev.peso, grasaPrev) : null, l: pesoGraso(last.peso, grasaLast) },
+    { label: 'Peso magro (kg)', f: pesoMagro(first.peso, grasaFn(first)), a: prev ? pesoMagro(prev.peso, grasaPrev) : null, l: pesoMagro(last.peso, grasaLast) },
   ]
 
   return (
@@ -120,13 +131,20 @@ export function AnalisisTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} />
-        <KpiCard label="IMC" rawValue={imcLast?.val ?? null} sub={imcLast?.etiq} decimals={1} />
+        <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} icon={
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
+        } />
+        <KpiCard label="IMC" rawValue={imcLast?.val ?? null} sub={imcLast?.etiq} decimals={1} icon={
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>
+        } />
         <KpiCard
           label="% Grasa"
           rawValue={grasaLast}
           unit="%"
           decimals={1}
+          icon={
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/></svg>
+          }
           sub={
             clase && (
               <span className="rounded px-1.5 py-0.5" style={{ background: clase.bg, color: clase.color }}>
@@ -135,69 +153,83 @@ export function AnalisisTab() {
             )
           }
         />
-        <KpiCard label="Peso graso" rawValue={pesoGraso(last.peso, grasaLast)} unit="kg" decimals={1} />
-        <KpiCard label="Peso magro" rawValue={pesoMagro(last.peso, grasaLast)} unit="kg" decimals={1} />
+        <KpiCard label="Peso graso" rawValue={pesoGraso(last.peso, grasaLast)} unit="kg" decimals={1} icon={
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c.5 3 3 4.5 3 8a3 3 0 0 1-6 0c0-1 .4-1.8 1-2.4C9 11 12 7 12 3z"/><path d="M12 3c2.5 3 5 5.5 5 9a5 5 0 0 1-10 0"/></svg>
+        } />
+        <KpiCard label="Peso magro" rawValue={pesoMagro(last.peso, grasaLast)} unit="kg" decimals={1} icon={
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11"/></svg>
+        } />
       </div>
 
-      {/* Composición corporal */}
-      {grasaLast != null && last.peso != null && (() => {
-        const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
-        const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
-        const total = pGraso + pMagro
-        const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
-        return (
-          <div className="rounded-card bg-surface p-4 shadow-card">
-            <div className="mb-3 text-sm font-bold">Composición corporal</div>
-            <div className="overflow-hidden rounded-full h-5" style={{ background: '#fde68a' }}>
-              <div
-                className="h-full rounded-full transition-all duration-[1800ms] ease-out"
-                style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
-              />
-            </div>
-            <div className="mt-3 flex justify-between text-sm">
-              <div className="flex items-center gap-1.5">
-                <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#0F7B92' }} />
-                <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
-                <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+      {/* Composición corporal + Tabla evolución en la misma fila */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {grasaLast != null && last.peso != null && (() => {
+          const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
+          const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
+          const total = pGraso + pMagro
+          const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
+          return (
+            <div className="rounded-card bg-surface p-4 shadow-card">
+              <div className="mb-3 text-sm font-bold">Composición corporal</div>
+              <div className="overflow-hidden rounded-full h-5" style={{ background: '#fde68a' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-[1800ms] ease-out"
+                  style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
+                />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
-                <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
-                <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#fbbf24' }} />
+              <div className="mt-3 flex justify-between text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#0F7B92' }} />
+                  <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
+                  <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
+                  <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
+                  <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#fbbf24' }} />
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })()}
+          )
+        })()}
 
-      {/* Tabla de evolución */}
-      <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
-        <div className="mb-2 text-sm font-bold">Evolución</div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-ink-muted">
-              <th className="py-1.5 font-semibold">Métrica</th>
-              <th className="py-1.5 font-semibold">Primera</th>
-              <th className="py-1.5 font-semibold">Última</th>
-              <th className="py-1.5 font-semibold">Δ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f) => {
-              const delta = f.f != null && f.l != null ? Math.round((f.l - f.f) * 10) / 10 : null
-              return (
-                <tr key={f.label} className="border-t border-border">
-                  <td className="py-1.5 font-medium">{f.label}</td>
-                  <td className="py-1.5">{f.f ?? '—'}</td>
-                  <td className="py-1.5 font-semibold">{f.l ?? '—'}</td>
-                  <td className={cn('py-1.5 font-semibold', delta != null && delta < 0 && 'text-success', delta != null && delta > 0 && 'text-danger')}>
-                    {delta != null ? (delta > 0 ? `+${delta}` : delta) : '—'}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
+          <div className="mb-2 text-sm font-bold">Evolución</div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-ink-muted">
+                <th className="py-1.5 font-semibold">Métrica</th>
+                <th className="py-1.5 font-semibold">Primera</th>
+                <th className="py-1.5 font-semibold">Anterior</th>
+                <th className="py-1.5 font-semibold">Última</th>
+                <th className="py-1.5 font-semibold">Δ Prim vs Últ</th>
+                <th className="py-1.5 font-semibold">Δ Ant vs Últ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map((f) => {
+                const deltaTotal = f.f != null && f.l != null ? Math.round((f.l - f.f) * 10) / 10 : null
+                const deltaAnt = f.a != null && f.l != null ? Math.round((f.l - f.a) * 10) / 10 : null
+                const fmtDelta = (d: number | null) =>
+                  d != null ? (d > 0 ? `+${d}` : String(d)) : '—'
+                return (
+                  <tr key={f.label} className="border-t border-border">
+                    <td className="py-1.5 font-medium">{f.label}</td>
+                    <td className="py-1.5 text-ink-muted">{f.f ?? '—'}</td>
+                    <td className="py-1.5 text-ink-muted">{f.a ?? '—'}</td>
+                    <td className="py-1.5 font-semibold">{f.l ?? '—'}</td>
+                    <td className={cn('py-1.5 font-semibold', deltaTotal != null && deltaTotal < 0 && 'text-success', deltaTotal != null && deltaTotal > 0 && 'text-danger')}>
+                      {fmtDelta(deltaTotal)}
+                    </td>
+                    <td className={cn('py-1.5 font-semibold', deltaAnt != null && deltaAnt < 0 && 'text-success', deltaAnt != null && deltaAnt > 0 && 'text-danger')}>
+                      {fmtDelta(deltaAnt)}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Gráficos: peso+grasa y perímetros en la misma fila */}
