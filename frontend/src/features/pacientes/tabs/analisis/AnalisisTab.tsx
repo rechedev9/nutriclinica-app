@@ -202,8 +202,8 @@ export function AnalisisTab() {
                 <th className="py-1.5 font-semibold">Primera</th>
                 <th className="py-1.5 font-semibold">Anterior</th>
                 <th className="py-1.5 font-semibold">Última</th>
-                <th className="py-1.5 font-semibold">Δ Prim vs Últ</th>
-                <th className="py-1.5 font-semibold">Δ Ant vs Últ</th>
+                <th className="py-1.5 font-bold text-ink">Δ Prim vs Últ</th>
+                <th className="py-1.5 font-bold text-ink">Δ Ant vs Últ</th>
               </tr>
             </thead>
             <tbody>
