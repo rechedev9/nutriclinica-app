@@ -124,7 +124,17 @@ export function ProductoModal({ open, onClose, producto }: Props) {
             <Input type="number" step="0.01" {...register('precio_venta')} />
           </Field>
           <Field label="Unidad">
-            <Input {...register('unidad')} />
+            <Select {...register('unidad')}>
+              <option value="ud">ud (unidad)</option>
+              <option value="bote">bote</option>
+              <option value="saco">saco</option>
+              <option value="bolsa">bolsa</option>
+              <option value="caja">caja</option>
+              <option value="kg">kg</option>
+              <option value="gr">gr</option>
+              <option value="l">l (litro)</option>
+              <option value="ml">ml</option>
+            </Select>
           </Field>
           <Field label="Stock mínimo">
             <Input type="number" step="0.1" {...register('stock_minimo')} />
