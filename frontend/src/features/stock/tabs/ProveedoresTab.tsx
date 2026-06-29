@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useProveedores, useDeleteProveedor } from '../hooks/useStock'
 import { ProveedorModal } from '../components/ProveedorModal'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Field'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
@@ -13,9 +14,12 @@ export function ProveedoresTab() {
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Proveedor | undefined>()
+  const [busqueda, setBusqueda] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  const rows = proveedores ?? []
+  const rows = (proveedores ?? []).filter((p) =>
+    p.nombre.toLowerCase().includes(busqueda.toLowerCase()),
+  )
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar proveedor?', confirmText: 'Eliminar', danger: true })
@@ -34,7 +38,16 @@ export function ProveedoresTab() {
         <Button onClick={nuevo}>+ Nuevo proveedor</Button>
       </div>
 
-      {rows.length === 0 ? (
+      {(proveedores ?? []).length > 0 && (
+        <Input
+          placeholder="Buscar proveedor…"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="max-w-xs"
+        />
+      )}
+
+      {(proveedores ?? []).length === 0 ? (
         <EmptyState
           icon={
             <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -46,6 +59,8 @@ export function ProveedoresTab() {
           subtitle="Añade tus proveedores para asociarlos a las compras y tener su contacto a mano."
           action={<Button onClick={nuevo}>+ Nuevo proveedor</Button>}
         />
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-ink-muted">No hay proveedores que coincidan con la búsqueda.</p>
       ) : (
         <div className="overflow-x-auto rounded-card bg-surface shadow-card">
           <table className="w-full text-sm">

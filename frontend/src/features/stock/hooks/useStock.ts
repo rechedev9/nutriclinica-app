@@ -133,6 +133,19 @@ export function useCreateCompra() {
   })
 }
 
+export function useUpdateCompra() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: CompraInput }) =>
+      api('PUT', `/api/stock/compras/${id}`, body),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.compras, qk.stock.almacen])
+      toast.success('Compra actualizada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
 export function useDeleteCompra() {
   const qc = useQueryClient()
   return useMutation({

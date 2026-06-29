@@ -210,6 +210,26 @@ func (s *Server) handleCreateCompra(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, ok(map[string]any{"id": id}))
 }
 
+func (s *Server) handleUpdateCompra(w http.ResponseWriter, r *http.Request) {
+	id, err := pathInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "id inválido")
+		return
+	}
+	var in models.CompraInput
+	if err := decodeJSON(r, &in); err != nil {
+		writeError(w, http.StatusBadRequest, "JSON inválido")
+		return
+	}
+	in.Notas = emptyToNil(in.Notas)
+	in.Fecha = emptyToNil(in.Fecha)
+	if err := s.db().UpdateCompra(id, in); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ok(nil))
+}
+
 func (s *Server) handleDeleteCompra(w http.ResponseWriter, r *http.Request) {
 	id, err := pathInt(r, "id")
 	if err != nil {

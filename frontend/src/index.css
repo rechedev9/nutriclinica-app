@@ -50,6 +50,12 @@
   }
 }
 
+/* Icono del selector de fecha/hora en modo oscuro. */
+.dark input[type='date']::-webkit-calendar-picker-indicator,
+.dark input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* Reglas de impresión para el informe PDF de Análisis. */
 @media print {
   @page {

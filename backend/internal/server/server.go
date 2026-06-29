@@ -127,6 +127,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("DELETE /api/stock/proveedores/{id}", s.requireAuth(s.handleDeleteProveedor))
 	mux.HandleFunc("GET /api/stock/compras", s.requireAuth(s.handleListCompras))
 	mux.HandleFunc("POST /api/stock/compras", s.requireAuth(s.handleCreateCompra))
+	mux.HandleFunc("PUT /api/stock/compras/{id}", s.requireAuth(s.handleUpdateCompra))
 	mux.HandleFunc("DELETE /api/stock/compras/{id}", s.requireAuth(s.handleDeleteCompra))
 	mux.HandleFunc("GET /api/stock/ventas", s.requireAuth(s.handleListVentas))
 	mux.HandleFunc("POST /api/stock/ventas", s.requireAuth(s.handleCreateVenta))

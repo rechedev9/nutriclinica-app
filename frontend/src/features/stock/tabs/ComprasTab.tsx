@@ -5,14 +5,26 @@ import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
-import { fmtFecha } from '@/lib/format/fecha'
+import { fmtFecha, fmtDatetime } from '@/lib/format/fecha'
+import type { Compra } from '@/types'
 
 export function ComprasTab() {
   const { data: compras, isLoading } = useCompras()
   const del = useDeleteCompra()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<Compra | undefined>()
   const [expanded, setExpanded] = useState<number | null>(null)
+
+  function abrirNueva() {
+    setEditing(undefined)
+    setOpen(true)
+  }
+
+  function abrirEditar(c: Compra) {
+    setEditing(c)
+    setOpen(true)
+  }
 
   if (isLoading) return <CenteredSpinner />
   const rows = compras ?? []
@@ -38,7 +50,7 @@ export function ComprasTab() {
 
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Compras</h3>
-        <Button onClick={() => setOpen(true)}>+ Nueva compra</Button>
+        <Button onClick={abrirNueva}>+ Nueva compra</Button>
       </div>
 
       {rows.length === 0 ? (
@@ -51,7 +63,7 @@ export function ComprasTab() {
           }
           title="Sin compras registradas"
           subtitle="Registra tus compras a proveedores para que el stock se actualice solo."
-          action={<Button onClick={() => setOpen(true)}>+ Nueva compra</Button>}
+          action={<Button onClick={abrirNueva}>+ Nueva compra</Button>}
         />
       ) : (
         rows.map((c) => (
@@ -59,13 +71,18 @@ export function ComprasTab() {
             <div className="flex items-center gap-3 p-4">
               <button onClick={() => setExpanded(expanded === c.id ? null : c.id)} className="flex flex-1 items-center gap-3 text-left">
                 <div className="flex-1">
-                  <div className="font-semibold">{c.fecha ? fmtFecha(c.fecha) : 'Sin fecha'}</div>
+                  <div className="font-semibold">
+                    {c.fecha ? (c.fecha.includes('T') ? fmtDatetime(c.fecha) : fmtFecha(c.fecha)) : 'Sin fecha'}
+                  </div>
                   <div className="text-[13px] text-ink-muted">
                     {c.proveedor_nombre ?? 'Sin proveedor'} · {c.lineas.length} línea(s)
                   </div>
                 </div>
                 <div className="font-bold">{c.total.toFixed(2)} €</div>
               </button>
+              <Button variant="ghost" size="sm" onClick={() => abrirEditar(c)}>
+                Editar
+              </Button>
               <Button variant="danger" size="sm" onClick={() => onDelete(c.id)}>
                 Borrar
               </Button>
@@ -87,7 +104,7 @@ export function ComprasTab() {
         ))
       )}
 
-      <CompraModal open={open} onClose={() => setOpen(false)} />
+      <CompraModal open={open} onClose={() => setOpen(false)} compra={editing} />
     </div>
   )
 }

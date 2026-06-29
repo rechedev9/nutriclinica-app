@@ -334,6 +334,34 @@ func (s *Store) CreateCompra(in models.CompraInput) (int64, error) {
 	return cid, tx.Commit()
 }
 
+// UpdateCompra reemplaza los datos y líneas de una compra existente.
+func (s *Store) UpdateCompra(id int64, in models.CompraInput) error {
+	var total float64
+	for _, l := range in.Lineas {
+		total += l.Cantidad * orZeroF(l.PrecioUnitario)
+	}
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE stock_compras SET fecha=?, proveedor_id=?, notas=?, total=? WHERE id=?`,
+		in.Fecha, in.ProveedorID, in.Notas, total, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM stock_compras_lineas WHERE compra_id=?`, id); err != nil {
+		return err
+	}
+	for _, l := range in.Lineas {
+		if _, err := tx.Exec(
+			`INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)`,
+			id, l.ProductoID, l.Cantidad, orZeroF(l.PrecioUnitario)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 // DeleteCompra borra una compra y sus líneas.
 func (s *Store) DeleteCompra(id int64) error {
 	tx, err := s.DB.Begin()
