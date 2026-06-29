@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
-import { fmtFecha, fmtDatetime } from '@/lib/format/fecha'
+import { fmtFecha } from '@/lib/format/fecha'
 import type { Compra } from '@/types'
 
 export function ComprasTab() {
@@ -72,10 +72,15 @@ export function ComprasTab() {
               <button onClick={() => setExpanded(expanded === c.id ? null : c.id)} className="flex flex-1 items-center gap-3 text-left">
                 <div className="flex-1">
                   <div className="font-semibold">
-                    {c.fecha ? (c.fecha.includes('T') ? fmtDatetime(c.fecha) : fmtFecha(c.fecha)) : 'Sin fecha'}
+                    {c.fecha
+                      ? c.fecha.includes('T')
+                        ? new Date(c.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : fmtFecha(c.fecha)
+                      : 'Sin fecha'}
                   </div>
                   <div className="text-[13px] text-ink-muted">
                     {c.proveedor_nombre ?? 'Sin proveedor'} · {c.lineas.length} línea(s)
+                    {c.fecha?.includes('T') && <> · {c.fecha.slice(11, 16)}</>}
                   </div>
                 </div>
                 <div className="font-bold">{c.total.toFixed(2)} €</div>
