@@ -162,40 +162,93 @@ export function AnalisisTab() {
       </div>
 
       {/* Composición corporal + Tabla evolución en la misma fila */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_3fr]">
         {grasaLast != null && last.peso != null && (() => {
           const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
           const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
           const total = pGraso + pMagro
           const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
+          const imcVal = imcLast?.val ?? null
+          const IMC_MIN = 14, IMC_MAX = 40
+          const imcPct = imcVal != null
+            ? Math.min(Math.max((imcVal - IMC_MIN) / (IMC_MAX - IMC_MIN) * 100, 0), 100)
+            : null
+          const imcZones = [
+            { label: 'Infrapeso', color: '#60a5fa', width: 17.3 },
+            { label: 'Normal',    color: '#34d399', width: 25.0 },
+            { label: 'Sobrepeso', color: '#fbbf24', width: 19.2 },
+            { label: 'Obesidad',  color: '#f87171', width: 38.5 },
+          ]
           return (
-            <div className="rounded-card bg-surface p-4 shadow-card">
-              <div className="mb-3 text-sm font-bold">Composición corporal</div>
-              <div className="overflow-hidden rounded-full h-5" style={{ background: '#fde68a' }}>
-                <div
-                  className="h-full rounded-full transition-all duration-[1800ms] ease-out"
-                  style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
-                />
-              </div>
-              <div className="mt-3 flex justify-between text-sm">
-                <div className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#0F7B92' }} />
-                  <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
-                  <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+            <div className="rounded-card bg-surface p-4 shadow-card flex flex-col gap-3">
+              <div className="text-sm font-bold">Composición corporal</div>
+
+              {/* Barra composición reducida */}
+              <div>
+                <div className="h-3 overflow-hidden rounded-full" style={{ background: '#fde68a' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-[1800ms] ease-out"
+                    style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
+                  />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
-                  <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
-                  <span className="inline-block h-3 w-3 rounded-full" style={{ background: '#fbbf24' }} />
+                <div className="mt-2 flex justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0F7B92' }} />
+                    <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
+                    <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
+                    <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#fbbf24' }} />
+                  </div>
                 </div>
               </div>
+
+              {/* Escala de clasificación IMC */}
+              {imcVal != null && (
+                <div className="border-t border-border pt-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wide text-ink-muted">Clasificación IMC</span>
+                    <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
+                  </div>
+                  <div className="relative">
+                    <div className="flex h-4 overflow-hidden rounded-full">
+                      {imcZones.map((z) => (
+                        <div key={z.label} style={{ width: `${z.width}%`, background: z.color }} />
+                      ))}
+                    </div>
+                    {imcPct != null && (
+                      <div
+                        className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-ink shadow"
+                        style={{ left: `${imcPct}%` }}
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1.5 flex text-[11px]">
+                    {imcZones.map((z) => (
+                      <div key={z.label} style={{ width: `${z.width}%`, color: z.color }} className="text-center font-semibold">
+                        {z.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )
         })()}
 
         <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 text-sm font-bold">Evolución</div>
-          <table className="w-full text-sm">
+          <table className="w-full table-fixed text-sm">
+            <colgroup>
+              <col className="w-[26%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+              <col className="w-[19%]" />
+              <col className="w-[19%]" />
+            </colgroup>
             <thead>
               <tr className="text-left text-ink-muted">
                 <th className="py-1.5 font-semibold">Métrica</th>
