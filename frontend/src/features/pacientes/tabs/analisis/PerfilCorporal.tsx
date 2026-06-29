@@ -79,7 +79,7 @@ function PanelSVG({
 
           return (
             <g key={`${p.key}-${i}`}>
-              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="rgb(var(--border))" strokeDasharray="4,3" />
+              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="rgb(var(--ink-muted))" strokeDasharray="4,3" />
               <circle cx={p.bodyX} cy={p.y} r={4} fill="#ef4444" />
               <text x={p.textX} y={p.y - 14} textAnchor={p.anchor} fontSize={12} fill="rgb(var(--ink-muted))" fontFamily="inherit">
                 {p.label}
