@@ -110,7 +110,12 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
             <Input {...register('dni')} />
           </Field>
           <Field label="Grupo sanguíneo">
-            <Input placeholder="A+, 0-…" {...register('grupo_sanguineo')} />
+            <Select {...register('grupo_sanguineo')}>
+              <option value="">—</option>
+              {['A+','A-','B+','B-','AB+','AB-','0+','0-'].map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </Select>
           </Field>
           <Field label="Teléfono">
             <Input {...register('telefono')} />

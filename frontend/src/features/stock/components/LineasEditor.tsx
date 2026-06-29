@@ -41,6 +41,14 @@ export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
+      {lineas.length > 0 && (
+        <div className="grid grid-cols-[1fr_80px_100px_36px] gap-2 max-md:hidden">
+          <div />
+          <div className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Cantidad</div>
+          <div className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Precio €</div>
+          <div />
+        </div>
+      )}
       {lineas.map((l, i) => (
         <div key={keys.current[i]} className="grid grid-cols-[1fr_80px_100px_36px] items-center gap-2 max-md:grid-cols-2">
           <Select value={l.producto_id} onChange={(e) => onProducto(i, Number(e.target.value))}>

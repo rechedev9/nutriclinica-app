@@ -133,6 +133,7 @@ export function AlmacenTab() {
               <tr className="border-b border-border text-left text-ink-muted">
                 <th className="p-3 font-semibold">Producto</th>
                 <th className="p-3 font-semibold">Categoría</th>
+                <th className="p-3 font-semibold">Proveedor</th>
                 <th className="p-3 font-semibold">Estado</th>
                 <th className="p-3 text-right font-semibold">Stock</th>
                 <th className="p-3 text-right font-semibold">Coste</th>
@@ -152,6 +153,7 @@ export function AlmacenTab() {
                   <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
                     <td className="p-3 font-semibold">{p.nombre}</td>
                     <td className="p-3 text-ink-muted">{p.categoria ?? '—'}</td>
+                    <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '—'}</td>
                     <td className="p-3">
                       <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold', est.cls)}>
                         {est.label}
@@ -159,6 +161,9 @@ export function AlmacenTab() {
                     </td>
                     <td className="p-3 text-right font-bold tabular-nums">
                       {p.stock_actual} <span className="font-normal text-ink-muted">{p.unidad ?? 'ud'}</span>
+                      {p.stock_minimo > 0 && (
+                        <div className="text-[11px] font-normal text-ink-muted">mín. {p.stock_minimo}</div>
+                      )}
                     </td>
                     <td className="p-3 text-right tabular-nums">{p.precio_coste.toFixed(2)} €</td>
                     <td className="p-3 text-right tabular-nums">{p.precio_venta.toFixed(2)} €</td>

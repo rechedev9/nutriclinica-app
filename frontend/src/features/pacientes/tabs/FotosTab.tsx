@@ -100,21 +100,44 @@ export function FotosTab() {
       {!fotos || fotos.length === 0 ? (
         <p className="py-8 text-center text-sm text-ink-muted">Sin fotos todavía.</p>
       ) : (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
-          {fotos.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setLightbox(f)}
-              className="group relative h-28 overflow-hidden rounded-card bg-surface-2 shadow-card"
-            >
-              <img
-                src={`/fotos/${f.filename}`}
-                alt={f.nota ?? ''}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                loading="lazy"
-              />
-            </button>
-          ))}
+        <div className="flex flex-col gap-6">
+          {(() => {
+            const sorted = [...fotos].sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''))
+            const grupos = new Map<string, typeof fotos>()
+            for (const f of sorted) {
+              const clave = f.fecha
+                ? new Date(f.fecha).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+                : 'Sin fecha'
+              const grupo = grupos.get(clave) ?? []
+              grupo.push(f)
+              grupos.set(clave, grupo)
+            }
+            return Array.from(grupos.entries()).map(([mes, fots]) => (
+              <div key={mes}>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="text-sm font-bold capitalize text-ink">{mes}</span>
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-ink-muted">{fots.length} foto{fots.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
+                  {fots.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setLightbox(f)}
+                      className="group relative h-28 overflow-hidden rounded-card bg-surface-2 shadow-card"
+                    >
+                      <img
+                        src={`/fotos/${f.filename}`}
+                        alt={f.nota ?? ''}
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          })()}
         </div>
       )}
 
