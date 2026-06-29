@@ -63,7 +63,7 @@ function PanelSVG({
 }) {
   return (
     <div className="rounded-card bg-surface p-3 shadow-card flex flex-col gap-2">
-      <div className="text-sm font-bold">{titulo}</div>
+      <div className="text-sm font-bold text-ink">{titulo}</div>
       <svg ref={svgRef as RefObject<SVGSVGElement>} viewBox="0 0 900 350" className="w-full">
         <image href={imagen} x="215" y="0" width="320" height="336" preserveAspectRatio="xMidYMid meet" />
         {puntos.map((p, i) => {
@@ -79,15 +79,15 @@ function PanelSVG({
 
           return (
             <g key={`${p.key}-${i}`}>
-              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="#cbd5e1" strokeDasharray="4,3" />
+              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="rgb(var(--border))" strokeDasharray="4,3" />
               <circle cx={p.bodyX} cy={p.y} r={4} fill="#ef4444" />
-              <text x={p.textX} y={p.y - 14} textAnchor={p.anchor} fontSize={12} fill="#64748b" fontFamily="inherit">
+              <text x={p.textX} y={p.y - 14} textAnchor={p.anchor} fontSize={12} fill="rgb(var(--ink-muted))" fontFamily="inherit">
                 {p.label}
               </text>
               <text
                 x={p.textX} y={p.y + 3}
                 textAnchor={p.anchor}
-                fontSize={21} fill="#0f172a" fontFamily="inherit" fontWeight="700"
+                fontSize={21} fill="rgb(var(--ink))" fontFamily="inherit" fontWeight="700"
                 data-countup={val} data-dec="1"
               >
                 {val.toFixed(1)} cm
