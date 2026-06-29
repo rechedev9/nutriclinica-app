@@ -37,8 +37,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       <AlertDialog.Root open={open} onOpenChange={(o) => !o && close(false)}>
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 z-[60] animate-fadeIn bg-black/40" />
-          <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <AlertDialog.Overlay className="fixed inset-0 z-[80] animate-fadeIn bg-black/40" />
+          <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center p-4">
             <AlertDialog.Content className="pointer-events-auto w-[min(420px,92vw)] animate-slideUp rounded-card bg-surface p-6 shadow-md">
             <AlertDialog.Title className="text-lg font-bold text-ink">{opts.title}</AlertDialog.Title>
             {opts.message && (

@@ -8,7 +8,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { calcEdad } from '@/lib/format/fecha'
-import { calcIMC, calcGrasaDW, clasificarGrasa, pesoGraso, pesoMagro } from '@/lib/calc'
+import { calcIMC, calcGrasaDW, clasificarGrasa, pesoGraso, pesoMagro, calcTMB } from '@/lib/calc'
 import { buildMonthMultiData } from '@/lib/chart/buildMonthData'
 import { ALL_MEDIDAS, PLIEGUES } from '@/types'
 import type { Revision } from '@/types'
@@ -130,7 +130,7 @@ export function AnalisisTab() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} icon={
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
         } />
@@ -158,6 +158,9 @@ export function AnalisisTab() {
         } />
         <KpiCard label="Peso magro" rawValue={pesoMagro(last.peso, grasaLast)} unit="kg" decimals={1} icon={
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11"/></svg>
+        } />
+        <KpiCard label="TMB" rawValue={calcTMB(last.peso, p.talla, edad, sexo)} unit="kcal" decimals={0} sub={<span className="text-ink-muted">en reposo</span>} icon={
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         } />
       </div>
 

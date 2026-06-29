@@ -100,12 +100,12 @@ export function FotosTab() {
       {!fotos || fotos.length === 0 ? (
         <p className="py-8 text-center text-sm text-ink-muted">Sin fotos todavía.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
           {fotos.map((f) => (
             <button
               key={f.id}
               onClick={() => setLightbox(f)}
-              className="group relative aspect-square overflow-hidden rounded-card bg-surface-2 shadow-card"
+              className="group relative h-28 overflow-hidden rounded-card bg-surface-2 shadow-card"
             >
               <img
                 src={`/fotos/${f.filename}`}
