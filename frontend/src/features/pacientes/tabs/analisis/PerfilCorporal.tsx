@@ -4,6 +4,7 @@ import type { Revision } from '@/types'
 interface Props {
   last: Revision
   prev: Revision | null
+  sexo: string
 }
 
 interface Punto {
@@ -105,9 +106,13 @@ function PanelSVG({
   )
 }
 
-export function PerfilCorporal({ last, prev }: Props) {
+export function PerfilCorporal({ last, prev, sexo }: Props) {
   const frontalRef = useRef<SVGSVGElement | null>(null)
   const posteriorRef = useRef<SVGSVGElement | null>(null)
+
+  const esMujer = sexo === 'Mujer'
+  const imgFrontal = esMujer ? '/silueta-frontal-mujer.png' : '/silueta-frontal.png'
+  const imgPosterior = esMujer ? '/silueta-posterior-mujer.png' : '/silueta-posterior.png'
 
   useEffect(() => {
     if (frontalRef.current) animarTextos(frontalRef.current)
@@ -116,8 +121,8 @@ export function PerfilCorporal({ last, prev }: Props) {
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <PanelSVG imagen="/silueta-frontal.png" titulo="Perfil corporal frontal" puntos={FRONTAL} last={last} prev={prev} svgRef={frontalRef} />
-      <PanelSVG imagen="/silueta-posterior.png" titulo="Perfil corporal posterior" puntos={POSTERIOR} last={last} prev={prev} svgRef={posteriorRef} />
+      <PanelSVG imagen={imgFrontal} titulo="Perfil corporal frontal" puntos={FRONTAL} last={last} prev={prev} svgRef={frontalRef} />
+      <PanelSVG imagen={imgPosterior} titulo="Perfil corporal posterior" puntos={POSTERIOR} last={last} prev={prev} svgRef={posteriorRef} />
     </div>
   )
 }

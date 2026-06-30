@@ -349,6 +349,7 @@ export function AnalisisTab() {
       <PerfilCorporal
         last={derived.last}
         prev={derived.asc.length >= 2 ? derived.asc[derived.asc.length - 2]! : null}
+        sexo={p.sexo ?? ''}
       />
     </div>
   )
