@@ -69,6 +69,7 @@ export function ProveedoresTab() {
                 <th className="p-3 font-semibold">Nombre</th>
                 <th className="p-3 font-semibold">Teléfono</th>
                 <th className="p-3 font-semibold">Email</th>
+                <th className="p-3 font-semibold">Notas</th>
                 <th className="p-3"></th>
               </tr>
             </thead>
@@ -93,6 +94,9 @@ export function ProveedoresTab() {
                     ) : (
                       <span className="text-ink-muted">—</span>
                     )}
+                  </td>
+                  <td className="p-3 max-w-[220px] text-ink-muted truncate" title={p.notas ?? ''}>
+                    {p.notas ?? <span className="text-ink-muted">—</span>}
                   </td>
                   <td className="p-3 text-right">
                     <Button
