@@ -24,11 +24,11 @@ const FRONTAL: Punto[] = [
 ]
 
 const POSTERIOR: Punto[] = [
-  { key: 'per_hombros', label: 'Espalda',     textX: 155, y: 78,  anchor: 'end',   bodyX: 366 },
-  { key: 'per_caderas', label: 'Caderas',     textX: 155, y: 147, anchor: 'end',   bodyX: 340 },
-  { key: 'per_muslo',   label: 'Femoral',     textX: 155, y: 208, anchor: 'end',   bodyX: 360 },
-  { key: 'per_caderas', label: 'Glúteo',      textX: 620, y: 166, anchor: 'start', bodyX: 393 },
-  { key: 'per_gemelo',  label: 'Pantorrilla', textX: 620, y: 270, anchor: 'start', bodyX: 437 },
+  { key: 'per_hombros', label: 'Espalda', textX: 155, y: 78,  anchor: 'end',   bodyX: 366 },
+  { key: 'per_caderas', label: 'Caderas', textX: 155, y: 147, anchor: 'end',   bodyX: 340 },
+  { key: 'per_caderas', label: 'Glúteo',  textX: 620, y: 166, anchor: 'start', bodyX: 393 },
+  { key: 'per_muslo',   label: 'Femoral', textX: 620, y: 209, anchor: 'start', bodyX: 394 },
+  { key: 'per_gemelo',  label: 'Gemelo',  textX: 155, y: 264, anchor: 'end',   bodyX: 332 },
 ]
 
 function animarTextos(svg: SVGSVGElement, duration = 1800) {
