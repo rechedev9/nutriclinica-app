@@ -60,7 +60,12 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 14mm 12mm;
+    margin: 0; /* Quita el header/footer del navegador (URL, fecha, página). */
+  }
+  /* Forzar impresión de colores de fondo (barras, gradientes, iconos). */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   /* El informe PDF siempre sale en claro, aunque el modo oscuro esté activo. */
   :root,
@@ -79,7 +84,29 @@
   .print-block {
     display: block !important;
   }
+  .print-page-break {
+    break-before: page;
+    padding-top: 26mm;
+  }
+  /* Cabecera que se repite en cada página del PDF. */
+  .print-running-header {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+  /* Desplaza el contenido para que no quede bajo la cabecera fija (~24mm). */
+  .print-content-area {
+    padding-top: 26mm !important;
+    padding-left: 10mm !important;
+    padding-right: 10mm !important;
+    padding-bottom: 8mm !important;
+  }
   body {
+    margin: 0;
+    padding: 0;
     background: white !important;
   }
 }

@@ -7,7 +7,7 @@ import { useRevisiones } from '../../hooks/useRevisiones'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
-import { calcEdad } from '@/lib/format/fecha'
+import { calcEdad, fmtFechaCorta } from '@/lib/format/fecha'
 import { calcIMC, calcGrasaDW, clasificarGrasa, pesoGraso, pesoMagro, calcTMB } from '@/lib/calc'
 import { buildMonthMultiData } from '@/lib/chart/buildMonthData'
 import { ALL_MEDIDAS, PLIEGUES } from '@/types'
@@ -164,7 +164,38 @@ export function AnalisisTab() {
   ]
 
   return (
-    <div className="dash-area flex flex-col gap-4 p-6">
+    <div className="dash-area flex flex-col gap-4 p-6 print-content-area">
+
+      {/* Cabecera profesional — solo visible al imprimir, se repite en cada página */}
+      <div className="hidden print-running-header">
+        <div style={{ background: '#0F7B92', color: 'white', padding: '5mm 10mm 4mm', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#86efac" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
+              <path d="M12 6v6l4 2" />
+              <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+            </svg>
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: '700', lineHeight: 1.1 }}>NutriClínica</div>
+              <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '1px' }}>Gestión de pacientes</div>
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Informe de análisis</div>
+            <div style={{ fontSize: '17px', fontWeight: '700', marginTop: '2px' }}>{p.nombre}</div>
+          </div>
+          <div style={{ textAlign: 'right', minWidth: '90px' }}>
+            {derived.last?.fecha && (
+              <>
+                <div style={{ fontSize: '11px', opacity: 0.75 }}>Última revisión</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', marginTop: '2px' }}>{fmtFechaCorta(derived.last.fecha)}</div>
+              </>
+            )}
+          </div>
+        </div>
+        <div style={{ height: '3px', background: 'linear-gradient(90deg, #0F7B92, #2DD4BF, #86efac)' }} />
+      </div>
+
       <div className="flex items-center justify-between print-hide">
         <h3 className="text-lg font-bold">Análisis y evolución</h3>
         <Button variant="outline" size="sm" onClick={() => window.print()}>
@@ -332,7 +363,7 @@ export function AnalisisTab() {
       </div>
 
       {/* Gráficos: peso+grasa y perímetros en la misma fila */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-hide">
         <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="mb-1 text-sm font-bold">Evolución del peso y la masa grasa</div>
           <div className="mb-3 text-[13px] text-ink-muted">kg · % grasa (Durnin-Womersley)</div>
@@ -380,7 +411,7 @@ export function AnalisisTab() {
 
       {/* Pliegues última revisión */}
       {derived.pliegues.data.length > 0 && (
-        <div className="rounded-card bg-surface p-4 shadow-card">
+        <div className="rounded-card bg-surface p-4 shadow-card print-hide">
           <div className="mb-3 text-sm font-bold">Pliegues cutáneos (última revisión)</div>
           <div className="h-[280px]">
             <ChartPliegues {...derived.pliegues} />
@@ -389,11 +420,13 @@ export function AnalisisTab() {
       )}
 
       {/* Perfil corporal con siluetas */}
+      <div className="print-page-break">
       <PerfilCorporal
         last={derived.last}
         prev={derived.asc.length >= 2 ? derived.asc[derived.asc.length - 2]! : null}
         sexo={p.sexo ?? ''}
       />
+      </div>
     </div>
   )
 }
