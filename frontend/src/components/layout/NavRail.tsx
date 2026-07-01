@@ -77,7 +77,7 @@ export function NavRail() {
     <nav
       aria-label="Navegación principal"
       className={cn(
-        'z-30 flex shrink-0 flex-col gap-1 border-r border-border bg-surface p-3 transition-[width] duration-200',
+        'print-hide z-30 flex shrink-0 flex-col gap-1 border-r border-border bg-surface p-3 transition-[width] duration-200',
         collapsed ? 'md:w-16' : 'md:w-56',
         // Móvil: barra de navegación inferior (no colapsa).
         'max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-auto max-md:flex-row max-md:justify-around max-md:gap-0 max-md:border-r-0 max-md:border-t max-md:p-1.5 max-md:shadow-[0_-2px_12px_rgba(15,27,45,.08)]',

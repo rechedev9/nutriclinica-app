@@ -13,7 +13,7 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-[58px] shrink-0 items-center justify-between bg-primary px-6 text-white shadow-[0_2px_8px_rgba(15,123,146,0.3)]">
+    <header className="flex h-[58px] shrink-0 items-center justify-between bg-primary px-6 text-white shadow-[0_2px_8px_rgba(15,123,146,0.3)] print-hide">
       <div className="flex items-center gap-2.5">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#86efac" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
