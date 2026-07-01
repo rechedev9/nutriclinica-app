@@ -79,19 +79,17 @@ function KpiCard({
           </div>
         )}
       </div>
-      <div className="mt-2 flex items-end">
+      <div className="mt-2 flex items-end gap-2">
         <div className="shrink-0 text-2xl font-extrabold">
           {animated}
           {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
         </div>
         {hasSpark && (
-          <>
-            <div className="flex-1" />
-            <div className="shrink-0" style={{ width: 150, height: 54 }}>
+          <div className="flex flex-1 justify-center">
+            <div style={{ height: 40, width: '100%', minWidth: 60, maxWidth: 160 }}>
               <SparkLine data={sparklineData!} />
             </div>
-            <div className="flex-1" />
-          </>
+          </div>
         )}
       </div>
       {sub && <div className="mt-1 text-[13px]">{sub}</div>}
@@ -228,7 +226,7 @@ export function AnalisisTab() {
             { label: 'Obesidad',  color: '#f87171', width: 38.5 },
           ]
           return (
-            <div className="rounded-card bg-surface p-4 shadow-card flex flex-col gap-3">
+            <div className="rounded-card bg-surface p-4 shadow-card flex flex-col gap-2">
               <div className="text-sm font-bold">Composición corporal</div>
 
               {/* Barra composición reducida */}
@@ -255,9 +253,9 @@ export function AnalisisTab() {
 
               {/* Escala de clasificación IMC */}
               {imcVal != null && (
-                <div className="border-t border-border pt-3">
+                <div className="border-t border-border pt-6">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wide text-ink-muted">Clasificación IMC</span>
+                    <span className="text-sm font-bold">Clasificación IMC</span>
                     <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
                   </div>
                   <div className="relative">
@@ -273,9 +271,9 @@ export function AnalisisTab() {
                       />
                     )}
                   </div>
-                  <div className="mt-1.5 flex text-[11px]">
+                  <div className="mt-1.5 flex text-xs">
                     {imcZones.map((z) => (
-                      <div key={z.label} style={{ width: `${z.width}%`, color: z.color }} className="text-center font-semibold">
+                      <div key={z.label} style={{ width: `${z.width}%`, color: z.color }} className="text-center font-bold">
                         {z.label}
                       </div>
                     ))}
