@@ -19,6 +19,37 @@ import { PerfilCorporal } from './PerfilCorporal'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 
+function SparkLine({ data }: { data: (number | null)[] }) {
+  const vals = data.filter((v): v is number => v != null)
+  if (vals.length < 2) return null
+  const W = 100, H = 40
+  const min = Math.min(...vals)
+  const max = Math.max(...vals)
+  const range = max - min || 1
+  const pts = vals.map((v, i) => ({
+    x: (i / (vals.length - 1)) * W,
+    y: H - ((v - min) / range) * (H * 0.72) - 3,
+  }))
+  let line = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1]!, c = pts[i]!
+    const dx = (c.x - p.x) * 0.4
+    line += ` C ${(p.x + dx).toFixed(2)} ${p.y.toFixed(2)}, ${(c.x - dx).toFixed(2)} ${c.y.toFixed(2)}, ${c.x.toFixed(2)} ${c.y.toFixed(2)}`
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 46 }}>
+      <defs>
+        <linearGradient id="spark-peso-g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0F7B92" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#0F7B92" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L ${W} ${H + 1} L 0 ${H + 1} Z`} fill="url(#spark-peso-g)" />
+      <path d={line} fill="none" stroke="#0F7B92" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function KpiCard({
   label,
   rawValue,
@@ -26,6 +57,7 @@ function KpiCard({
   sub,
   decimals = 1,
   icon,
+  sparklineData,
 }: {
   label: string
   rawValue: number | null
@@ -33,23 +65,28 @@ function KpiCard({
   sub?: React.ReactNode
   decimals?: number
   icon?: React.ReactNode
+  sparklineData?: (number | null)[]
 }) {
   const animated = useCountUp(rawValue, decimals)
+  const hasSpark = sparklineData != null && sparklineData.filter(v => v != null).length >= 2
   return (
-    <div className="rounded-card bg-surface p-4 shadow-card">
-      <div className="flex items-start justify-between gap-2">
-        <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
-        {icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
-            {icon}
-          </div>
-        )}
+    <div className={cn('rounded-card bg-surface shadow-card', hasSpark ? 'overflow-hidden' : 'p-4')}>
+      <div className={hasSpark ? 'p-4 pb-2' : undefined}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
+          {icon && (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
+              {icon}
+            </div>
+          )}
+        </div>
+        <div className="mt-2 text-2xl font-extrabold">
+          {animated}
+          {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
+        </div>
+        {sub && <div className="mt-1 text-[13px]">{sub}</div>}
       </div>
-      <div className="mt-2 text-2xl font-extrabold">
-        {animated}
-        {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
-      </div>
-      {sub && <div className="mt-1 text-[13px]">{sub}</div>}
+      {hasSpark && <SparkLine data={sparklineData!} />}
     </div>
   )
 }
@@ -131,7 +168,7 @@ export function AnalisisTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} icon={
+        <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} sparklineData={derived.asc.map(r => r.peso)} icon={
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
         } />
         <KpiCard label="IMC" rawValue={imcLast?.val ?? null} sub={imcLast?.etiq} decimals={1} icon={
