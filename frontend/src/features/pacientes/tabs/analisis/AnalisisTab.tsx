@@ -74,7 +74,7 @@ function KpiCard({
       <div className="flex items-start justify-between gap-2">
         <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
         {icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
             {icon}
           </div>
         )}
@@ -177,10 +177,10 @@ export function AnalisisTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} sparklineData={derived.asc.map(r => r.peso)} icon={
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
         } />
         <KpiCard label="IMC" rawValue={imcLast?.val ?? null} sub={imcLast?.etiq} decimals={1} icon={
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>
         } />
         <KpiCard
           label="% Grasa"
@@ -188,7 +188,7 @@ export function AnalisisTab() {
           unit="%"
           decimals={1}
           icon={
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/></svg>
           }
           sub={
             clase && (
@@ -199,13 +199,13 @@ export function AnalisisTab() {
           }
         />
         <KpiCard label="Peso graso" rawValue={pesoGraso(last.peso, grasaLast)} unit="kg" decimals={1} icon={
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c.5 3 3 4.5 3 8a3 3 0 0 1-6 0c0-1 .4-1.8 1-2.4C9 11 12 7 12 3z"/><path d="M12 3c2.5 3 5 5.5 5 9a5 5 0 0 1-10 0"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c.5 3 3 4.5 3 8a3 3 0 0 1-6 0c0-1 .4-1.8 1-2.4C9 11 12 7 12 3z"/><path d="M12 3c2.5 3 5 5.5 5 9a5 5 0 0 1-10 0"/></svg>
         } />
         <KpiCard label="Peso magro" rawValue={pesoMagro(last.peso, grasaLast)} unit="kg" decimals={1} icon={
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11"/></svg>
         } />
         <KpiCard label="TMB" rawValue={calcTMB(last.peso, p.talla, edad, sexo)} unit="kcal" decimals={0} sub={<span className="text-ink-muted">en reposo</span>} icon={
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         } />
       </div>
 
