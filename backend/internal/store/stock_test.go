@@ -61,29 +61,55 @@ func TestAlmacenYLineas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(alm) != 1 {
-		t.Fatalf("se esperaba 1 producto en almacén, hay %d", len(alm))
+	var almBatido *models.AlmacenRow
+	for i := range alm {
+		if alm[i].Nombre == "Batido" {
+			almBatido = &alm[i]
+			break
+		}
 	}
-	if alm[0].StockActual != 11 {
-		t.Errorf("stock_actual = %v, se esperaba 11", alm[0].StockActual)
+	if almBatido == nil {
+		t.Fatal("producto 'Batido' no encontrado en almacén")
+	}
+	if almBatido.StockActual != 11 {
+		t.Errorf("stock_actual = %v, se esperaba 11", almBatido.StockActual)
 	}
 
 	compras, err := st.Compras()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(compras) != 1 || len(compras[0].Lineas) != 2 {
-		t.Fatalf("se esperaba 1 compra con 2 líneas, hay %d compras", len(compras))
+	var compraTest *models.Compra
+	for i := range compras {
+		if compras[i].ProveedorNombre != nil && *compras[i].ProveedorNombre == "Proveedor A" {
+			compraTest = &compras[i]
+			break
+		}
+	}
+	if compraTest == nil || len(compraTest.Lineas) != 2 {
+		t.Fatalf("se esperaba 1 compra de 'Proveedor A' con 2 líneas")
 	}
 
 	ventas, err := st.Ventas()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(ventas) != 1 || len(ventas[0].Lineas) != 1 {
-		t.Fatalf("se esperaba 1 venta con 1 línea")
+	var ventaTest *models.Venta
+	for i := range ventas {
+		for _, l := range ventas[i].Lineas {
+			if l.ProductoNombre != nil && *l.ProductoNombre == "Batido" {
+				ventaTest = &ventas[i]
+				break
+			}
+		}
+		if ventaTest != nil {
+			break
+		}
 	}
-	if ventas[0].Lineas[0].ProductoNombre == nil || *ventas[0].Lineas[0].ProductoNombre != "Batido" {
+	if ventaTest == nil || len(ventaTest.Lineas) != 1 {
+		t.Fatal("se esperaba 1 venta con 1 línea de 'Batido'")
+	}
+	if ventaTest.Lineas[0].ProductoNombre == nil || *ventaTest.Lineas[0].ProductoNombre != "Batido" {
 		t.Errorf("la línea debería traer el nombre del producto")
 	}
 }
