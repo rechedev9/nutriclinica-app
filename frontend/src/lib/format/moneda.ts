@@ -1,3 +1,5 @@
 export function fmtMoneda(n: number): string {
-  return n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+  const [ent, dec] = n.toFixed(2).split('.')
+  const miles = ent!.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${miles},${dec} €`
 }
