@@ -204,6 +204,31 @@ type VentaInput struct {
 	Lineas     []LineaInput `json:"lineas"`
 }
 
+// Merma refleja una fila de stock_mermas con joins de producto y proveedor.
+type Merma struct {
+	ID              int64   `json:"id"`
+	ProductoID      int64   `json:"producto_id"`
+	ProveedorID     *int64  `json:"proveedor_id"`
+	Cantidad        float64 `json:"cantidad"`
+	Motivo          string  `json:"motivo"`
+	Fecha           *string `json:"fecha"`
+	Notas           *string `json:"notas"`
+	Creado          *string `json:"creado"`
+	ProductoNombre  *string `json:"producto_nombre"`
+	ProveedorNombre *string `json:"proveedor_nombre"`
+	Unidad          *string `json:"unidad"`
+}
+
+// MermaInput es el cuerpo de creación de una merma.
+type MermaInput struct {
+	ProductoID  int64   `json:"producto_id"`
+	ProveedorID *int64  `json:"proveedor_id"`
+	Cantidad    float64 `json:"cantidad"`
+	Motivo      string  `json:"motivo"`
+	Fecha       *string `json:"fecha"`
+	Notas       *string `json:"notas"`
+}
+
 // --- Auditoría (RGPD) ---
 
 // AuditEntry es una fila del registro de auditoría.

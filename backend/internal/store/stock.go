@@ -19,7 +19,7 @@ func (s *Store) Almacen() ([]models.AlmacenRow, error) {
 	rows, err := s.DB.Query(`
 		SELECT p.id, p.nombre, p.unidad, p.precio_coste, p.precio_venta, p.stock_minimo,
 		       c.nombre as categoria, pr.nombre as proveedor_nombre,
-		       COALESCE(comp.tot, 0) - COALESCE(vent.tot, 0) as stock_actual
+		       COALESCE(comp.tot, 0) - COALESCE(vent.tot, 0) - COALESCE(merm.tot, 0) as stock_actual
 		FROM stock_productos p
 		LEFT JOIN stock_categorias c   ON c.id  = p.categoria_id
 		LEFT JOIN stock_proveedores pr ON pr.id = p.proveedor_id
@@ -27,6 +27,8 @@ func (s *Store) Almacen() ([]models.AlmacenRow, error) {
 		       ON comp.producto_id = p.id
 		LEFT JOIN (SELECT producto_id, SUM(cantidad) AS tot FROM stock_ventas_lineas GROUP BY producto_id) vent
 		       ON vent.producto_id = p.id
+		LEFT JOIN (SELECT producto_id, SUM(cantidad) AS tot FROM stock_mermas GROUP BY producto_id) merm
+		       ON merm.producto_id = p.id
 		WHERE p.activo=1 ORDER BY p.nombre COLLATE NOCASE`)
 	if err != nil {
 		return nil, err
@@ -445,6 +447,56 @@ func (s *Store) CreateVenta(in models.VentaInput) (int64, error) {
 		}
 	}
 	return vid, tx.Commit()
+}
+
+// --- Mermas ---
+
+var motivosValidos = map[string]bool{
+	"caducidad":           true,
+	"accidente_rotura":    true,
+	"devolucion_cliente":  true,
+}
+
+func (s *Store) Mermas() ([]models.Merma, error) {
+	rows, err := s.DB.Query(`
+		SELECT m.id, m.producto_id, m.proveedor_id, m.cantidad, m.motivo, m.fecha, m.notas, m.creado,
+		       p.nombre as producto_nombre, pr.nombre as proveedor_nombre, p.unidad
+		FROM stock_mermas m
+		JOIN stock_productos p ON p.id = m.producto_id
+		LEFT JOIN stock_proveedores pr ON pr.id = m.proveedor_id
+		ORDER BY m.fecha DESC, m.id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []models.Merma{}
+	for rows.Next() {
+		var m models.Merma
+		if err := rows.Scan(&m.ID, &m.ProductoID, &m.ProveedorID, &m.Cantidad, &m.Motivo,
+			&m.Fecha, &m.Notas, &m.Creado, &m.ProductoNombre, &m.ProveedorNombre, &m.Unidad); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+func (s *Store) CreateMerma(in models.MermaInput) (int64, error) {
+	if !motivosValidos[in.Motivo] {
+		return 0, fmt.Errorf("motivo inválido: %s", in.Motivo)
+	}
+	res, err := s.DB.Exec(
+		`INSERT INTO stock_mermas (producto_id, proveedor_id, cantidad, motivo, fecha, notas) VALUES (?,?,?,?,?,?)`,
+		in.ProductoID, in.ProveedorID, in.Cantidad, in.Motivo, in.Fecha, in.Notas)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (s *Store) DeleteMerma(id int64) error {
+	_, err := s.DB.Exec(`DELETE FROM stock_mermas WHERE id=?`, id)
+	return err
 }
 
 // DeleteVenta borra una venta y sus líneas.

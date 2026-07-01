@@ -7,6 +7,8 @@ import type {
   Categoria,
   Compra,
   CompraInput,
+  Merma,
+  MermaInput,
   Producto,
   ProductoInput,
   Proveedor,
@@ -181,6 +183,34 @@ export function useDeleteVenta() {
     onSuccess: () => {
       invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
       toast.success('Venta eliminada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+// --- Mermas ---
+export const useMermas = () =>
+  useQuery({ queryKey: qk.stock.mermas, queryFn: () => api<Merma[]>('GET', '/api/stock/mermas') })
+
+export function useCreateMerma() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (b: MermaInput) => api('POST', '/api/stock/mermas', b),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.mermas, qk.stock.almacen])
+      toast.success('Merma registrada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+export function useDeleteMerma() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api('DELETE', `/api/stock/mermas/${id}`),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.mermas, qk.stock.almacen])
+      toast.success('Merma eliminada')
     },
     onError: (e) => toast.error(mensajeError(e)),
   })

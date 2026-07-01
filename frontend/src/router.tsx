@@ -26,6 +26,7 @@ const AlmacenTab = lazyNamed(() => import('@/features/stock/tabs/AlmacenTab'), '
 const ComprasTab = lazyNamed(() => import('@/features/stock/tabs/ComprasTab'), 'ComprasTab')
 const VentasTab = lazyNamed(() => import('@/features/stock/tabs/VentasTab'), 'VentasTab')
 const ProveedoresTab = lazyNamed(() => import('@/features/stock/tabs/ProveedoresTab'), 'ProveedoresTab')
+const MermasTab = lazyNamed(() => import('@/features/stock/tabs/MermasTab'), 'MermasTab')
 const UsuariosPage = lazyNamed(() => import('@/features/usuarios/UsuariosPage'), 'UsuariosPage')
 const AuditoriaPage = lazyNamed(() => import('@/features/auditoria/AuditoriaPage'), 'AuditoriaPage')
 
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
               { path: 'compras', element: <ComprasTab /> },
               { path: 'ventas', element: <VentasTab /> },
               { path: 'proveedores', element: <ProveedoresTab /> },
+              { path: 'mermas', element: <MermasTab /> },
             ],
           },
           { path: 'usuarios', element: <UsuariosPage /> },

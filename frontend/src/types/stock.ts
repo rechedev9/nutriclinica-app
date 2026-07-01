@@ -103,3 +103,28 @@ export interface VentaInput {
   notas?: string | null
   lineas: LineaInput[]
 }
+
+export type MotivoMerma = 'caducidad' | 'accidente_rotura' | 'devolucion_cliente'
+
+export interface Merma {
+  id: number
+  producto_id: number
+  proveedor_id: number | null
+  cantidad: number
+  motivo: MotivoMerma
+  fecha: string | null
+  notas: string | null
+  creado: string | null
+  producto_nombre: string | null
+  proveedor_nombre: string | null
+  unidad: string | null
+}
+
+export interface MermaInput {
+  producto_id: number
+  proveedor_id?: number | null
+  cantidad: number
+  motivo: MotivoMerma
+  fecha?: string | null
+  notas?: string | null
+}

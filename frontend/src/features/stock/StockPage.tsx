@@ -6,6 +6,7 @@ const tabs = [
   { to: 'compras', label: 'Compras' },
   { to: 'ventas', label: 'Ventas' },
   { to: 'proveedores', label: 'Proveedores' },
+  { to: 'mermas', label: 'Mermas' },
 ]
 
 export function StockPage() {

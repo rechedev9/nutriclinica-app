@@ -243,6 +243,54 @@ func (s *Server) handleDeleteCompra(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ok(nil))
 }
 
+// --- Mermas ---
+
+func (s *Server) handleListMermas(w http.ResponseWriter, r *http.Request) {
+	ms, err := s.db().Mermas()
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ms)
+}
+
+func (s *Server) handleCreateMerma(w http.ResponseWriter, r *http.Request) {
+	var in models.MermaInput
+	if err := decodeJSON(r, &in); err != nil {
+		writeError(w, http.StatusBadRequest, "JSON inválido")
+		return
+	}
+	in.Notas = emptyToNil(in.Notas)
+	in.Fecha = emptyToNil(in.Fecha)
+	if in.ProductoID == 0 {
+		writeError(w, http.StatusBadRequest, "El producto es obligatorio")
+		return
+	}
+	if in.Cantidad <= 0 {
+		writeError(w, http.StatusBadRequest, "La cantidad debe ser mayor que cero")
+		return
+	}
+	id, err := s.db().CreateMerma(in)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, ok(map[string]any{"id": id}))
+}
+
+func (s *Server) handleDeleteMerma(w http.ResponseWriter, r *http.Request) {
+	id, err := pathInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "id inválido")
+		return
+	}
+	if err := s.db().DeleteMerma(id); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ok(nil))
+}
+
 // --- Ventas ---
 
 func (s *Server) handleListVentas(w http.ResponseWriter, r *http.Request) {

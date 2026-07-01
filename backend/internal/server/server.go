@@ -132,6 +132,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/stock/ventas", s.requireAuth(s.handleListVentas))
 	mux.HandleFunc("POST /api/stock/ventas", s.requireAuth(s.handleCreateVenta))
 	mux.HandleFunc("DELETE /api/stock/ventas/{id}", s.requireAuth(s.handleDeleteVenta))
+	mux.HandleFunc("GET /api/stock/mermas", s.requireAuth(s.handleListMermas))
+	mux.HandleFunc("POST /api/stock/mermas", s.requireAuth(s.handleCreateMerma))
+	mux.HandleFunc("DELETE /api/stock/mermas/{id}", s.requireAuth(s.handleDeleteMerma))
 
 	// --- Auditoría (solo admin, RGPD) ---
 	mux.HandleFunc("GET /api/auditoria", s.requireAdmin(s.handleListAuditoria))

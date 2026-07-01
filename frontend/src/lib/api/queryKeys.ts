@@ -13,5 +13,6 @@ export const qk = {
     proveedores: ['stock', 'proveedores'] as const,
     compras: ['stock', 'compras'] as const,
     ventas: ['stock', 'ventas'] as const,
+    mermas: ['stock', 'mermas'] as const,
   },
 }
