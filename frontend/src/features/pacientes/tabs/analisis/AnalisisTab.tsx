@@ -37,7 +37,7 @@ function SparkLine({ data }: { data: (number | null)[] }) {
     line += ` C ${(p.x + dx).toFixed(2)} ${p.y.toFixed(2)}, ${(c.x - dx).toFixed(2)} ${c.y.toFixed(2)}, ${c.x.toFixed(2)} ${c.y.toFixed(2)}`
   }
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 46 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '100%' }}>
       <defs>
         <linearGradient id="spark-peso-g" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#0F7B92" stopOpacity="0.22" />
@@ -45,7 +45,7 @@ function SparkLine({ data }: { data: (number | null)[] }) {
         </linearGradient>
       </defs>
       <path d={`${line} L ${W} ${H + 1} L 0 ${H + 1} Z`} fill="url(#spark-peso-g)" />
-      <path d={line} fill="none" stroke="#0F7B92" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={line} fill="none" stroke="#0F7B92" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -70,23 +70,31 @@ function KpiCard({
   const animated = useCountUp(rawValue, decimals)
   const hasSpark = sparklineData != null && sparklineData.filter(v => v != null).length >= 2
   return (
-    <div className={cn('rounded-card bg-surface shadow-card', hasSpark ? 'overflow-hidden' : 'p-4')}>
-      <div className={hasSpark ? 'p-4 pb-2' : undefined}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
-          {icon && (
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
-              {icon}
-            </div>
-          )}
-        </div>
-        <div className="mt-2 text-2xl font-extrabold">
+    <div className="rounded-card bg-surface p-4 shadow-card">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
+        {icon && (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
+            {icon}
+          </div>
+        )}
+      </div>
+      <div className="mt-2 flex items-end">
+        <div className="shrink-0 text-2xl font-extrabold">
           {animated}
           {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
         </div>
-        {sub && <div className="mt-1 text-[13px]">{sub}</div>}
+        {hasSpark && (
+          <>
+            <div className="flex-1" />
+            <div className="shrink-0" style={{ width: 150, height: 54 }}>
+              <SparkLine data={sparklineData!} />
+            </div>
+            <div className="flex-1" />
+          </>
+        )}
       </div>
-      {hasSpark && <SparkLine data={sparklineData!} />}
+      {sub && <div className="mt-1 text-[13px]">{sub}</div>}
     </div>
   )
 }
