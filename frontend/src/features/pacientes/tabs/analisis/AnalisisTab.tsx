@@ -198,7 +198,19 @@ export function AnalisisTab() {
 
       <div className="flex items-center justify-between print-hide">
         <h3 className="text-lg font-bold">Análisis y evolución</h3>
-        <Button variant="outline" size="sm" onClick={() => window.print()}>
+        <Button variant="outline" size="sm" onClick={() => {
+          const nombreFichero = p.nombre
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')
+          const fechaFichero = derived.last?.fecha
+            ? derived.last.fecha.replace(/-/g, '')
+            : ''
+          const titulo = fechaFichero ? `${nombreFichero}_${fechaFichero}` : nombreFichero
+          const prev = document.title
+          document.title = titulo
+          window.print()
+          document.title = prev
+        }}>
           Exportar PDF
         </Button>
       </div>
