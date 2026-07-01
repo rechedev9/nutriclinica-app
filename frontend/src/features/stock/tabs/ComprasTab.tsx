@@ -6,6 +6,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
+import { fmtMoneda } from '@/lib/format/moneda'
 import type { Compra } from '@/types'
 
 export function ComprasTab() {
@@ -44,7 +45,7 @@ export function ComprasTab() {
         </div>
         <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="text-[13px] text-ink-muted">Total gastado</div>
-          <div className="mt-1 text-2xl font-extrabold">{totalGastado.toFixed(2)} €</div>
+          <div className="mt-1 text-2xl font-extrabold">{fmtMoneda(totalGastado)}</div>
         </div>
       </div>
 
@@ -83,7 +84,7 @@ export function ComprasTab() {
                     {c.fecha?.includes('T') && <> · {c.fecha.slice(11, 16)}</>}
                   </div>
                 </div>
-                <div className="font-bold">{c.total.toFixed(2)} €</div>
+                <div className="font-bold">{fmtMoneda(c.total)}</div>
               </button>
               <Button variant="ghost" size="sm" onClick={() => abrirEditar(c)}>
                 Editar
@@ -99,7 +100,7 @@ export function ComprasTab() {
                     <span>
                       {l.producto_nombre} × {l.cantidad} {l.unidad}
                     </span>
-                    <span className="font-semibold">{(l.cantidad * l.precio_unitario).toFixed(2)} €</span>
+                    <span className="font-semibold">{fmtMoneda(l.cantidad * l.precio_unitario)}</span>
                   </div>
                 ))}
                 {c.notas && <p className="mt-2 text-ink-muted">{c.notas}</p>}

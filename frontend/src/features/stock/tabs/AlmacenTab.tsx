@@ -6,6 +6,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/cn'
+import { fmtMoneda } from '@/lib/format/moneda'
 import type { Producto } from '@/types'
 
 function Kpi({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
@@ -78,8 +79,8 @@ export function AlmacenTab() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi label="Productos" value={String(rows.length)} />
         <Kpi label="Alertas de mínimo" value={String(sinStock)} danger={sinStock > 0} />
-        <Kpi label="Valor a coste" value={`${valCoste.toFixed(2)} €`} />
-        <Kpi label="Valor a venta" value={`${valVenta.toFixed(2)} €`} />
+        <Kpi label="Valor a coste" value={fmtMoneda(valCoste)} />
+        <Kpi label="Valor a venta" value={fmtMoneda(valVenta)} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -165,13 +166,13 @@ export function AlmacenTab() {
                         <div className="text-[11px] font-normal text-ink-muted">mín. {p.stock_minimo}</div>
                       )}
                     </td>
-                    <td className="p-3 text-right tabular-nums">{p.precio_coste.toFixed(2)} €</td>
-                    <td className="p-3 text-right tabular-nums">{p.precio_venta.toFixed(2)} €</td>
+                    <td className="p-3 text-right tabular-nums">{fmtMoneda(p.precio_coste)}</td>
+                    <td className="p-3 text-right tabular-nums">{fmtMoneda(p.precio_venta)}</td>
                     <td className={cn('p-3 text-right tabular-nums', margenU < 0 && 'text-danger')}>
-                      {margenU.toFixed(2)} €
+                      {fmtMoneda(margenU)}
                       {margenPct != null && <span className="ml-1 text-[12px] text-ink-muted">({margenPct}%)</span>}
                     </td>
-                    <td className="p-3 text-right font-semibold tabular-nums">{valorStock.toFixed(2)} €</td>
+                    <td className="p-3 text-right font-semibold tabular-nums">{fmtMoneda(valorStock)}</td>
                     <td className="p-3 text-right">
                       <Button
                         variant="ghost"

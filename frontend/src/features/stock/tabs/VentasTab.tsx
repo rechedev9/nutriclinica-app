@@ -7,6 +7,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
+import { fmtMoneda } from '@/lib/format/moneda'
 
 export function VentasTab() {
   const { data: ventas, isLoading } = useVentas()
@@ -34,7 +35,7 @@ export function VentasTab() {
         </div>
         <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="text-[13px] text-ink-muted">Total ingresado</div>
-          <div className="mt-1 text-2xl font-extrabold">{totalIngresado.toFixed(2)} €</div>
+          <div className="mt-1 text-2xl font-extrabold">{fmtMoneda(totalIngresado)}</div>
         </div>
       </div>
 
@@ -87,7 +88,7 @@ export function VentasTab() {
                     · {v.lineas.length} línea(s)
                   </div>
                 </div>
-                <div className="font-bold">{v.total.toFixed(2)} €</div>
+                <div className="font-bold">{fmtMoneda(v.total)}</div>
               </button>
               <Button variant="danger" size="sm" onClick={() => onDelete(v.id)}>
                 Borrar
@@ -100,7 +101,7 @@ export function VentasTab() {
                     <span>
                       {l.producto_nombre} × {l.cantidad} {l.unidad}
                     </span>
-                    <span className="font-semibold">{(l.cantidad * l.precio_unitario).toFixed(2)} €</span>
+                    <span className="font-semibold">{fmtMoneda(l.cantidad * l.precio_unitario)}</span>
                   </div>
                 ))}
                 {v.notas && <p className="mt-2 text-ink-muted">{v.notas}</p>}
