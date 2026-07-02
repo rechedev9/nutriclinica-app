@@ -1,6 +1,7 @@
 // Registro único de los componentes de Chart.js (importar una sola vez).
 import {
   Chart as ChartJS,
+  ArcElement,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -13,6 +14,7 @@ import {
 } from 'chart.js'
 
 ChartJS.register(
+  ArcElement,
   CategoryScale,
   LinearScale,
   PointElement,
