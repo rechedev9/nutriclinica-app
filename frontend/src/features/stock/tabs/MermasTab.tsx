@@ -33,10 +33,20 @@ export function MermasTab() {
   const del = useDeleteMerma()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  const rows = mermas ?? []
+  const todos = mermas ?? []
 
+  const rows = todos.filter((m) => {
+    const fecha = (m.fecha ?? '').slice(0, 10)
+    if (desde && fecha < desde) return false
+    if (hasta && fecha > hasta) return false
+    return true
+  })
+
+  const hayFiltro = desde !== '' || hasta !== ''
   const totalCaducidad = rows.filter((m) => m.motivo === 'caducidad').length
   const totalAccidente = rows.filter((m) => m.motivo === 'accidente_rotura').length
   const totalDevolucion = rows.filter((m) => m.motivo === 'devolucion_cliente').length
@@ -50,7 +60,7 @@ export function MermasTab() {
     <div className="flex flex-col gap-4 p-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="rounded-card bg-surface p-4 shadow-card">
-          <div className="text-[13px] text-ink-muted">Total registros</div>
+          <div className="text-[13px] text-ink-muted">Total registros{hayFiltro ? ' (filtrados)' : ''}</div>
           <div className="mt-1 text-2xl font-extrabold">{rows.length}</div>
         </div>
         <div className="rounded-card bg-surface p-4 shadow-card">
@@ -72,12 +82,63 @@ export function MermasTab() {
         <Button onClick={() => setOpen(true)}>+ Nueva merma</Button>
       </div>
 
-      {rows.length === 0 ? (
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-ink-muted">Filtrar por fecha:</span>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm text-ink-muted">Desde</label>
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm text-ink-muted">Hasta</label>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        {hayFiltro && (
+          <button
+            onClick={() => { setDesde(''); setHasta('') }}
+            className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      {todos.length === 0 ? (
         <EmptyState
           icon={alertaIcono}
           title="Sin mermas registradas"
           subtitle="Registra aquí las pérdidas de producto por caducidad, accidente o devolución."
           action={<Button onClick={() => setOpen(true)}>+ Nueva merma</Button>}
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          }
+          title="Sin mermas en ese período"
+          subtitle="Prueba a ampliar el rango de fechas o limpia el filtro."
+          action={
+            <button
+              onClick={() => { setDesde(''); setHasta('') }}
+              className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
+            >
+              Limpiar filtro
+            </button>
+          }
         />
       ) : (
         <div className="overflow-x-auto rounded-card bg-surface shadow-card">

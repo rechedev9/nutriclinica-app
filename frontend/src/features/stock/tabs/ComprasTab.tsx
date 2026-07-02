@@ -27,9 +27,21 @@ export function ComprasTab() {
     setOpen(true)
   }
 
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
+
   if (isLoading) return <CenteredSpinner />
-  const rows = compras ?? []
+  const todos = compras ?? []
+
+  const rows = todos.filter((c) => {
+    const fecha = (c.fecha ?? '').slice(0, 10)
+    if (desde && fecha < desde) return false
+    if (hasta && fecha > hasta) return false
+    return true
+  })
+
   const totalGastado = rows.reduce((s, c) => s + c.total, 0)
+  const hayFiltro = desde !== '' || hasta !== ''
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar compra?', confirmText: 'Eliminar', danger: true })
@@ -40,11 +52,11 @@ export function ComprasTab() {
     <div className="flex flex-col gap-4 p-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <div className="rounded-card bg-surface p-4 shadow-card">
-          <div className="text-[13px] text-ink-muted">Compras</div>
+          <div className="text-[13px] text-ink-muted">Compras{hayFiltro ? ' (filtradas)' : ''}</div>
           <div className="mt-1 text-2xl font-extrabold">{rows.length}</div>
         </div>
         <div className="rounded-card bg-surface p-4 shadow-card">
-          <div className="text-[13px] text-ink-muted">Total gastado</div>
+          <div className="text-[13px] text-ink-muted">Total gastado{hayFiltro ? ' (filtrado)' : ''}</div>
           <div className="mt-1 text-2xl font-extrabold">{fmtMoneda(totalGastado)}</div>
         </div>
       </div>
@@ -54,7 +66,37 @@ export function ComprasTab() {
         <Button onClick={abrirNueva}>+ Nueva compra</Button>
       </div>
 
-      {rows.length === 0 ? (
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-ink-muted">Filtrar por fecha:</span>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm text-ink-muted">Desde</label>
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm text-ink-muted">Hasta</label>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        {hayFiltro && (
+          <button
+            onClick={() => { setDesde(''); setHasta('') }}
+            className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      {todos.length === 0 ? (
         <EmptyState
           icon={
             <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -65,6 +107,27 @@ export function ComprasTab() {
           title="Sin compras registradas"
           subtitle="Registra tus compras a proveedores para que el stock se actualice solo."
           action={<Button onClick={abrirNueva}>+ Nueva compra</Button>}
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          }
+          title="Sin compras en ese período"
+          subtitle="Prueba a ampliar el rango de fechas o limpia el filtro."
+          action={
+            <button
+              onClick={() => { setDesde(''); setHasta('') }}
+              className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
+            >
+              Limpiar filtro
+            </button>
+          }
         />
       ) : (
         rows.map((c) => (

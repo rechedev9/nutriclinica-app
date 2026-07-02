@@ -16,10 +16,21 @@ export function VentasTab() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<number | null>(null)
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  const rows = ventas ?? []
+  const todos = ventas ?? []
+
+  const rows = todos.filter((v) => {
+    const fecha = v.fecha ?? ''
+    if (desde && fecha < desde) return false
+    if (hasta && fecha > hasta) return false
+    return true
+  })
+
   const totalIngresado = rows.reduce((s, v) => s + v.total, 0)
+  const hayFiltro = desde !== '' || hasta !== ''
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar venta?', confirmText: 'Eliminar', danger: true })
@@ -30,11 +41,11 @@ export function VentasTab() {
     <div className="flex flex-col gap-4 p-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <div className="rounded-card bg-surface p-4 shadow-card">
-          <div className="text-[13px] text-ink-muted">Ventas</div>
+          <div className="text-[13px] text-ink-muted">Ventas{hayFiltro ? ' (filtradas)' : ''}</div>
           <div className="mt-1 text-2xl font-extrabold">{rows.length}</div>
         </div>
         <div className="rounded-card bg-surface p-4 shadow-card">
-          <div className="text-[13px] text-ink-muted">Total ingresado</div>
+          <div className="text-[13px] text-ink-muted">Total ingresado{hayFiltro ? ' (filtrado)' : ''}</div>
           <div className="mt-1 text-2xl font-extrabold">{fmtMoneda(totalIngresado)}</div>
         </div>
       </div>
@@ -44,7 +55,37 @@ export function VentasTab() {
         <Button onClick={() => setOpen(true)}>+ Nueva venta</Button>
       </div>
 
-      {rows.length === 0 ? (
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-ink-muted">Filtrar por fecha:</span>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm text-ink-muted">Desde</label>
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-sm text-ink-muted">Hasta</label>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        {hayFiltro && (
+          <button
+            onClick={() => { setDesde(''); setHasta('') }}
+            className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      {todos.length === 0 ? (
         <EmptyState
           icon={
             <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -55,6 +96,27 @@ export function VentasTab() {
           title="Sin ventas registradas"
           subtitle="Registra las ventas de productos a tus pacientes o ventas libres."
           action={<Button onClick={() => setOpen(true)}>+ Nueva venta</Button>}
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          }
+          title="Sin ventas en ese período"
+          subtitle="Prueba a ampliar el rango de fechas o limpia el filtro."
+          action={
+            <button
+              onClick={() => { setDesde(''); setHasta('') }}
+              className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
+            >
+              Limpiar filtro
+            </button>
+          }
         />
       ) : (
         rows.map((v) => (
