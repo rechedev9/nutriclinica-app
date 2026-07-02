@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import '@/lib/chart/chartSetup'
-import { Bar, Doughnut } from 'react-chartjs-2'
+import { Bar, Doughnut, Line } from 'react-chartjs-2'
 import { useCompras, useVentas, useMermas, useAlmacen } from '../hooks/useStock'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { useChartTheme, tooltipPlugin } from '@/lib/chart/useChartTheme'
@@ -59,6 +59,9 @@ export function AnalisisStockTab() {
   const { data: almacenData, isLoading: la } = useAlmacen()
   const t = useChartTheme()
 
+  const [filtroProv, setFiltroProv] = useState('')
+  const [filtroProducto, setFiltroProducto] = useState('')
+
   const compras = comprasData ?? []
   const ventas = ventasData ?? []
   const mermas = mermasData ?? []
@@ -115,6 +118,68 @@ export function AnalisisStockTab() {
     for (const m of mermas) counts[m.motivo] = (counts[m.motivo] ?? 0) + 1
     return counts
   }, [mermas])
+
+  // Datos para el gráfico de precio unitario de compra
+  const { productosLista, proveedoresDeProducto, precioDatasets, precioLabels } = useMemo(() => {
+    // Todos los productos únicos que aparecen en líneas de compra
+    const productosSet = new Set<string>()
+    for (const c of compras) {
+      for (const l of c.lineas) {
+        if (l.producto_nombre) productosSet.add(l.producto_nombre)
+      }
+    }
+    const productosLista = Array.from(productosSet).sort()
+
+    if (!filtroProducto) {
+      return { productosLista, proveedoresDeProducto: [], precioDatasets: [], precioLabels: [] }
+    }
+
+    // Proveedores que tienen ese producto
+    const provSet = new Set<string>()
+    for (const c of compras) {
+      if (c.lineas.some((l) => l.producto_nombre === filtroProducto)) {
+        provSet.add(c.proveedor_nombre ?? 'Sin proveedor')
+      }
+    }
+    const proveedoresDeProducto = Array.from(provSet).sort()
+
+    // Puntos por proveedor: { fecha → precio }
+    const porProv: Record<string, { fecha: string; precio: number }[]> = {}
+    for (const c of compras) {
+      const prov = c.proveedor_nombre ?? 'Sin proveedor'
+      if (filtroProv && prov !== filtroProv) continue
+      const linea = c.lineas.find((l) => l.producto_nombre === filtroProducto)
+      if (!linea) continue
+      const fecha = (c.fecha ?? '').slice(0, 10)
+      if (!fecha) continue
+      if (!porProv[prov]) porProv[prov] = []
+      porProv[prov].push({ fecha, precio: linea.precio_unitario })
+    }
+
+    // Eje X: todas las fechas únicas ordenadas
+    const fechasSet = new Set<string>()
+    for (const pts of Object.values(porProv)) pts.forEach((p) => fechasSet.add(p.fecha))
+    const precioLabels = Array.from(fechasSet).sort()
+
+    const provKeys = Object.keys(porProv)
+    const precioDatasets = provKeys.map((prov, i) => {
+      const mapaFecha: Record<string, number> = {}
+      for (const { fecha, precio } of porProv[prov] ?? []) mapaFecha[fecha] = precio
+      return {
+        label: prov,
+        data: precioLabels.map((f) => mapaFecha[f] ?? null),
+        borderColor: PALETTE[i % PALETTE.length] ?? '#0F7B92',
+        backgroundColor: (PALETTE[i % PALETTE.length] ?? '#0F7B92') + '22',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.3,
+        fill: false,
+        spanGaps: true,
+      }
+    })
+
+    return { productosLista, proveedoresDeProducto, precioDatasets, precioLabels }
+  }, [compras, filtroProducto, filtroProv])
 
   // Opciones de gráficos (memoizadas con el tema para no re-renderizar en cada frame)
   const evolucionOpts = useMemo(
@@ -194,6 +259,28 @@ export function AnalisisStockTab() {
         tooltip: {
           ...tooltipPlugin(t),
           callbacks: { label: (ctx) => ` ${typeof ctx.raw === 'number' ? ctx.raw + ' ud' : ''}` },
+        },
+      },
+    }),
+    [t],
+  )
+
+  const precioOpts = useMemo(
+    (): ChartOptions<'line'> => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: t.legend, usePointStyle: true, boxWidth: 10, padding: 14 } },
+        tooltip: {
+          ...tooltipPlugin(t),
+          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.y)} / ud` },
+        },
+      },
+      scales: {
+        x: { grid: { color: t.grid }, ticks: { color: t.ticks } },
+        y: {
+          grid: { color: t.grid },
+          ticks: { color: t.ticks, callback: (v) => fmtMoneda(Number(v)) },
         },
       },
     }),
@@ -314,13 +401,13 @@ export function AnalisisStockTab() {
         </Section>
       </div>
 
-      {/* Mermas + Productos bajo mínimo */}
-      <div className="grid gap-5 md:grid-cols-2">
+      {/* Mermas + Precio unitario + Bajo mínimos */}
+      <div className="grid gap-5 md:grid-cols-3">
         <Section title="Mermas registradas por motivo">
           {mermas.length === 0 ? (
             <p className="py-4 text-sm text-ink-muted">Sin mermas registradas.</p>
           ) : (
-            <div style={{ height: 220 }}>
+            <div style={{ height: 180 }}>
               <Doughnut
                 options={mermaOpts}
                 data={{
@@ -338,6 +425,41 @@ export function AnalisisStockTab() {
                   ],
                 }}
               />
+            </div>
+          )}
+        </Section>
+
+        <Section title="Evolución de precio de compra">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <select
+              value={filtroProducto}
+              onChange={(e) => { setFiltroProducto(e.target.value); setFiltroProv('') }}
+              className="flex-1 rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">— Producto —</option>
+              {productosLista.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <select
+              value={filtroProv}
+              onChange={(e) => setFiltroProv(e.target.value)}
+              disabled={!filtroProducto}
+              className="flex-1 rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
+            >
+              <option value="">— Todos los proveedores —</option>
+              {proveedoresDeProducto.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          {!filtroProducto ? (
+            <p className="py-6 text-center text-sm text-ink-muted">Selecciona un producto para ver la evolución de su precio de compra.</p>
+          ) : precioLabels.length === 0 ? (
+            <p className="py-6 text-center text-sm text-ink-muted">Sin compras registradas para este producto.</p>
+          ) : (
+            <div style={{ height: 180 }}>
+              <Line options={precioOpts} data={{ labels: precioLabels, datasets: precioDatasets }} />
             </div>
           )}
         </Section>
