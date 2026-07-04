@@ -8,6 +8,7 @@ import { fmtMoneda } from '@/lib/format/moneda'
 import type { ChartOptions } from 'chart.js'
 
 const PALETTE = ['#0F7B92', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6']
+const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 const MOTIVO_LABEL: Record<string, string> = {
   caducidad: 'Caducidad',
@@ -43,10 +44,21 @@ function KpiCard({
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  actions,
+}: {
+  title: string
+  children: React.ReactNode
+  actions?: React.ReactNode
+}) {
   return (
     <div className="rounded-card bg-surface p-5 shadow-card">
-      <h3 className="mb-4 text-[15px] font-bold">{title}</h3>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-[15px] font-bold">{title}</h3>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </div>
       {children}
     </div>
   )
@@ -59,6 +71,9 @@ export function AnalisisStockTab() {
   const { data: almacenData, isLoading: la } = useAlmacen()
   const t = useChartTheme()
 
+  const [filtroAnio, setFiltroAnio] = useState('')
+  const [filtroMesDesde, setFiltroMesDesde] = useState(1)
+  const [filtroMesHasta, setFiltroMesHasta] = useState(12)
   const [filtroProv, setFiltroProv] = useState('')
   const [filtroProducto, setFiltroProducto] = useState('')
   const [busquedaProducto, setBusquedaProducto] = useState('')
@@ -80,14 +95,19 @@ export function AnalisisStockTab() {
   const mermas = mermasData ?? []
   const almacen = almacenData ?? []
 
-  // Últimos 12 meses en formato YYYY-MM
   const meses = useMemo(() => {
-    const now = new Date()
-    return Array.from({ length: 12 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    })
-  }, [])
+    if (!filtroAnio) {
+      const now = new Date()
+      return Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      })
+    }
+    return Array.from(
+      { length: filtroMesHasta - filtroMesDesde + 1 },
+      (_, i) => `${filtroAnio}-${String(filtroMesDesde + i).padStart(2, '0')}`,
+    )
+  }, [filtroAnio, filtroMesDesde, filtroMesHasta])
 
   const { ventasPorMes, comprasPorMes } = useMemo(() => {
     const ventasPorMes: Record<string, number> = {}
@@ -101,6 +121,19 @@ export function AnalisisStockTab() {
       if (m) comprasPorMes[m] = (comprasPorMes[m] ?? 0) + c.total
     }
     return { ventasPorMes, comprasPorMes }
+  }, [ventas, compras])
+
+  const anosDisponibles = useMemo(() => {
+    const anos = new Set<string>()
+    for (const v of ventas) {
+      const y = (v.fecha ?? '').slice(0, 4)
+      if (y.length === 4) anos.add(y)
+    }
+    for (const c of compras) {
+      const y = (c.fecha ?? '').slice(0, 4)
+      if (y.length === 4) anos.add(y)
+    }
+    return Array.from(anos).sort()
   }, [ventas, compras])
 
   const topProductos = useMemo(() => {
@@ -197,6 +230,14 @@ export function AnalisisStockTab() {
 
     return { productosLista, productosFiltrados, proveedoresDeProducto, precioDatasets, precioLabels }
   }, [compras, filtroProducto, filtroProv, busquedaProducto])
+
+  const evolucionTitulo = useMemo(() => {
+    if (!filtroAnio) return 'Evolución mensual — ingresos vs. gastos (últimos 12 meses)'
+    if (filtroMesDesde === 1 && filtroMesHasta === 12) return `Evolución mensual — ingresos vs. gastos (${filtroAnio})`
+    const mesD = MESES_CORTOS[filtroMesDesde - 1] ?? ''
+    const mesH = MESES_CORTOS[filtroMesHasta - 1] ?? ''
+    return `Evolución mensual — ingresos vs. gastos (${mesD}–${mesH} ${filtroAnio})`
+  }, [filtroAnio, filtroMesDesde, filtroMesHasta])
 
   // Opciones de gráficos (memoizadas con el tema para no re-renderizar en cada frame)
   const evolucionOpts = useMemo(
@@ -345,7 +386,52 @@ export function AnalisisStockTab() {
       </div>
 
       {/* Evolución mensual */}
-      <Section title="Evolución mensual — ingresos vs. gastos (últimos 12 meses)">
+      <Section
+        title={evolucionTitulo}
+        actions={
+          <>
+            <select
+              value={filtroAnio}
+              onChange={(e) => {
+                setFiltroAnio(e.target.value)
+                setFiltroMesDesde(1)
+                setFiltroMesHasta(12)
+              }}
+              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">Últimos 12 meses</option>
+              {anosDisponibles.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+            <select
+              value={filtroMesDesde}
+              onChange={(e) => {
+                const val = Number(e.target.value)
+                setFiltroMesDesde(val)
+                if (filtroMesHasta < val) setFiltroMesHasta(val)
+              }}
+              disabled={!filtroAnio}
+              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
+            >
+              {MESES_CORTOS.map((m, i) => (
+                <option key={i} value={i + 1}>{m}</option>
+              ))}
+            </select>
+            <span className="text-sm text-ink-muted">–</span>
+            <select
+              value={filtroMesHasta}
+              onChange={(e) => setFiltroMesHasta(Number(e.target.value))}
+              disabled={!filtroAnio}
+              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
+            >
+              {MESES_CORTOS.map((m, i) => (
+                <option key={i} value={i + 1} disabled={i + 1 < filtroMesDesde}>{m}</option>
+              ))}
+            </select>
+          </>
+        }
+      >
         <div style={{ height: 240 }}>
           <Bar
             options={evolucionOpts}
