@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import '@/lib/chart/chartSetup'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
 import { useCompras, useVentas, useMermas, useAlmacen } from '../hooks/useStock'
@@ -61,6 +61,19 @@ export function AnalisisStockTab() {
 
   const [filtroProv, setFiltroProv] = useState('')
   const [filtroProducto, setFiltroProducto] = useState('')
+  const [busquedaProducto, setBusquedaProducto] = useState('')
+  const [comboAbierto, setComboAbierto] = useState(false)
+  const comboRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function cerrar(e: MouseEvent) {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setComboAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', cerrar)
+    return () => document.removeEventListener('mousedown', cerrar)
+  }, [])
 
   const compras = comprasData ?? []
   const ventas = ventasData ?? []
@@ -120,7 +133,7 @@ export function AnalisisStockTab() {
   }, [mermas])
 
   // Datos para el gráfico de precio unitario de compra
-  const { productosLista, proveedoresDeProducto, precioDatasets, precioLabels } = useMemo(() => {
+  const { productosFiltrados, proveedoresDeProducto, precioDatasets, precioLabels } = useMemo(() => {
     // Todos los productos únicos que aparecen en líneas de compra
     const productosSet = new Set<string>()
     for (const c of compras) {
@@ -130,8 +143,12 @@ export function AnalisisStockTab() {
     }
     const productosLista = Array.from(productosSet).sort()
 
+    const productosFiltrados = busquedaProducto
+      ? productosLista.filter((p) => p.toLowerCase().includes(busquedaProducto.toLowerCase()))
+      : productosLista
+
     if (!filtroProducto) {
-      return { productosLista, proveedoresDeProducto: [], precioDatasets: [], precioLabels: [] }
+      return { productosLista, productosFiltrados, proveedoresDeProducto: [], precioDatasets: [], precioLabels: [] }
     }
 
     // Proveedores que tienen ese producto
@@ -178,8 +195,8 @@ export function AnalisisStockTab() {
       }
     })
 
-    return { productosLista, proveedoresDeProducto, precioDatasets, precioLabels }
-  }, [compras, filtroProducto, filtroProv])
+    return { productosLista, productosFiltrados, proveedoresDeProducto, precioDatasets, precioLabels }
+  }, [compras, filtroProducto, filtroProv, busquedaProducto])
 
   // Opciones de gráficos (memoizadas con el tema para no re-renderizar en cada frame)
   const evolucionOpts = useMemo(
@@ -431,16 +448,45 @@ export function AnalisisStockTab() {
 
         <Section title="Evolución de precio de compra">
           <div className="mb-3 flex flex-wrap gap-2">
-            <select
-              value={filtroProducto}
-              onChange={(e) => { setFiltroProducto(e.target.value); setFiltroProv('') }}
-              className="flex-1 rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="">— Producto —</option>
-              {productosLista.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
+            <div ref={comboRef} className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Buscar producto…"
+                value={comboAbierto ? busquedaProducto : (filtroProducto || busquedaProducto)}
+                onFocus={() => {
+                  setBusquedaProducto('')
+                  setComboAbierto(true)
+                }}
+                onChange={(e) => {
+                  setBusquedaProducto(e.target.value)
+                  if (filtroProducto) { setFiltroProducto(''); setFiltroProv('') }
+                  setComboAbierto(true)
+                }}
+                className="w-full rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              {comboAbierto && (
+                <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-border bg-surface shadow-md">
+                  {productosFiltrados.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-ink-muted">Sin resultados</div>
+                  ) : (
+                    productosFiltrados.map((p) => (
+                      <div
+                        key={p}
+                        onMouseDown={() => {
+                          setFiltroProducto(p)
+                          setBusquedaProducto('')
+                          setFiltroProv('')
+                          setComboAbierto(false)
+                        }}
+                        className={`cursor-pointer px-3 py-2 text-sm hover:bg-primary/10 ${p === filtroProducto ? 'font-semibold text-primary' : 'text-ink'}`}
+                      >
+                        {p}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
             <select
               value={filtroProv}
               onChange={(e) => setFiltroProv(e.target.value)}
