@@ -2,7 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 
 const tabs = [
-  { to: 'almacen', label: 'Almacén' },
+  { to: 'almacen', label: 'Stock' },
   { to: 'compras', label: 'Compras' },
   { to: 'ventas', label: 'Ventas' },
   { to: 'proveedores', label: 'Proveedores' },
