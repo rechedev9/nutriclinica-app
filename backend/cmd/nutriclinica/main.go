@@ -13,11 +13,13 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
 
 	"nutriclinica/internal/auth"
+	"nutriclinica/internal/backup"
 	"nutriclinica/internal/config"
 	"nutriclinica/internal/server"
 	"nutriclinica/internal/store"
@@ -100,6 +102,18 @@ func main() {
 		log.Printf("Cifrado en reposo ACTIVADO: se pedirá la contraseña maestra en el navegador.")
 	}
 
+	// Ctx de vida de la app: se cancela al recibir Ctrl+C / SIGTERM. Se crea
+	// aquí (antes de arrancar el servidor HTTP) para que también gobierne
+	// tareas de fondo como el backup a S3.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if cfg, ok := backup.DesdeEntorno(); ok {
+		cfg.EstadoPath = filepath.Join(paths.DataDir, "bbdd", ".s3backup-estado.json")
+		log.Printf("Backup automático a S3 activado: s3://%s/%s cada %s (solo sube lo que cambie)", cfg.Bucket, cfg.Prefijo, cfg.Intervalo)
+		backup.Iniciar(ctx, cfg, srv.CurrentDB, paths.FotosDir)
+	}
+
 	ln, addr := listen(*port)
 	url := "http://" + addr
 	fmt.Printf("\n  NutriClínica corriendo en %s\n\n", url)
@@ -120,8 +134,6 @@ func main() {
 
 	// Esperar Ctrl+C / SIGTERM y cerrar de forma ordenada: primero el servidor
 	// HTTP (deja de aceptar conexiones), luego la BD (vacía el WAL).
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	<-ctx.Done()
 	log.Println("Cerrando NutriClínica...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

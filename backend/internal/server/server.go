@@ -2,6 +2,7 @@
 package server
 
 import (
+	"database/sql"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -65,6 +66,17 @@ func New(cfg Config) (*Server, error) {
 
 // db devuelve el store actual (nil si la BD está bloqueada).
 func (s *Server) db() *store.Store { return s.st.Load() }
+
+// CurrentDB devuelve la conexión SQL actual, o nil si la BD está bloqueada
+// (modo cifrado sin desbloquear todavía). Pensado para tareas de
+// mantenimiento en segundo plano (p.ej. el backup a S3) que no deben
+// bloquear el arranque ni acoplarse al ciclo de vida del cifrado.
+func (s *Server) CurrentDB() *sql.DB {
+	if st := s.db(); st != nil {
+		return st.DB
+	}
+	return nil
+}
 
 // Close cierra el store si está abierto (para el apagado ordenado).
 func (s *Server) Close() error {
