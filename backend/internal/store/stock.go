@@ -19,7 +19,8 @@ func (s *Store) Almacen() ([]models.AlmacenRow, error) {
 	rows, err := s.DB.Query(`
 		SELECT p.id, p.nombre, p.unidad, p.precio_coste, p.precio_venta, p.stock_minimo,
 		       c.nombre as categoria, pr.nombre as proveedor_nombre,
-		       COALESCE(comp.tot, 0) - COALESCE(vent.tot, 0) - COALESCE(merm.tot, 0) as stock_actual
+		       COALESCE(comp.tot, 0) - COALESCE(vent.tot, 0) - COALESCE(merm.tot, 0) as stock_actual,
+		       p.creado
 		FROM stock_productos p
 		LEFT JOIN stock_categorias c   ON c.id  = p.categoria_id
 		LEFT JOIN stock_proveedores pr ON pr.id = p.proveedor_id
@@ -38,7 +39,7 @@ func (s *Store) Almacen() ([]models.AlmacenRow, error) {
 	for rows.Next() {
 		var r models.AlmacenRow
 		if err := rows.Scan(&r.ID, &r.Nombre, &r.Unidad, &r.PrecioCoste, &r.PrecioVenta,
-			&r.StockMinimo, &r.Categoria, &r.ProveedorNombre, &r.StockActual); err != nil {
+			&r.StockMinimo, &r.Categoria, &r.ProveedorNombre, &r.StockActual, &r.Creado); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

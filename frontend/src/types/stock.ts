@@ -8,6 +8,7 @@ export interface AlmacenRow {
   categoria: string | null
   proveedor_nombre: string | null
   stock_actual: number
+  creado: string | null
 }
 
 export interface Producto {

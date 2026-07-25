@@ -98,6 +98,7 @@ type AlmacenRow struct {
 	Categoria       *string `json:"categoria"`
 	ProveedorNombre *string `json:"proveedor_nombre"`
 	StockActual     float64 `json:"stock_actual"`
+	Creado          *string `json:"creado"`
 }
 
 // Producto refleja stock_productos con join de categoría y proveedor.

@@ -7,7 +7,72 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/cn'
 import { fmtMoneda } from '@/lib/format/moneda'
-import type { Producto } from '@/types'
+import { fmtFecha } from '@/lib/format/fecha'
+import type { AlmacenRow, Producto } from '@/types'
+
+type SortKey =
+  | 'nombre'
+  | 'categoria'
+  | 'proveedor_nombre'
+  | 'estado'
+  | 'stock_actual'
+  | 'precio_coste'
+  | 'precio_venta'
+  | 'margen'
+  | 'valor_stock'
+  | 'creado'
+
+function valorOrden(p: AlmacenRow, key: SortKey): string | number {
+  switch (key) {
+    case 'nombre':
+      return p.nombre.toLowerCase()
+    case 'categoria':
+      return (p.categoria ?? '').toLowerCase()
+    case 'proveedor_nombre':
+      return (p.proveedor_nombre ?? '').toLowerCase()
+    case 'estado':
+      return p.stock_actual <= 0 ? 0 : p.stock_actual <= p.stock_minimo ? 1 : 2
+    case 'stock_actual':
+      return p.stock_actual
+    case 'precio_coste':
+      return p.precio_coste
+    case 'precio_venta':
+      return p.precio_venta
+    case 'margen':
+      return p.precio_venta - p.precio_coste
+    case 'valor_stock':
+      return Math.max(0, p.stock_actual) * p.precio_coste
+    case 'creado':
+      return p.creado ?? ''
+  }
+}
+
+function ThOrdenable({
+  label,
+  sortKey,
+  align,
+  sort,
+  onSort,
+}: {
+  label: string
+  sortKey: SortKey
+  align?: 'right'
+  sort: { key: SortKey; dir: 'asc' | 'desc' } | null
+  onSort: (key: SortKey) => void
+}) {
+  const activo = sort?.key === sortKey
+  return (
+    <th
+      className={cn('p-3 font-semibold cursor-pointer select-none hover:text-ink', align === 'right' && 'text-right')}
+      onClick={() => onSort(sortKey)}
+    >
+      <span className={cn('inline-flex items-center gap-1', align === 'right' && 'flex-row-reverse')}>
+        {label}
+        <span className={cn('text-[10px]', !activo && 'opacity-0')}>{sort?.dir === 'desc' ? '▼' : '▲'}</span>
+      </span>
+    </th>
+  )
+}
 
 function Kpi({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
   return (
@@ -41,7 +106,12 @@ export function AlmacenTab() {
   const [editing, setEditing] = useState<Producto | undefined>()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('')
+  const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null)
   const deferredQ = useDeferredValue(q)
+
+  function onSort(key: SortKey) {
+    setSort((prev) => (prev?.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
+  }
 
   const rows = useMemo(() => almacen ?? [], [almacen])
   const categorias = useMemo(
@@ -57,6 +127,17 @@ export function AlmacenTab() {
       return coincideTexto && coincideCat
     })
   }, [rows, deferredQ, cat])
+  const ordenadas = useMemo(() => {
+    if (!sort) return filtradas
+    const { key, dir } = sort
+    const factor = dir === 'asc' ? 1 : -1
+    return [...filtradas].sort((a, b) => {
+      const va = valorOrden(a, key)
+      const vb = valorOrden(b, key)
+      if (typeof va === 'string' && typeof vb === 'string') return va.localeCompare(vb) * factor
+      return ((va as number) - (vb as number)) * factor
+    })
+  }, [filtradas, sort])
 
   if (isLoading) return <CenteredSpinner />
 
@@ -132,20 +213,21 @@ export function AlmacenTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-ink-muted">
-                <th className="p-3 font-semibold">Producto</th>
-                <th className="p-3 font-semibold">Categoría</th>
-                <th className="p-3 font-semibold">Proveedor</th>
-                <th className="p-3 font-semibold">Estado</th>
-                <th className="p-3 text-right font-semibold">Stock</th>
-                <th className="p-3 text-right font-semibold">Coste</th>
-                <th className="p-3 text-right font-semibold">Venta</th>
-                <th className="p-3 text-right font-semibold">Margen</th>
-                <th className="p-3 text-right font-semibold">Valor stock</th>
+                <ThOrdenable label="Producto" sortKey="nombre" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Categoría" sortKey="categoria" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Proveedor" sortKey="proveedor_nombre" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Estado" sortKey="estado" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Stock" sortKey="stock_actual" align="right" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Coste" sortKey="precio_coste" align="right" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Venta" sortKey="precio_venta" align="right" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Margen" sortKey="margen" align="right" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Valor stock" sortKey="valor_stock" align="right" sort={sort} onSort={onSort} />
+                <ThOrdenable label="Alta" sortKey="creado" sort={sort} onSort={onSort} />
                 <th className="p-3"></th>
               </tr>
             </thead>
             <tbody>
-              {filtradas.map((p) => {
+              {ordenadas.map((p) => {
                 const est = estadoStock(p.stock_actual, p.stock_minimo)
                 const margenU = p.precio_venta - p.precio_coste
                 const margenPct = p.precio_venta > 0 ? Math.round((margenU / p.precio_venta) * 100) : null
@@ -173,6 +255,7 @@ export function AlmacenTab() {
                       {margenPct != null && <span className="ml-1 text-[12px] text-ink-muted">({margenPct}%)</span>}
                     </td>
                     <td className="p-3 text-right font-semibold tabular-nums">{fmtMoneda(valorStock)}</td>
+                    <td className="p-3 text-ink-muted">{fmtFecha(p.creado)}</td>
                     <td className="p-3 text-right">
                       <Button
                         variant="ghost"
