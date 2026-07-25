@@ -3,6 +3,15 @@
 # Para tenerlo "en el escritorio": arrastra este archivo al Escritorio (o crea un alias).
 cd "$(dirname "$0")" || exit 1
 
+# Si existe "aws-backup.env" junto a este script, carga esas variables
+# (credenciales de AWS) para activar el backup automático a S3.
+if [ -f "aws-backup.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "aws-backup.env"
+  set +a
+fi
+
 ARCH="$(uname -m)"
 if [ "$ARCH" = "arm64" ]; then
   BIN="NutriClinica-mac-arm64"

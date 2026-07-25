@@ -34,13 +34,15 @@ Pop-Location
 
 Write-Host '==> Ensamblando carpetas distribuibles...' -ForegroundColor Cyan
 
-# Windows: ejecutable + icono + creador de acceso directo + LEEME.
+# Windows: ejecutable + icono + lanzador + creador de acceso directo + LEEME.
 $win = "$dist/NutriClinica-Windows"
 New-Item -ItemType Directory -Force $win | Out-Null
 Copy-Item "$dist/NutriClinica-win-amd64.exe" "$win/NutriClinica.exe" -Force
 Copy-Item "$root/icono_nutri.ico" "$win/icono_nutri.ico" -Force
+Copy-Item "$root/deploy/NutriClinica.bat" $win -Force
 Copy-Item "$root/deploy/Crear acceso directo.bat" $win -Force
 Copy-Item "$root/deploy/crear-acceso-directo.ps1" $win -Force
+Copy-Item "$root/deploy/aws-backup.env.example" $win -Force
 Copy-Item "$root/deploy/LEEME.txt" $win -Force
 
 # macOS: binarios (arm64 + amd64) + lanzador .command + LEEME.
@@ -49,6 +51,7 @@ New-Item -ItemType Directory -Force $mac | Out-Null
 Copy-Item "$dist/NutriClinica-mac-arm64" $mac -Force
 Copy-Item "$dist/NutriClinica-mac-amd64" $mac -Force
 Copy-Item "$root/deploy/NutriClinica.command" $mac -Force
+Copy-Item "$root/deploy/aws-backup.env.example" $mac -Force
 Copy-Item "$root/deploy/LEEME.txt" $mac -Force
 
 Write-Host "==> Listo." -ForegroundColor Green
