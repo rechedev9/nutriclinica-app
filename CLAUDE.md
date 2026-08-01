@@ -74,7 +74,7 @@ React Router models the navigation: the NavRail and patient tabs are **routes** 
 ## Data, auth, and conventions
 
 - `bbdd/` and `fotos/` hold real patient PII and are gitignored. The Go schema is designed to open the existing `pacientes.db` non-destructively; if FK orphans exist from the old FK-off era, the server logs them and `--fix-orphans` cleans them after a `VACUUM INTO` backup.
-- Git remotes: `origin` is the owner's **private** repo (`granrafael/nutriclinica`) — push here; `upstream` points at the same repo (kept as a separate remote from an earlier setup) and `no-mistakes` is a local backup remote. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
+- Git remotes: `origin` is the owner's **private** repo (`granrafael/nutriclinica`) — push here. It used to point at `rechedev9/nutriclinica`, a friend's account from when he was collaborating on the project; that repo is gone now that the owner works on it solo, so `origin` was repointed to `granrafael/nutriclinica`. `upstream` points at the same repo (harmless duplicate) and `no-mistakes` is a local backup remote. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
 - Keep new code in Spanish (identifiers, UI strings, comments) to match the codebase.
 - Backend: add a route in the matching `handlers/*.go` and a method in the matching `store/*.go`. Frontend: add a feature file/hook alongside the existing ones; don't reach for global state when the URL or a parent's local state suffices.
 
