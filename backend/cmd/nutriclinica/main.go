@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -28,10 +29,12 @@ import (
 
 func main() {
 	dataDir := flag.String("data-dir", "", "Directorio de datos (bbdd/ y fotos/). Por defecto: junto al ejecutable.")
+	host := flag.String("host", "127.0.0.1", "Dirección de escucha. Usa 0.0.0.0 para exponerlo en red (despliegue en servidor/contenedor).")
 	port := flag.Int("port", 5001, "Puerto de escucha")
 	noBrowser := flag.Bool("no-browser", false, "No abrir el navegador al arrancar")
 	fixOrphans := flag.Bool("fix-orphans", false, "Limpiar filas huérfanas (hace backup antes)")
 	cifrar := flag.Bool("cifrar", false, "Cifrar la base de datos en reposo (pide contraseña maestra al abrir)")
+	https := flag.Bool("https", false, "La app se sirve detrás de HTTPS (proxy inverso o TLS directo): activa la cookie de sesión Secure.")
 	flag.Parse()
 
 	paths, err := config.Resolve(*dataDir)
@@ -40,7 +43,7 @@ func main() {
 	}
 	log.Printf("Directorio de datos: %s", paths.DataDir)
 
-	sessions, err := auth.NewManager(paths.SecretKey)
+	sessions, err := auth.NewManager(paths.SecretKey, *https)
 	if err != nil {
 		log.Fatalf("inicializando sesiones: %v", err)
 	}
@@ -114,14 +117,20 @@ func main() {
 		backup.Iniciar(ctx, cfg, srv.CurrentDB, paths.FotosDir)
 	}
 
-	ln, addr := listen(*port)
+	ln, addr := listen(*host, *port)
 	url := "http://" + addr
 	fmt.Printf("\n  NutriClínica corriendo en %s\n\n", url)
 
 	if !*noBrowser {
+		// Si escucha en todas las interfaces (0.0.0.0), abrir el navegador
+		// local contra 127.0.0.1, no contra 0.0.0.0.
+		browserURL := url
+		if *host == "0.0.0.0" {
+			browserURL = fmt.Sprintf("http://127.0.0.1:%s", addr[strings.LastIndex(addr, ":")+1:])
+		}
 		go func() {
 			time.Sleep(600 * time.Millisecond)
-			openBrowser(url)
+			openBrowser(browserURL)
 		}()
 	}
 
@@ -163,13 +172,14 @@ func handleOrphans(st *store.Store, dbPath string, fix bool) error {
 	return nil
 }
 
-// listen intenta el puerto dado en 127.0.0.1; si está ocupado, usa uno libre.
-func listen(port int) (net.Listener, string) {
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+// listen intenta el puerto dado en host; si está ocupado, usa uno libre en
+// ese mismo host.
+func listen(host string, port int) (net.Listener, string) {
+	addr := fmt.Sprintf("%s:%d", host, port)
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Printf("Puerto %d ocupado, usando uno libre...", port)
-		ln, err = net.Listen("tcp", "127.0.0.1:0")
+		ln, err = net.Listen("tcp", fmt.Sprintf("%s:0", host))
 		if err != nil {
 			log.Fatalf("no se pudo abrir ningún puerto: %v", err)
 		}

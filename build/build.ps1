@@ -1,6 +1,6 @@
-# Build de NutriClínica para Windows y macOS.
+# Build de NutriClínica para Windows, macOS y Linux (servidor).
 # 1) Compila el SPA (Vite) y lo copia a backend/web/dist (embebido por Go).
-# 2) Cross-compila el binario Go para win/amd64, darwin/arm64 y darwin/amd64.
+# 2) Cross-compila el binario Go para win/amd64, darwin/arm64, darwin/amd64 y linux/amd64.
 #
 # Uso:  pwsh build/build.ps1
 $ErrorActionPreference = 'Stop'
@@ -20,7 +20,8 @@ New-Item -ItemType Directory -Force $dist | Out-Null
 $targets = @(
   @{ os = 'windows'; arch = 'amd64'; out = 'NutriClinica-win-amd64.exe' },
   @{ os = 'darwin';  arch = 'arm64'; out = 'NutriClinica-mac-arm64' },
-  @{ os = 'darwin';  arch = 'amd64'; out = 'NutriClinica-mac-amd64' }
+  @{ os = 'darwin';  arch = 'amd64'; out = 'NutriClinica-mac-amd64' },
+  @{ os = 'linux';   arch = 'amd64'; out = 'NutriClinica-linux-amd64' }
 )
 foreach ($t in $targets) {
   Write-Host "    -> $($t.os)/$($t.arch)" -ForegroundColor DarkCyan

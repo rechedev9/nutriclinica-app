@@ -17,8 +17,10 @@ type Manager struct {
 }
 
 // NewManager crea el gestor de sesiones, cargando o generando la clave de
-// firma persistida en secretKeyPath (32 bytes aleatorios).
-func NewManager(secretKeyPath string) (*Manager, error) {
+// firma persistida en secretKeyPath (32 bytes aleatorios). secureCookie debe
+// ser true cuando la app se sirve por HTTPS (despliegue en servidor); false
+// en el uso local por defecto (http://127.0.0.1).
+func NewManager(secretKeyPath string, secureCookie bool) (*Manager, error) {
 	key, err := loadOrCreateKey(secretKeyPath)
 	if err != nil {
 		return nil, err
@@ -29,7 +31,7 @@ func NewManager(secretKeyPath string) (*Manager, error) {
 		MaxAge:   12 * 60 * 60, // 12 horas
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-		Secure:   false, // localhost por http
+		Secure:   secureCookie,
 	}
 	return &Manager{store: store}, nil
 }

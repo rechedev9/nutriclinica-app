@@ -248,7 +248,7 @@ export function AnalisisStockTab() {
         legend: { labels: { color: t.legend, usePointStyle: true, boxWidth: 10, padding: 16 } },
         tooltip: {
           ...tooltipPlugin(t),
-          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.y)}` },
+          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.y ?? 0)}` },
         },
       },
       scales: {
@@ -271,7 +271,7 @@ export function AnalisisStockTab() {
         legend: { display: false },
         tooltip: {
           ...tooltipPlugin(t),
-          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.x)}` },
+          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.x ?? 0)}` },
         },
       },
       scales: {
@@ -331,7 +331,7 @@ export function AnalisisStockTab() {
         legend: { labels: { color: t.legend, usePointStyle: true, boxWidth: 10, padding: 14 } },
         tooltip: {
           ...tooltipPlugin(t),
-          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.y)} / ud` },
+          callbacks: { label: (ctx) => ` ${fmtMoneda(ctx.parsed.y ?? 0)} / ud` },
         },
       },
       scales: {

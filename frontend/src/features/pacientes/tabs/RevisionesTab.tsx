@@ -73,7 +73,7 @@ function RevisionCard({
                 <div key={m.key} className="text-sm">
                   <div className="flex items-center gap-1 text-ink-muted">
                     {m.grupo === 'pliegue' && (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" title="Medido con plicómetro">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Medido con plicómetro">
                         <path d="M3 8h13" />
                         <path d="M3 16h13" />
                         <path d="M16 8c3 0 3 8 0 8" />
