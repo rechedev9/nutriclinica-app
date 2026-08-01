@@ -98,7 +98,7 @@ func main() {
 	if cfg, ok := backup.DesdeEntorno(); ok {
 		cfg.EstadoPath = filepath.Join(paths.DataDir, "bbdd", ".s3backup-estado.json")
 		log.Printf("Backup automático a S3 activado: s3://%s/%s cada %s (solo sube lo que cambie)", cfg.Bucket, cfg.Prefijo, cfg.Intervalo)
-		backup.Iniciar(ctx, cfg, pgCfg, paths.FotosDir)
+		backup.Iniciar(ctx, cfg, paths.FotosDir)
 	}
 
 	ln, addr := listen(*host, *port)
