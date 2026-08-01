@@ -28,12 +28,10 @@ import (
 )
 
 func main() {
-	dataDir := flag.String("data-dir", "", "Directorio de datos (bbdd/ y fotos/). Por defecto: junto al ejecutable.")
+	dataDir := flag.String("data-dir", "", "Directorio de datos (bbdd/secret.key y fotos/). Por defecto: junto al ejecutable.")
 	host := flag.String("host", "127.0.0.1", "Dirección de escucha. Usa 0.0.0.0 para exponerlo en red (despliegue en servidor/contenedor).")
 	port := flag.Int("port", 5001, "Puerto de escucha")
 	noBrowser := flag.Bool("no-browser", false, "No abrir el navegador al arrancar")
-	fixOrphans := flag.Bool("fix-orphans", false, "Limpiar filas huérfanas (hace backup antes)")
-	cifrar := flag.Bool("cifrar", false, "Cifrar la base de datos en reposo (pide contraseña maestra al abrir)")
 	https := flag.Bool("https", false, "La app se sirve detrás de HTTPS (proxy inverso o TLS directo): activa la cookie de sesión Secure.")
 	flag.Parse()
 
@@ -42,6 +40,12 @@ func main() {
 		log.Fatalf("resolviendo rutas de datos: %v", err)
 	}
 	log.Printf("Directorio de datos: %s", paths.DataDir)
+
+	pgCfg, err := config.PostgresFromEnv()
+	if err != nil {
+		log.Fatalf("configuración de PostgreSQL: %v", err)
+	}
+	log.Printf("BBDD: PostgreSQL en %s:%d/%s", pgCfg.Host, pgCfg.Port, pgCfg.DBName)
 
 	sessions, err := auth.NewManager(paths.SecretKey, *https)
 	if err != nil {
@@ -55,25 +59,11 @@ func main() {
 		log.Printf("AVISO: SPA no embebido (placeholder). Usa el dev server de Vite o ejecuta el build.")
 	}
 
-	// abrir abre, verifica y migra el store con la clave dada (dek=nil => sin
-	// cifrar). En modo cifrado se invoca tras desbloquear; sin cifrar, al
-	// construir el servidor.
-	abrir := func(dek []byte) (*store.Store, error) {
-		st, err := store.Open(paths.DBPath, dek)
+	// abrir conecta con Postgres y aplica las migraciones pendientes.
+	abrir := func() (*store.Store, error) {
+		st, err := store.Open(pgCfg)
 		if err != nil {
 			return nil, err
-		}
-		if err := st.VerifyPragmas(); err != nil {
-			st.Close()
-			return nil, fmt.Errorf("pragmas SQLite: %w", err)
-		}
-		if err := st.IntegrityCheck(); err != nil {
-			st.Close()
-			return nil, fmt.Errorf("integridad de la base de datos: %w", err)
-		}
-		if err := handleOrphans(st, paths.DBPath, *fixOrphans); err != nil {
-			st.Close()
-			return nil, fmt.Errorf("comprobación de claves foráneas: %w", err)
 		}
 		if err := st.Migrate(); err != nil {
 			st.Close()
@@ -89,21 +79,15 @@ func main() {
 	}
 
 	srv, err := server.New(server.Config{
-		Sessions:  sessions,
-		FotosDir:  paths.FotosDir,
-		SPA:       spa,
-		DBPath:    paths.DBPath,
-		VaultPath: paths.VaultKey,
-		Cifrado:   *cifrar,
-		Abrir:     abrir,
+		Sessions: sessions,
+		FotosDir: paths.FotosDir,
+		SPA:      spa,
+		Abrir:    abrir,
 	})
 	if err != nil {
 		log.Fatalf("abriendo base de datos: %v", err)
 	}
 	defer srv.Close()
-	if *cifrar {
-		log.Printf("Cifrado en reposo ACTIVADO: se pedirá la contraseña maestra en el navegador.")
-	}
 
 	// Ctx de vida de la app: se cancela al recibir Ctrl+C / SIGTERM. Se crea
 	// aquí (antes de arrancar el servidor HTTP) para que también gobierne
@@ -114,7 +98,7 @@ func main() {
 	if cfg, ok := backup.DesdeEntorno(); ok {
 		cfg.EstadoPath = filepath.Join(paths.DataDir, "bbdd", ".s3backup-estado.json")
 		log.Printf("Backup automático a S3 activado: s3://%s/%s cada %s (solo sube lo que cambie)", cfg.Bucket, cfg.Prefijo, cfg.Intervalo)
-		backup.Iniciar(ctx, cfg, srv.CurrentDB, paths.FotosDir)
+		backup.Iniciar(ctx, cfg, pgCfg, paths.FotosDir)
 	}
 
 	ln, addr := listen(*host, *port)
@@ -142,7 +126,7 @@ func main() {
 	}()
 
 	// Esperar Ctrl+C / SIGTERM y cerrar de forma ordenada: primero el servidor
-	// HTTP (deja de aceptar conexiones), luego la BD (vacía el WAL).
+	// HTTP (deja de aceptar conexiones), luego la BD.
 	<-ctx.Done()
 	log.Println("Cerrando NutriClínica...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -150,26 +134,6 @@ func main() {
 	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("cierre del servidor: %v", err)
 	}
-}
-
-// handleOrphans informa de filas huérfanas; con fix=true hace backup y limpia.
-func handleOrphans(st *store.Store, dbPath string, fix bool) error {
-	orphans, err := st.ForeignKeyCheck()
-	if err != nil {
-		return err
-	}
-	if len(orphans) == 0 {
-		return nil
-	}
-	log.Printf("AVISO: %d filas violan claves foráneas (datos heredados con FK OFF):", len(orphans))
-	for _, o := range orphans {
-		log.Printf("  - %s rowid=%d -> %s (fkid=%d)", o.Table, o.RowID, o.Parent, o.FKID)
-	}
-	if fix {
-		return st.FixOrphans(dbPath)
-	}
-	log.Printf("Ejecuta con --fix-orphans para limpiarlas (se hará backup antes).")
-	return nil
 }
 
 // listen intenta el puerto dado en host; si está ocupado, usa uno libre en

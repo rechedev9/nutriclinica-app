@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
+	"nutriclinica/internal/config"
 	"nutriclinica/internal/crypto"
 	"nutriclinica/internal/models"
 	"nutriclinica/internal/store"
@@ -20,19 +23,51 @@ import (
 // PNG 1x1 válido (la subida valida que el contenido es una imagen real).
 const png1x1B64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
+// abrirStoreTest crea un esquema de Postgres desechable y devuelve un Store
+// migrado sobre él (test de integración: se omite si no hay Postgres
+// configurado en NUTRICLINICA_PG_*).
+func abrirStoreTest(t *testing.T) *store.Store {
+	t.Helper()
+	base, err := config.PostgresFromEnv()
+	if err != nil {
+		t.Skipf("Postgres no configurado para tests de integración: %v", err)
+	}
+	schema := fmt.Sprintf("test_%d", time.Now().UnixNano())
+
+	admin, err := store.Open(base)
+	if err != nil {
+		t.Fatalf("conectando a Postgres: %v", err)
+	}
+	if _, err := admin.DB.Exec(`CREATE SCHEMA "` + schema + `"`); err != nil {
+		admin.Close()
+		t.Fatalf("creando esquema de prueba: %v", err)
+	}
+	t.Cleanup(func() {
+		admin.DB.Exec(`DROP SCHEMA "` + schema + `" CASCADE`)
+		admin.Close()
+	})
+
+	base.SearchPath = schema
+	st, err := store.Open(base)
+	if err != nil {
+		t.Fatalf("abriendo BD de prueba: %v", err)
+	}
+	t.Cleanup(func() { st.Close() })
+	if err := st.Migrate(); err != nil {
+		t.Fatalf("migrando BD de prueba: %v", err)
+	}
+	return st
+}
+
 func TestFotosCifradoEnReposo(t *testing.T) {
 	dir := t.TempDir()
 	fotosDir := filepath.Join(dir, "fotos")
+	// Clave arbitraria de 32 bytes: el cifrado de fotos es independiente del
+	// cifrado de la BD (que ya no existe), solo hace falta material de clave
+	// para derivar fotoKey vía HKDF.
 	dek := bytes.Repeat([]byte{3}, 32)
 
-	st, err := store.Open(filepath.Join(dir, "test.db"), dek)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer st.Close()
-	if err := st.Migrate(); err != nil {
-		t.Fatal(err)
-	}
+	st := abrirStoreTest(t)
 	p, err := st.CreatePaciente(models.PacienteInput{Nombre: "Foto Test"})
 	if err != nil {
 		t.Fatal(err)
@@ -42,8 +77,7 @@ func TestFotosCifradoEnReposo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := &Server{fotosDir: fotosDir, fotoKey: fotoKey}
-	srv.st.Store(st)
+	srv := &Server{fotosDir: fotosDir, fotoKey: fotoKey, dbStore: st}
 
 	png, _ := base64.StdEncoding.DecodeString(png1x1B64)
 

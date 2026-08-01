@@ -5,20 +5,17 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
+	"nutriclinica/internal/config"
 	"nutriclinica/internal/store"
 )
 
 func main() {
-	dataDir := "../bbdd"
-	if len(os.Args) > 1 {
-		dataDir = os.Args[1]
+	pgCfg, err := config.PostgresFromEnv()
+	if err != nil {
+		log.Fatalf("configuración de PostgreSQL: %v", err)
 	}
-	dbPath := filepath.Join(dataDir, "pacientes.db")
-
-	st, err := store.Open(dbPath, nil)
+	st, err := store.Open(pgCfg)
 	if err != nil {
 		log.Fatalf("abriendo BD: %v", err)
 	}

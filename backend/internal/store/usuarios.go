@@ -16,7 +16,7 @@ type UsuarioAuth struct {
 
 // Usuarios devuelve todos los usuarios (sin hash), ordenados por nombre.
 func (s *Store) Usuarios() ([]models.Usuario, error) {
-	rows, err := s.DB.Query(`SELECT id, usuario, rol, creado FROM usuarios ORDER BY usuario COLLATE NOCASE`)
+	rows, err := s.DB.Query(`SELECT id, usuario, rol, creado FROM usuarios ORDER BY lower(usuario)`)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (s *Store) Usuarios() ([]models.Usuario, error) {
 // UsuarioByName busca un usuario por nombre para autenticación.
 func (s *Store) UsuarioByName(usuario string) (*UsuarioAuth, error) {
 	var u UsuarioAuth
-	err := s.DB.QueryRow(`SELECT id, usuario, password_hash, rol FROM usuarios WHERE usuario=?`, usuario).
+	err := s.DB.QueryRow(`SELECT id, usuario, password_hash, rol FROM usuarios WHERE usuario=$1`, usuario).
 		Scan(&u.ID, &u.Usuario, &u.PasswordHash, &u.Rol)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -45,7 +45,7 @@ func (s *Store) UsuarioByName(usuario string) (*UsuarioAuth, error) {
 
 func (s *Store) usuario(id int64) (*models.Usuario, error) {
 	var u models.Usuario
-	err := s.DB.QueryRow(`SELECT id, usuario, rol, creado FROM usuarios WHERE id=?`, id).
+	err := s.DB.QueryRow(`SELECT id, usuario, rol, creado FROM usuarios WHERE id=$1`, id).
 		Scan(&u.ID, &u.Usuario, &u.Rol, &u.Creado)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -55,12 +55,9 @@ func (s *Store) usuario(id int64) (*models.Usuario, error) {
 
 // CreateUsuario inserta un usuario con su hash.
 func (s *Store) CreateUsuario(usuario, passwordHash, rol string) (*models.Usuario, error) {
-	res, err := s.DB.Exec(`INSERT INTO usuarios (usuario, password_hash, rol) VALUES (?,?,?)`,
-		usuario, passwordHash, rol)
-	if err != nil {
-		return nil, err
-	}
-	id, err := res.LastInsertId()
+	var id int64
+	err := s.DB.QueryRow(`INSERT INTO usuarios (usuario, password_hash, rol) VALUES ($1,$2,$3) RETURNING id`,
+		usuario, passwordHash, rol).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +66,7 @@ func (s *Store) CreateUsuario(usuario, passwordHash, rol string) (*models.Usuari
 
 // UpdateUsuario actualiza usuario y rol.
 func (s *Store) UpdateUsuario(id int64, usuario, rol string) (*models.Usuario, error) {
-	if _, err := s.DB.Exec(`UPDATE usuarios SET usuario=?, rol=? WHERE id=?`, usuario, rol, id); err != nil {
+	if _, err := s.DB.Exec(`UPDATE usuarios SET usuario=$1, rol=$2 WHERE id=$3`, usuario, rol, id); err != nil {
 		return nil, err
 	}
 	return s.usuario(id)
@@ -77,14 +74,14 @@ func (s *Store) UpdateUsuario(id int64, usuario, rol string) (*models.Usuario, e
 
 // SetPassword cambia el hash de contraseña de un usuario.
 func (s *Store) SetPassword(id int64, passwordHash string) error {
-	_, err := s.DB.Exec(`UPDATE usuarios SET password_hash=? WHERE id=?`, passwordHash, id)
+	_, err := s.DB.Exec(`UPDATE usuarios SET password_hash=$1 WHERE id=$2`, passwordHash, id)
 	return err
 }
 
 // PasswordHash devuelve el hash de un usuario por id.
 func (s *Store) PasswordHash(id int64) (string, error) {
 	var h string
-	err := s.DB.QueryRow(`SELECT password_hash FROM usuarios WHERE id=?`, id).Scan(&h)
+	err := s.DB.QueryRow(`SELECT password_hash FROM usuarios WHERE id=$1`, id).Scan(&h)
 	if err == sql.ErrNoRows {
 		return "", nil
 	}
@@ -93,7 +90,7 @@ func (s *Store) PasswordHash(id int64) (string, error) {
 
 // DeleteUsuario borra un usuario por id.
 func (s *Store) DeleteUsuario(id int64) error {
-	_, err := s.DB.Exec(`DELETE FROM usuarios WHERE id=?`, id)
+	_, err := s.DB.Exec(`DELETE FROM usuarios WHERE id=$1`, id)
 	return err
 }
 

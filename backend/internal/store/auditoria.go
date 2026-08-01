@@ -6,7 +6,7 @@ import "nutriclinica/internal/models"
 // Pensada para llamarse tras una operación que modifica o exporta datos.
 func (s *Store) RegistrarAuditoria(usuario, metodo, ruta string, estado int) error {
 	_, err := s.DB.Exec(
-		`INSERT INTO audit_log (usuario, metodo, ruta, estado) VALUES (?,?,?,?)`,
+		`INSERT INTO audit_log (usuario, metodo, ruta, estado) VALUES ($1,$2,$3,$4)`,
 		usuario, metodo, ruta, estado)
 	return err
 }
@@ -18,7 +18,7 @@ func (s *Store) Auditoria(limite int) ([]models.AuditEntry, error) {
 	}
 	rows, err := s.DB.Query(
 		`SELECT id, fecha, usuario, metodo, ruta, estado
-		 FROM audit_log ORDER BY id DESC LIMIT ?`, limite)
+		 FROM audit_log ORDER BY id DESC LIMIT $1`, limite)
 	if err != nil {
 		return nil, err
 	}

@@ -13,15 +13,16 @@ package backup
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -30,6 +31,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+
+	"nutriclinica/internal/store"
 )
 
 // Config agrupa los parámetros de la subida periódica a S3.
@@ -70,15 +73,14 @@ func DesdeEntorno() (Config, bool) {
 }
 
 // Iniciar arranca en segundo plano la comprobación periódica y vuelve
-// inmediatamente. getDB devuelve la conexión actual de la BBDD (nil si está
-// bloqueada, en modo cifrado sin desbloquear: esa comprobación se salta y se
-// reintenta en el siguiente tick); fotosDir es la carpeta de fotos. Se
-// detiene cuando ctx se cancela.
+// inmediatamente. pg son los parámetros de conexión a la BBDD PostgreSQL
+// (para invocar pg_dump); fotosDir es la carpeta de fotos. Se detiene cuando
+// ctx se cancela.
 //
 // En cada tick solo se sube a S3 lo que haya cambiado de verdad desde la
 // última subida (se compara por hash con EstadoPath): si el cliente no ha
 // tocado la app, el tick no genera ninguna llamada a AWS ni gasto asociado.
-func Iniciar(ctx context.Context, cfg Config, getDB func() *sql.DB, fotosDir string) {
+func Iniciar(ctx context.Context, cfg Config, pg store.Config, fotosDir string) {
 	go func() {
 		t := time.NewTimer(1 * time.Minute)
 		defer t.Stop()
@@ -87,10 +89,7 @@ func Iniciar(ctx context.Context, cfg Config, getDB func() *sql.DB, fotosDir str
 			case <-ctx.Done():
 				return
 			case <-t.C:
-				db := getDB()
-				if db == nil {
-					log.Printf("Backup a S3 pospuesto: la BBDD está bloqueada todavía.")
-				} else if err := subirUnaVez(ctx, cfg, db, fotosDir); err != nil {
+				if err := subirUnaVez(ctx, cfg, pg, fotosDir); err != nil {
 					log.Printf("AVISO: backup a S3 falló: %v", err)
 				}
 				t.Reset(cfg.Intervalo)
@@ -106,13 +105,13 @@ type estado struct {
 	FotosSha256 string `json:"fotos_sha256"`
 }
 
-// subirUnaVez genera un snapshot consistente de la BBDD (VACUUM INTO) y un
-// zip de las fotos; solo sube a S3 los que hayan cambiado desde la última
-// vez (comparando por hash), sobrescribiendo el objeto anterior.
-func subirUnaVez(ctx context.Context, cfg Config, db *sql.DB, fotosDir string) error {
-	snapshotPath, err := snapshotDB(ctx, db)
+// subirUnaVez genera un volcado consistente de la BBDD (pg_dump) y un zip de
+// las fotos; solo sube a S3 los que hayan cambiado desde la última vez
+// (comparando por hash), sobrescribiendo el objeto anterior.
+func subirUnaVez(ctx context.Context, cfg Config, pg store.Config, fotosDir string) error {
+	snapshotPath, err := snapshotDB(ctx, pg)
 	if err != nil {
-		return fmt.Errorf("generando snapshot de la BBDD: %w", err)
+		return fmt.Errorf("generando volcado de la BBDD (pg_dump): %w", err)
 	}
 	defer os.Remove(snapshotPath)
 
@@ -144,10 +143,10 @@ func subirUnaVez(ctx context.Context, cfg Config, db *sql.DB, fotosDir string) e
 	cliente := s3.NewFromConfig(awsCfg)
 
 	if dbHash != previo.DBSha256 {
-		if err := subirFichero(ctx, cliente, cfg.Bucket, clave(cfg.Prefijo, "pacientes.db"), snapshotPath); err != nil {
+		if err := subirFichero(ctx, cliente, cfg.Bucket, clave(cfg.Prefijo, "pacientes.dump"), snapshotPath); err != nil {
 			return fmt.Errorf("subiendo BBDD: %w", err)
 		}
-		log.Printf("BBDD subida a s3://%s/%s", cfg.Bucket, clave(cfg.Prefijo, "pacientes.db"))
+		log.Printf("BBDD subida a s3://%s/%s", cfg.Bucket, clave(cfg.Prefijo, "pacientes.dump"))
 	}
 	if fotosHash != previo.FotosSha256 {
 		if err := subirFichero(ctx, cliente, cfg.Bucket, clave(cfg.Prefijo, "fotos.zip"), fotosZipPath); err != nil {
@@ -162,21 +161,41 @@ func subirUnaVez(ctx context.Context, cfg Config, db *sql.DB, fotosDir string) e
 	return nil
 }
 
-// snapshotDB crea, en un fichero temporal, una copia consistente de la BBDD
-// vía VACUUM INTO (misma técnica que store.FixOrphans). El llamador es
-// responsable de borrar el fichero devuelto.
-func snapshotDB(ctx context.Context, db *sql.DB) (string, error) {
-	tmp, err := os.CreateTemp("", "nutriclinica-*.db")
+// snapshotDB crea, en un fichero temporal, un volcado consistente de la BBDD
+// vía pg_dump (formato "custom", comprimido). Requiere tener instalado
+// pg_dump en el PATH del equipo (basta con las "PostgreSQL Command Line
+// Tools", no hace falta el servidor completo). Para restaurar un volcado:
+// pg_restore --clean --if-exists -h <host> -U <user> -d <dbname> <fichero>.
+// El llamador es responsable de borrar el fichero devuelto.
+func snapshotDB(ctx context.Context, pg store.Config) (string, error) {
+	tmp, err := os.CreateTemp("", "nutriclinica-*.dump")
 	if err != nil {
 		return "", err
 	}
 	path := tmp.Name()
 	tmp.Close()
-	os.Remove(path) // VACUUM INTO exige que el destino no exista.
 
-	if _, err := db.ExecContext(ctx, `VACUUM INTO ?`, path); err != nil {
+	sslMode := pg.SSLMode
+	if sslMode == "" {
+		sslMode = "require"
+	}
+	cmd := exec.CommandContext(ctx, "pg_dump",
+		"-h", pg.Host,
+		"-p", strconv.Itoa(pg.Port),
+		"-U", pg.User,
+		"-d", pg.DBName,
+		"-Fc",
+		"-f", path,
+	)
+	cmd.Env = append(os.Environ(),
+		"PGPASSWORD="+pg.Password,
+		"PGSSLMODE="+sslMode,
+	)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
 		os.Remove(path)
-		return "", err
+		return "", fmt.Errorf("pg_dump: %w (%s)", err, strings.TrimSpace(stderr.String()))
 	}
 	return path, nil
 }

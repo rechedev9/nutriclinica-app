@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"nutriclinica/internal/models"
@@ -53,7 +54,7 @@ func revValues(r *models.Revision) []any {
 
 // Revisiones devuelve las revisiones de un paciente, más recientes primero.
 func (s *Store) Revisiones(pid int64) ([]models.Revision, error) {
-	rows, err := s.DB.Query(`SELECT `+revisionCols+` FROM revisiones WHERE paciente_id=? ORDER BY fecha DESC`, pid)
+	rows, err := s.DB.Query(`SELECT `+revisionCols+` FROM revisiones WHERE paciente_id=$1 ORDER BY fecha DESC`, pid)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func (s *Store) Revisiones(pid int64) ([]models.Revision, error) {
 
 // Revision devuelve una revisión por id, o nil si no existe.
 func (s *Store) Revision(id int64) (*models.Revision, error) {
-	row := s.DB.QueryRow(`SELECT `+revisionCols+` FROM revisiones WHERE id=?`, id)
+	row := s.DB.QueryRow(`SELECT `+revisionCols+` FROM revisiones WHERE id=$1`, id)
 	r, err := scanRevision(row)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -82,13 +83,14 @@ func (s *Store) Revision(id int64) (*models.Revision, error) {
 // CreateRevision inserta una revisión para un paciente.
 func (s *Store) CreateRevision(pid int64, r *models.Revision) (*models.Revision, error) {
 	cols := strings.Join(revFields, ", ")
-	ph := strings.TrimSuffix(strings.Repeat("?, ", len(revFields)), ", ")
+	// $1 es paciente_id; los campos de revFields ocupan $2..$(len+1).
+	ph := placeholders(2, len(revFields))
 	args := append([]any{pid}, revValues(r)...)
-	res, err := s.DB.Exec(`INSERT INTO revisiones (paciente_id, `+cols+`) VALUES (?, `+ph+`)`, args...)
-	if err != nil {
-		return nil, err
-	}
-	id, err := res.LastInsertId()
+	var id int64
+	err := s.DB.QueryRow(
+		`INSERT INTO revisiones (paciente_id, `+cols+`) VALUES ($1, `+ph+`) RETURNING id`,
+		args...,
+	).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +99,10 @@ func (s *Store) CreateRevision(pid int64, r *models.Revision) (*models.Revision,
 
 // UpdateRevision actualiza una revisión por id.
 func (s *Store) UpdateRevision(id int64, r *models.Revision) (*models.Revision, error) {
-	sets := strings.Join(mapStrings(revFields, func(f string) string { return f + "=?" }), ", ")
+	sets := strings.Join(indexedAssignments(revFields, 1), ", ")
 	args := append(revValues(r), id)
-	if _, err := s.DB.Exec(`UPDATE revisiones SET `+sets+` WHERE id=?`, args...); err != nil {
+	where := fmt.Sprintf("$%d", len(revFields)+1)
+	if _, err := s.DB.Exec(`UPDATE revisiones SET `+sets+` WHERE id=`+where, args...); err != nil {
 		return nil, err
 	}
 	return s.Revision(id)
@@ -107,14 +110,25 @@ func (s *Store) UpdateRevision(id int64, r *models.Revision) (*models.Revision, 
 
 // DeleteRevision borra una revisión por id.
 func (s *Store) DeleteRevision(id int64) error {
-	_, err := s.DB.Exec(`DELETE FROM revisiones WHERE id=?`, id)
+	_, err := s.DB.Exec(`DELETE FROM revisiones WHERE id=$1`, id)
 	return err
 }
 
-func mapStrings(in []string, fn func(string) string) []string {
+// placeholders genera "$start, $start+1, ..." para n parámetros.
+func placeholders(start, n int) string {
+	ph := make([]string, n)
+	for i := 0; i < n; i++ {
+		ph[i] = fmt.Sprintf("$%d", start+i)
+	}
+	return strings.Join(ph, ", ")
+}
+
+// indexedAssignments genera "campo=$start, campo2=$start+1, ..." para un
+// UPDATE SET, en el mismo orden que in.
+func indexedAssignments(in []string, start int) []string {
 	out := make([]string, len(in))
-	for i, v := range in {
-		out[i] = fn(v)
+	for i, f := range in {
+		out[i] = fmt.Sprintf("%s=$%d", f, start+i)
 	}
 	return out
 }

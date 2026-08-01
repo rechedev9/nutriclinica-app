@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 )
 
-// Paths agrupa las rutas de datos que usa la aplicación.
+// Paths agrupa las rutas de datos que usa la aplicación. La BBDD ya no vive
+// en este directorio (está en PostgreSQL/RDS, ver PostgresFromEnv); solo
+// quedan las fotos y la clave de firma de sesiones.
 type Paths struct {
 	DataDir   string // raíz de datos (contiene bbdd/ y fotos/)
-	DBPath    string // bbdd/pacientes.db
 	FotosDir  string // fotos/
 	SecretKey string // bbdd/secret.key
-	VaultKey  string // bbdd/keyvault.json (sobre de la clave de cifrado)
 }
 
 // Resolve decide el directorio de datos según esta prioridad:
@@ -42,14 +42,12 @@ func Resolve(explicit string) (Paths, error) {
 
 	p := Paths{
 		DataDir:   dataDir,
-		DBPath:    filepath.Join(dataDir, "bbdd", "pacientes.db"),
 		FotosDir:  filepath.Join(dataDir, "fotos"),
 		SecretKey: filepath.Join(dataDir, "bbdd", "secret.key"),
-		VaultKey:  filepath.Join(dataDir, "bbdd", "keyvault.json"),
 	}
-	// 0700: estos directorios contienen PII (BBDD y fotos), no deben ser
-	// accesibles por otros usuarios del sistema.
-	if err := os.MkdirAll(filepath.Dir(p.DBPath), 0o700); err != nil {
+	// 0700: estos directorios contienen PII (fotos y la clave de sesión), no
+	// deben ser accesibles por otros usuarios del sistema.
+	if err := os.MkdirAll(filepath.Dir(p.SecretKey), 0o700); err != nil {
 		return Paths{}, err
 	}
 	if err := os.MkdirAll(p.FotosDir, 0o700); err != nil {

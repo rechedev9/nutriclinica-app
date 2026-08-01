@@ -3,7 +3,6 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"nutriclinica/internal/models"
 )
@@ -30,7 +29,7 @@ func (s *Store) Almacen() ([]models.AlmacenRow, error) {
 		       ON vent.producto_id = p.id
 		LEFT JOIN (SELECT producto_id, SUM(cantidad) AS tot FROM stock_mermas GROUP BY producto_id) merm
 		       ON merm.producto_id = p.id
-		WHERE p.activo=1 ORDER BY p.nombre COLLATE NOCASE`)
+		WHERE p.activo=1 ORDER BY lower(p.nombre)`)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,7 @@ func (s *Store) Productos() ([]models.Producto, error) {
 		FROM stock_productos p
 		LEFT JOIN stock_categorias c  ON c.id  = p.categoria_id
 		LEFT JOIN stock_proveedores pr ON pr.id = p.proveedor_id
-		WHERE p.activo=1 ORDER BY p.nombre COLLATE NOCASE`)
+		WHERE p.activo=1 ORDER BY lower(p.nombre)`)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func (s *Store) Productos() ([]models.Producto, error) {
 
 func (s *Store) producto(id int64) (*models.Producto, error) {
 	var p models.Producto
-	err := s.DB.QueryRow(`SELECT `+productoCols+` FROM stock_productos WHERE id=?`, id).
+	err := s.DB.QueryRow(`SELECT `+productoCols+` FROM stock_productos WHERE id=$1`, id).
 		Scan(&p.ID, &p.Nombre, &p.CategoriaID, &p.ProveedorID, &p.PrecioCoste,
 			&p.PrecioVenta, &p.Unidad, &p.StockMinimo, &p.Activo, &p.Creado)
 	if err == sql.ErrNoRows {
@@ -106,15 +105,12 @@ func orUnidad(p *string) string {
 
 // CreateProducto inserta un producto y lo devuelve (sin join).
 func (s *Store) CreateProducto(in models.ProductoInput) (*models.Producto, error) {
-	res, err := s.DB.Exec(
+	var id int64
+	err := s.DB.QueryRow(
 		`INSERT INTO stock_productos (nombre, categoria_id, proveedor_id, precio_coste, precio_venta, unidad, stock_minimo)
-		 VALUES (?,?,?,?,?,?,?)`,
+		 VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		in.Nombre, in.CategoriaID, in.ProveedorID, orZeroF(in.PrecioCoste), orZeroF(in.PrecioVenta),
-		orUnidad(in.Unidad), orZeroF(in.StockMinimo))
-	if err != nil {
-		return nil, err
-	}
-	id, err := res.LastInsertId()
+		orUnidad(in.Unidad), orZeroF(in.StockMinimo)).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +120,8 @@ func (s *Store) CreateProducto(in models.ProductoInput) (*models.Producto, error
 // UpdateProducto actualiza un producto y lo devuelve.
 func (s *Store) UpdateProducto(id int64, in models.ProductoInput) (*models.Producto, error) {
 	_, err := s.DB.Exec(
-		`UPDATE stock_productos SET nombre=?, categoria_id=?, proveedor_id=?, precio_coste=?,
-		 precio_venta=?, unidad=?, stock_minimo=? WHERE id=?`,
+		`UPDATE stock_productos SET nombre=$1, categoria_id=$2, proveedor_id=$3, precio_coste=$4,
+		 precio_venta=$5, unidad=$6, stock_minimo=$7 WHERE id=$8`,
 		in.Nombre, in.CategoriaID, in.ProveedorID, orZeroF(in.PrecioCoste), orZeroF(in.PrecioVenta),
 		orUnidad(in.Unidad), orZeroF(in.StockMinimo), id)
 	if err != nil {
@@ -136,14 +132,14 @@ func (s *Store) UpdateProducto(id int64, in models.ProductoInput) (*models.Produ
 
 // SoftDeleteProducto marca un producto como inactivo (activo=0).
 func (s *Store) SoftDeleteProducto(id int64) error {
-	_, err := s.DB.Exec(`UPDATE stock_productos SET activo=0 WHERE id=?`, id)
+	_, err := s.DB.Exec(`UPDATE stock_productos SET activo=0 WHERE id=$1`, id)
 	return err
 }
 
 // --- Categorías ---
 
 func (s *Store) Categorias() ([]models.Categoria, error) {
-	rows, err := s.DB.Query(`SELECT id, nombre FROM stock_categorias ORDER BY nombre COLLATE NOCASE`)
+	rows, err := s.DB.Query(`SELECT id, nombre FROM stock_categorias ORDER BY lower(nombre)`)
 	if err != nil {
 		return nil, err
 	}
@@ -160,11 +156,8 @@ func (s *Store) Categorias() ([]models.Categoria, error) {
 }
 
 func (s *Store) CreateCategoria(nombre string) (*models.Categoria, error) {
-	res, err := s.DB.Exec(`INSERT INTO stock_categorias (nombre) VALUES (?)`, nombre)
-	if err != nil {
-		return nil, err
-	}
-	id, err := res.LastInsertId()
+	var id int64
+	err := s.DB.QueryRow(`INSERT INTO stock_categorias (nombre) VALUES ($1) RETURNING id`, nombre).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +167,7 @@ func (s *Store) CreateCategoria(nombre string) (*models.Categoria, error) {
 // --- Proveedores ---
 
 func (s *Store) Proveedores() ([]models.Proveedor, error) {
-	rows, err := s.DB.Query(`SELECT id, nombre, telefono, email, notas FROM stock_proveedores ORDER BY nombre COLLATE NOCASE`)
+	rows, err := s.DB.Query(`SELECT id, nombre, telefono, email, notas FROM stock_proveedores ORDER BY lower(nombre)`)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +185,7 @@ func (s *Store) Proveedores() ([]models.Proveedor, error) {
 
 func (s *Store) proveedor(id int64) (*models.Proveedor, error) {
 	var p models.Proveedor
-	err := s.DB.QueryRow(`SELECT id, nombre, telefono, email, notas FROM stock_proveedores WHERE id=?`, id).
+	err := s.DB.QueryRow(`SELECT id, nombre, telefono, email, notas FROM stock_proveedores WHERE id=$1`, id).
 		Scan(&p.ID, &p.Nombre, &p.Telefono, &p.Email, &p.Notas)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -201,12 +194,9 @@ func (s *Store) proveedor(id int64) (*models.Proveedor, error) {
 }
 
 func (s *Store) CreateProveedor(in models.ProveedorInput) (*models.Proveedor, error) {
-	res, err := s.DB.Exec(`INSERT INTO stock_proveedores (nombre, telefono, email, notas) VALUES (?,?,?,?)`,
-		in.Nombre, in.Telefono, in.Email, in.Notas)
-	if err != nil {
-		return nil, err
-	}
-	id, err := res.LastInsertId()
+	var id int64
+	err := s.DB.QueryRow(`INSERT INTO stock_proveedores (nombre, telefono, email, notas) VALUES ($1,$2,$3,$4) RETURNING id`,
+		in.Nombre, in.Telefono, in.Email, in.Notas).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +204,7 @@ func (s *Store) CreateProveedor(in models.ProveedorInput) (*models.Proveedor, er
 }
 
 func (s *Store) UpdateProveedor(id int64, in models.ProveedorInput) (*models.Proveedor, error) {
-	_, err := s.DB.Exec(`UPDATE stock_proveedores SET nombre=?, telefono=?, email=?, notas=? WHERE id=?`,
+	_, err := s.DB.Exec(`UPDATE stock_proveedores SET nombre=$1, telefono=$2, email=$3, notas=$4 WHERE id=$5`,
 		in.Nombre, in.Telefono, in.Email, in.Notas, id)
 	if err != nil {
 		return nil, err
@@ -223,7 +213,7 @@ func (s *Store) UpdateProveedor(id int64, in models.ProveedorInput) (*models.Pro
 }
 
 func (s *Store) DeleteProveedor(id int64) error {
-	_, err := s.DB.Exec(`DELETE FROM stock_proveedores WHERE id=?`, id)
+	_, err := s.DB.Exec(`DELETE FROM stock_proveedores WHERE id=$1`, id)
 	return err
 }
 
@@ -251,8 +241,9 @@ func (s *Store) Compras() ([]models.Compra, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	// Cargar todas las líneas en una sola query (tras cerrar el cursor: una sola
-	// conexión, nada anidado) y repartirlas por compra. Evita el N+1.
+	// Cargar todas las líneas en una sola query y repartirlas por compra.
+	// Evita el N+1 (ya no hace falta por el límite de una sola conexión de
+	// SQLite, pero sigue siendo la forma más eficiente de traerlas).
 	ids := make([]int64, len(out))
 	for i := range out {
 		ids[i] = out[i].ID
@@ -279,17 +270,15 @@ func (s *Store) lineasPorPadre(tabla, col string, ids []int64) (map[int64][]mode
 	if len(ids) == 0 {
 		return res, nil
 	}
-	ph := make([]string, len(ids))
 	args := make([]any, len(ids))
 	for i, id := range ids {
-		ph[i] = "?"
 		args[i] = id
 	}
 	q := fmt.Sprintf(`
 		SELECT l.%s, l.id, l.producto_id, l.cantidad, l.precio_unitario, p.nombre as producto_nombre, p.unidad
 		FROM %s l
 		JOIN stock_productos p ON p.id=l.producto_id
-		WHERE l.%s IN (%s)`, col, tabla, col, strings.Join(ph, ","))
+		WHERE l.%s IN (%s)`, col, tabla, col, placeholders(1, len(ids)))
 	rows, err := s.DB.Query(q, args...)
 	if err != nil {
 		return nil, err
@@ -318,18 +307,15 @@ func (s *Store) CreateCompra(in models.CompraInput) (int64, error) {
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec(`INSERT INTO stock_compras (fecha, proveedor_id, notas, total) VALUES (?,?,?,?)`,
-		in.Fecha, in.ProveedorID, in.Notas, total)
-	if err != nil {
-		return 0, err
-	}
-	cid, err := res.LastInsertId()
+	var cid int64
+	err = tx.QueryRow(`INSERT INTO stock_compras (fecha, proveedor_id, notas, total) VALUES ($1,$2,$3,$4) RETURNING id`,
+		in.Fecha, in.ProveedorID, in.Notas, total).Scan(&cid)
 	if err != nil {
 		return 0, err
 	}
 	for _, l := range in.Lineas {
 		if _, err := tx.Exec(
-			`INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)`,
+			`INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES ($1,$2,$3,$4)`,
 			cid, l.ProductoID, l.Cantidad, orZeroF(l.PrecioUnitario)); err != nil {
 			return 0, err
 		}
@@ -348,16 +334,16 @@ func (s *Store) UpdateCompra(id int64, in models.CompraInput) error {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`UPDATE stock_compras SET fecha=?, proveedor_id=?, notas=?, total=? WHERE id=?`,
+	if _, err := tx.Exec(`UPDATE stock_compras SET fecha=$1, proveedor_id=$2, notas=$3, total=$4 WHERE id=$5`,
 		in.Fecha, in.ProveedorID, in.Notas, total, id); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`DELETE FROM stock_compras_lineas WHERE compra_id=?`, id); err != nil {
+	if _, err := tx.Exec(`DELETE FROM stock_compras_lineas WHERE compra_id=$1`, id); err != nil {
 		return err
 	}
 	for _, l := range in.Lineas {
 		if _, err := tx.Exec(
-			`INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)`,
+			`INSERT INTO stock_compras_lineas (compra_id, producto_id, cantidad, precio_unitario) VALUES ($1,$2,$3,$4)`,
 			id, l.ProductoID, l.Cantidad, orZeroF(l.PrecioUnitario)); err != nil {
 			return err
 		}
@@ -372,10 +358,10 @@ func (s *Store) DeleteCompra(id int64) error {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`DELETE FROM stock_compras_lineas WHERE compra_id=?`, id); err != nil {
+	if _, err := tx.Exec(`DELETE FROM stock_compras_lineas WHERE compra_id=$1`, id); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`DELETE FROM stock_compras WHERE id=?`, id); err != nil {
+	if _, err := tx.Exec(`DELETE FROM stock_compras WHERE id=$1`, id); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -431,18 +417,15 @@ func (s *Store) CreateVenta(in models.VentaInput) (int64, error) {
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec(`INSERT INTO stock_ventas (fecha, paciente_id, notas, total) VALUES (?,?,?,?)`,
-		in.Fecha, in.PacienteID, in.Notas, total)
-	if err != nil {
-		return 0, err
-	}
-	vid, err := res.LastInsertId()
+	var vid int64
+	err = tx.QueryRow(`INSERT INTO stock_ventas (fecha, paciente_id, notas, total) VALUES ($1,$2,$3,$4) RETURNING id`,
+		in.Fecha, in.PacienteID, in.Notas, total).Scan(&vid)
 	if err != nil {
 		return 0, err
 	}
 	for _, l := range in.Lineas {
 		if _, err := tx.Exec(
-			`INSERT INTO stock_ventas_lineas (venta_id, producto_id, cantidad, precio_unitario) VALUES (?,?,?,?)`,
+			`INSERT INTO stock_ventas_lineas (venta_id, producto_id, cantidad, precio_unitario) VALUES ($1,$2,$3,$4)`,
 			vid, l.ProductoID, l.Cantidad, orZeroF(l.PrecioUnitario)); err != nil {
 			return 0, err
 		}
@@ -453,9 +436,9 @@ func (s *Store) CreateVenta(in models.VentaInput) (int64, error) {
 // --- Mermas ---
 
 var motivosValidos = map[string]bool{
-	"caducidad":           true,
-	"accidente_rotura":    true,
-	"devolucion_cliente":  true,
+	"caducidad":          true,
+	"accidente_rotura":   true,
+	"devolucion_cliente": true,
 }
 
 func (s *Store) Mermas() ([]models.Merma, error) {
@@ -486,17 +469,15 @@ func (s *Store) CreateMerma(in models.MermaInput) (int64, error) {
 	if !motivosValidos[in.Motivo] {
 		return 0, fmt.Errorf("motivo inválido: %s", in.Motivo)
 	}
-	res, err := s.DB.Exec(
-		`INSERT INTO stock_mermas (producto_id, proveedor_id, cantidad, motivo, fecha, notas) VALUES (?,?,?,?,?,?)`,
-		in.ProductoID, in.ProveedorID, in.Cantidad, in.Motivo, in.Fecha, in.Notas)
-	if err != nil {
-		return 0, err
-	}
-	return res.LastInsertId()
+	var id int64
+	err := s.DB.QueryRow(
+		`INSERT INTO stock_mermas (producto_id, proveedor_id, cantidad, motivo, fecha, notas) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+		in.ProductoID, in.ProveedorID, in.Cantidad, in.Motivo, in.Fecha, in.Notas).Scan(&id)
+	return id, err
 }
 
 func (s *Store) DeleteMerma(id int64) error {
-	_, err := s.DB.Exec(`DELETE FROM stock_mermas WHERE id=?`, id)
+	_, err := s.DB.Exec(`DELETE FROM stock_mermas WHERE id=$1`, id)
 	return err
 }
 
@@ -507,10 +488,10 @@ func (s *Store) DeleteVenta(id int64) error {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`DELETE FROM stock_ventas_lineas WHERE venta_id=?`, id); err != nil {
+	if _, err := tx.Exec(`DELETE FROM stock_ventas_lineas WHERE venta_id=$1`, id); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`DELETE FROM stock_ventas WHERE id=?`, id); err != nil {
+	if _, err := tx.Exec(`DELETE FROM stock_ventas WHERE id=$1`, id); err != nil {
 		return err
 	}
 	return tx.Commit()

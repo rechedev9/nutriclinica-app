@@ -12,7 +12,8 @@ import (
 //go:embed schema/*.sql
 var schemaFS embed.FS
 
-// schemaVersion es la versión de esquema objetivo (PRAGMA user_version).
+// schemaVersion es la versión de esquema objetivo, rastreada en la tabla
+// schema_migrations (PostgreSQL no tiene un equivalente a PRAGMA user_version).
 const schemaVersion = 7
 
 // seedUser describe un usuario inicial.
@@ -29,21 +30,21 @@ var usuariosSeed = []seedUser{
 }
 
 // Migrate aplica las migraciones pendientes preservando los datos existentes.
-// Usa PRAGMA user_version para versionar el esquema.
+// El progreso se guarda en la tabla schema_migrations.
 func (s *Store) Migrate() error {
-	var version int
-	if err := s.DB.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
-		return fmt.Errorf("leyendo user_version: %w", err)
+	if _, err := s.DB.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER NOT NULL)`); err != nil {
+		return fmt.Errorf("creando schema_migrations: %w", err)
+	}
+	version, err := s.currentSchemaVersion()
+	if err != nil {
+		return fmt.Errorf("leyendo schema_migrations: %w", err)
 	}
 
 	if version < 1 {
 		if err := s.applySQLFile("schema/0001_init.sql"); err != nil {
 			return err
 		}
-		if err := s.ensureRevisionColumns(); err != nil {
-			return err
-		}
-		if err := s.setUserVersion(1); err != nil {
+		if err := s.setSchemaVersion(1); err != nil {
 			return err
 		}
 		version = 1
@@ -56,7 +57,7 @@ func (s *Store) Migrate() error {
 		if err := s.seedUsuarios(); err != nil {
 			return err
 		}
-		if err := s.setUserVersion(2); err != nil {
+		if err := s.setSchemaVersion(2); err != nil {
 			return err
 		}
 		version = 2
@@ -66,7 +67,7 @@ func (s *Store) Migrate() error {
 		if err := s.applySQLFile("schema/0003_indices.sql"); err != nil {
 			return err
 		}
-		if err := s.setUserVersion(3); err != nil {
+		if err := s.setSchemaVersion(3); err != nil {
 			return err
 		}
 		version = 3
@@ -76,7 +77,7 @@ func (s *Store) Migrate() error {
 		if err := s.applySQLFile("schema/0004_auditoria.sql"); err != nil {
 			return err
 		}
-		if err := s.setUserVersion(4); err != nil {
+		if err := s.setSchemaVersion(4); err != nil {
 			return err
 		}
 		version = 4
@@ -86,7 +87,7 @@ func (s *Store) Migrate() error {
 		if err := s.applySQLFile("schema/0005_consentimiento.sql"); err != nil {
 			return err
 		}
-		if err := s.setUserVersion(5); err != nil {
+		if err := s.setSchemaVersion(5); err != nil {
 			return err
 		}
 		version = 5
@@ -96,7 +97,7 @@ func (s *Store) Migrate() error {
 		if err := s.applySQLFile("schema/0006_mermas.sql"); err != nil {
 			return err
 		}
-		if err := s.setUserVersion(6); err != nil {
+		if err := s.setSchemaVersion(6); err != nil {
 			return err
 		}
 		version = 6
@@ -106,7 +107,7 @@ func (s *Store) Migrate() error {
 		if err := s.applySQLFile("schema/0007_seed_stock.sql"); err != nil {
 			return err
 		}
-		if err := s.setUserVersion(7); err != nil {
+		if err := s.setSchemaVersion(7); err != nil {
 			return err
 		}
 		version = 7
@@ -115,55 +116,54 @@ func (s *Store) Migrate() error {
 	return nil
 }
 
+// applySQLFile ejecuta cada sentencia del fichero embebido dentro de una
+// transacción. A diferencia de SQLite, el driver de Postgres no garantiza
+// ejecutar varias sentencias separadas por ';' en un único Exec, así que se
+// dividen y se ejecutan una a una (los ficheros de schema/ son de control
+// interno, no contienen ';' dentro de literales de texto).
 func (s *Store) applySQLFile(name string) error {
 	data, err := schemaFS.ReadFile(name)
 	if err != nil {
 		return fmt.Errorf("leyendo %s: %w", name, err)
 	}
-	if _, err := s.DB.Exec(string(data)); err != nil {
-		return fmt.Errorf("aplicando %s: %w", name, err)
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return fmt.Errorf("iniciando transacción para %s: %w", name, err)
+	}
+	defer tx.Rollback()
+
+	for _, stmt := range splitStatements(string(data)) {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("aplicando %s: %w", name, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("confirmando %s: %w", name, err)
 	}
 	return nil
 }
 
-// ensureRevisionColumns replica el patrón try/except ALTER TABLE del Flask
-// original para BBDD antiguas que pudieran no tener peso/talla/grupo_sanguineo.
-func (s *Store) ensureRevisionColumns() error {
-	cols := map[string]bool{}
-	rows, err := s.DB.Query("PRAGMA table_info(pacientes)")
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var cid int
-		var name, ctype string
-		var notnull, pk int
-		var dflt any
-		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
-			return err
+// splitStatements separa un fichero SQL en sentencias individuales por ';',
+// descartando líneas de comentario ('--') y sentencias vacías.
+func splitStatements(sqlText string) []string {
+	var lines []string
+	for _, line := range strings.Split(sqlText, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "--") {
+			continue
 		}
-		cols[name] = true
+		lines = append(lines, line)
 	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
+	cleaned := strings.Join(lines, "\n")
 
-	add := []struct{ name, typ string }{
-		{"peso", "REAL"},
-		{"talla", "REAL"},
-		{"grupo_sanguineo", "TEXT"},
-	}
-	for _, c := range add {
-		if !cols[c.name] {
-			stmt := fmt.Sprintf("ALTER TABLE pacientes ADD COLUMN %s %s", c.name, c.typ)
-			if _, err := s.DB.Exec(stmt); err != nil &&
-				!strings.Contains(err.Error(), "duplicate column") {
-				return fmt.Errorf("añadiendo columna %s: %w", c.name, err)
-			}
+	var stmts []string
+	for _, part := range strings.Split(cleaned, ";") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			stmts = append(stmts, part)
 		}
 	}
-	return nil
+	return stmts
 }
 
 // seedUsuarios inserta los usuarios iniciales con hash bcrypt si no existen.
@@ -174,7 +174,7 @@ func (s *Store) seedUsuarios() error {
 			return err
 		}
 		_, err = s.DB.Exec(
-			`INSERT OR IGNORE INTO usuarios (usuario, password_hash, rol) VALUES (?,?,?)`,
+			`INSERT INTO usuarios (usuario, password_hash, rol) VALUES ($1,$2,$3) ON CONFLICT (usuario) DO NOTHING`,
 			u.usuario, string(hash), u.rol,
 		)
 		if err != nil {
@@ -191,7 +191,7 @@ func (s *Store) UsuariosConPasswordPorDefecto() ([]string, error) {
 	var pendientes []string
 	for _, u := range usuariosSeed {
 		var hash string
-		err := s.DB.QueryRow(`SELECT password_hash FROM usuarios WHERE usuario=?`, u.usuario).Scan(&hash)
+		err := s.DB.QueryRow(`SELECT password_hash FROM usuarios WHERE usuario=$1`, u.usuario).Scan(&hash)
 		if err == sql.ErrNoRows {
 			continue
 		}
@@ -205,8 +205,22 @@ func (s *Store) UsuariosConPasswordPorDefecto() ([]string, error) {
 	return pendientes, nil
 }
 
-func (s *Store) setUserVersion(v int) error {
-	// PRAGMA no admite parámetros enlazados; v es un entero controlado.
-	_, err := s.DB.Exec(fmt.Sprintf("PRAGMA user_version = %d", v))
+func (s *Store) currentSchemaVersion() (int, error) {
+	var version int
+	err := s.DB.QueryRow(`SELECT version FROM schema_migrations LIMIT 1`).Scan(&version)
+	if err == sql.ErrNoRows {
+		if _, err := s.DB.Exec(`INSERT INTO schema_migrations (version) VALUES (0)`); err != nil {
+			return 0, err
+		}
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
+func (s *Store) setSchemaVersion(v int) error {
+	_, err := s.DB.Exec(`UPDATE schema_migrations SET version = $1`, v)
 	return err
 }

@@ -9,7 +9,7 @@ import (
 // Fotos devuelve las fotos de un paciente, más recientes primero.
 func (s *Store) Fotos(pid int64) ([]models.Foto, error) {
 	rows, err := s.DB.Query(
-		`SELECT id, paciente_id, filename, nota, fecha FROM fotos WHERE paciente_id=? ORDER BY fecha DESC`, pid)
+		`SELECT id, paciente_id, filename, nota, fecha FROM fotos WHERE paciente_id=$1 ORDER BY fecha DESC`, pid)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (s *Store) Fotos(pid int64) ([]models.Foto, error) {
 func (s *Store) Foto(id int64) (*models.Foto, error) {
 	var f models.Foto
 	err := s.DB.QueryRow(
-		`SELECT id, paciente_id, filename, nota, fecha FROM fotos WHERE id=?`, id).
+		`SELECT id, paciente_id, filename, nota, fecha FROM fotos WHERE id=$1`, id).
 		Scan(&f.ID, &f.PacienteID, &f.Filename, &f.Nota, &f.Fecha)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -40,7 +40,7 @@ func (s *Store) Foto(id int64) (*models.Foto, error) {
 // PacienteNombre devuelve el nombre de un paciente (para construir rutas de foto).
 func (s *Store) PacienteNombre(id int64) (string, error) {
 	var nombre string
-	err := s.DB.QueryRow(`SELECT nombre FROM pacientes WHERE id=?`, id).Scan(&nombre)
+	err := s.DB.QueryRow(`SELECT nombre FROM pacientes WHERE id=$1`, id).Scan(&nombre)
 	if err == sql.ErrNoRows {
 		return "", nil
 	}
@@ -49,12 +49,10 @@ func (s *Store) PacienteNombre(id int64) (string, error) {
 
 // CreateFoto inserta el registro de una foto ya guardada en disco.
 func (s *Store) CreateFoto(pid int64, filename string, nota *string) (*models.Foto, error) {
-	res, err := s.DB.Exec(
-		`INSERT INTO fotos (paciente_id, filename, nota) VALUES (?,?,?)`, pid, filename, nota)
-	if err != nil {
-		return nil, err
-	}
-	id, err := res.LastInsertId()
+	var id int64
+	err := s.DB.QueryRow(
+		`INSERT INTO fotos (paciente_id, filename, nota) VALUES ($1,$2,$3) RETURNING id`, pid, filename, nota).
+		Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +61,6 @@ func (s *Store) CreateFoto(pid int64, filename string, nota *string) (*models.Fo
 
 // DeleteFoto borra el registro de una foto por id.
 func (s *Store) DeleteFoto(id int64) error {
-	_, err := s.DB.Exec(`DELETE FROM fotos WHERE id=?`, id)
+	_, err := s.DB.Exec(`DELETE FROM fotos WHERE id=$1`, id)
 	return err
 }

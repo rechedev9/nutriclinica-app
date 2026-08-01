@@ -16,7 +16,7 @@ func (s *Store) RevisionesConNombre() ([]RevConNombre, error) {
 	rows, err := s.DB.Query(`
 		SELECT r.*, p.nombre
 		FROM revisiones r JOIN pacientes p ON p.id = r.paciente_id
-		ORDER BY p.nombre COLLATE NOCASE, r.fecha DESC`)
+		ORDER BY lower(p.nombre), r.fecha DESC`)
 	if err != nil {
 		return nil, err
 	}

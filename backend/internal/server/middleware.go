@@ -54,26 +54,23 @@ func (s *Server) auditMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rec, r)
-		st := s.db()
-		if st == nil || !esAuditable(r) {
+		if !esAuditable(r) {
 			return
 		}
 		usuario := ""
 		if u, ok := s.sessions.Current(r); ok {
 			usuario = u.Usuario
 		}
-		if err := st.RegistrarAuditoria(usuario, r.Method, r.URL.Path, rec.status); err != nil {
+		if err := s.db().RegistrarAuditoria(usuario, r.Method, r.URL.Path, rec.status); err != nil {
 			log.Printf("auditoría: no se pudo registrar %s %s: %v", r.Method, r.URL.Path, err)
 		}
 	})
 }
 
 // esAuditable decide si la petición debe quedar en el registro: mutaciones de
-// la API o exportaciones de datos a Excel. Los endpoints de ciclo de vida del
-// cifrado (estado/configurar/unlock) no se auditan.
+// la API o exportaciones de datos a Excel. /api/estado no se audita.
 func esAuditable(r *http.Request) bool {
-	switch r.URL.Path {
-	case "/api/estado", "/api/configurar", "/api/unlock":
+	if r.URL.Path == "/api/estado" {
 		return false
 	}
 	switch r.Method {
@@ -83,26 +80,6 @@ func esAuditable(r *http.Request) bool {
 		return strings.HasPrefix(r.URL.Path, "/api/exportar")
 	}
 	return false
-}
-
-// gateMW bloquea el acceso a los datos (API y fotos) mientras la BD no esté
-// desbloqueada, salvo los endpoints de ciclo de vida del cifrado.
-func (s *Server) gateMW(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.db() == nil && requiereStore(r.URL.Path) {
-			writeError(w, http.StatusServiceUnavailable, "La base de datos está bloqueada")
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func requiereStore(path string) bool {
-	switch path {
-	case "/api/estado", "/api/configurar", "/api/unlock":
-		return false
-	}
-	return strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/fotos/")
 }
 
 // recoverMW convierte panics en 500 JSON.
