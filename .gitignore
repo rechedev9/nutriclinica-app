@@ -5,6 +5,9 @@ fotos/
 # Credenciales reales del backup a S3 (solo la plantilla .example va al repo)
 deploy/aws-backup.env
 
+# Credenciales reales de conexión a PostgreSQL/RDS (solo la plantilla .example va al repo)
+backend/pg.env
+
 # Python
 __pycache__/
 *.pyc

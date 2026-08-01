@@ -253,7 +253,7 @@ WHERE NOT EXISTS (SELECT 1 FROM stock_compras_lineas);
 -- VENTAS (paciente_id NULL = venta de mostrador sin paciente registrado)
 INSERT INTO stock_ventas (fecha, paciente_id, notas, total)
 SELECT fecha, paciente_id, notas, total FROM (
-    SELECT '2025-12-12' AS fecha, NULL AS paciente_id, 'Venta mostrador 12-dic'     AS notas, 40.80 AS total
+    SELECT '2025-12-12' AS fecha, NULL::integer AS paciente_id, 'Venta mostrador 12-dic'     AS notas, 40.80 AS total
     UNION ALL SELECT '2025-12-18', NULL, 'Venta mostrador 18-dic',  40.60
     UNION ALL SELECT '2026-01-08', NULL, 'Venta mostrador 8-ene',   60.70
     UNION ALL SELECT '2026-01-15', NULL, 'Venta mostrador 15-ene',  25.00
