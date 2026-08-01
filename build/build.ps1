@@ -43,6 +43,7 @@ Copy-Item "$root/icono_nutri.ico" "$win/icono_nutri.ico" -Force
 Copy-Item "$root/deploy/NutriClinica.bat" $win -Force
 Copy-Item "$root/deploy/Crear acceso directo.bat" $win -Force
 Copy-Item "$root/deploy/crear-acceso-directo.ps1" $win -Force
+Copy-Item "$root/backend/pg.env.example" $win -Force
 Copy-Item "$root/deploy/aws-backup.env.example" $win -Force
 Copy-Item "$root/deploy/LEEME.txt" $win -Force
 
@@ -52,6 +53,7 @@ New-Item -ItemType Directory -Force $mac | Out-Null
 Copy-Item "$dist/NutriClinica-mac-arm64" $mac -Force
 Copy-Item "$dist/NutriClinica-mac-amd64" $mac -Force
 Copy-Item "$root/deploy/NutriClinica.command" $mac -Force
+Copy-Item "$root/backend/pg.env.example" $mac -Force
 Copy-Item "$root/deploy/aws-backup.env.example" $mac -Force
 Copy-Item "$root/deploy/LEEME.txt" $mac -Force
 
