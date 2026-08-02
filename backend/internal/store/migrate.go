@@ -14,7 +14,7 @@ var schemaFS embed.FS
 
 // schemaVersion es la versión de esquema objetivo, rastreada en la tabla
 // schema_migrations (PostgreSQL no tiene un equivalente a PRAGMA user_version).
-const schemaVersion = 7
+const schemaVersion = 8
 
 // seedUser describe un usuario inicial.
 type seedUser struct {
@@ -111,6 +111,16 @@ func (s *Store) Migrate() error {
 			return err
 		}
 		version = 7
+	}
+
+	if version < 8 {
+		if err := s.applySQLFile("schema/0008_fix_real_precision.sql"); err != nil {
+			return err
+		}
+		if err := s.setSchemaVersion(8); err != nil {
+			return err
+		}
+		version = 8
 	}
 
 	return nil
