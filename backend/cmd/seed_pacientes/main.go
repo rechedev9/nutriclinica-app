@@ -35,49 +35,49 @@ func seedSQL() []string {
 		// ── PACIENTES ────────────────────────────────────────────────────────────
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'María García López','1994-03-15','F','12345678A','612 345 678','maria.garcia@email.com',
+SELECT 'María García López','1994-03-15','Mujer','12345678A','612 345 678','maria.garcia@email.com',
 'Adelgazamiento y mejora de la composición corporal','Baja (caminar 2-3 x/semana)',
 NULL,NULL,'Primera consulta. Refiere cansancio y dificultad para perder peso pese a intentos previos.',78.5,164.0,'A+'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='María García López')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Carlos Martínez Ruiz','1979-07-22','M','87654321B','623 456 789','carlos.martinez@email.com',
+SELECT 'Carlos Martínez Ruiz','1979-07-22','Hombre','87654321B','623 456 789','carlos.martinez@email.com',
 'Pérdida de grasa y mejora de la composición corporal','Moderada (gym 3x/semana)',
 NULL,NULL,'Trabaja muchas horas sentado. Quiere perder el exceso de grasa abdominal.',92.4,178.0,'O+'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Carlos Martínez Ruiz')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Ana Fernández Soto','1998-01-08','F','23456789C','634 567 890','ana.fernandez@email.com',
+SELECT 'Ana Fernández Soto','1998-01-08','Mujer','23456789C','634 567 890','ana.fernandez@email.com',
 'Ganancia de masa muscular y fuerza','Alta (gym 5x/semana + cardio)',
 NULL,NULL,'Atleta aficionada. Sigue entrenamiento de fuerza. Dieta actualmente hipercalórica.',58.3,168.0,'B+'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Ana Fernández Soto')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Javier López Moreno','1986-11-30','M','34567890D','645 678 901','javier.lopez@email.com',
+SELECT 'Javier López Moreno','1986-11-30','Hombre','34567890D','645 678 901','javier.lopez@email.com',
 'Pérdida de peso significativa y control de tensión','Sedentaria (oficina)',
 NULL,'Hipertensión arterial, colesterol LDL elevado','Derivado por médico de cabecera. Objetivo -20 kg en 12 meses.',108.4,175.0,'AB-'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Javier López Moreno')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Laura Sánchez Gil','1971-06-12','F','45678901E','656 789 012','laura.sanchez@email.com',
+SELECT 'Laura Sánchez Gil','1971-06-12','Mujer','45678901E','656 789 012','laura.sanchez@email.com',
 'Mejorar salud metabólica y control de peso','Baja (paseos suaves)',
 NULL,'Hipotiroidismo (tratada con levotiroxina)','La medicación tiroidea puede ralentizar la pérdida. Progreso esperado más lento.',72.8,161.0,'A-'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Laura Sánchez Gil')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Pedro Rodríguez Díaz','2000-03-04','M','56789012F','667 890 123','pedro.rodriguez@email.com',
+SELECT 'Pedro Rodríguez Díaz','2000-03-04','Hombre','56789012F','667 890 123','pedro.rodriguez@email.com',
 'Volumen muscular máximo','Muy alta (gym 6x/semana + fútbol sala)',
 NULL,NULL,'Ectomorfo con dificultad para ganar masa. Superávit calórico y alta ingesta proteica.',75.6,182.0,'O-'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Pedro Rodríguez Díaz')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Isabel Torres Vega','1984-09-18','F','67890123G','678 901 234','isabel.torres@email.com',
+SELECT 'Isabel Torres Vega','1984-09-18','Mujer','67890123G','678 901 234','isabel.torres@email.com',
 'Mantenimiento y tonificación','Moderada (yoga 3x/semana, pilates 1x/semana)',
 'Intolerancia a la lactosa',NULL,'Peso estable desde hace años. Busca mejorar composición corporal sin perder peso.',69.1,166.0,'B+'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Isabel Torres Vega')`,
 
 		`INSERT INTO pacientes (nombre,fecha_nac,sexo,dni,telefono,email,objetivo,actividad_fisica,intolerancias,patologias,notas,peso,talla,grupo_sanguineo)
-SELECT 'Miguel Romero Castro','1976-04-25','M','78901234H','689 012 345','miguel.romero@email.com',
+SELECT 'Miguel Romero Castro','1976-04-25','Hombre','78901234H','689 012 345','miguel.romero@email.com',
 'Control de peso y glucemia','Muy baja (sedentario)',
 NULL,'Diabetes mellitus tipo 2, obesidad grado II','Insulinorresistencia. Coordinado con endocrino. Objetivo inicial -10 kg.',96.0,170.0,'A+'
 WHERE NOT EXISTS (SELECT 1 FROM pacientes WHERE nombre='Miguel Romero Castro')`,
