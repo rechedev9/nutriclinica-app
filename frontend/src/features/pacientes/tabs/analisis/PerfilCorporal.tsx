@@ -75,27 +75,27 @@ function PanelSVG({
               ? Math.round((val - (prev[p.key] as number)) * 10) / 10
               : null
           const hasDelta = delta != null && delta !== 0
-          const mejora = delta != null && delta < 0
+          const subio = delta != null && delta > 0
           const lineX1 = p.anchor === 'end' ? p.textX + 16 : p.textX - 16
 
           return (
             <g key={`${p.key}-${i}`}>
               <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="rgb(var(--ink-muted))" strokeDasharray="4,3" />
               <circle cx={p.bodyX} cy={p.y} r={4} fill="#ef4444" />
-              <text x={p.textX} y={p.y - 14} textAnchor={p.anchor} fontSize={12} fill="rgb(var(--ink-muted))" fontFamily="inherit">
+              <text x={p.textX} y={p.y - 16} textAnchor={p.anchor} fontSize={13} fill="rgb(var(--ink-muted))" fontFamily="inherit">
                 {p.label}
               </text>
               <text
-                x={p.textX} y={p.y + 3}
+                x={p.textX} y={p.y + 6}
                 textAnchor={p.anchor}
-                fontSize={21} fill="rgb(var(--ink))" fontFamily="inherit" fontWeight="700"
+                fontSize={26} fill="rgb(var(--ink))" fontFamily="inherit" fontWeight="700"
                 data-countup={val} data-dec="1"
               >
                 {val.toFixed(1)} cm
               </text>
               {hasDelta && (
-                <text x={p.textX} y={p.y + 17} textAnchor={p.anchor} fontSize={11} fill={mejora ? '#0E9F6E' : '#b91c1c'} fontFamily="inherit">
-                  {mejora ? '↓' : '↑'} {Math.abs(delta!).toFixed(1)} cm
+                <text x={p.textX} y={p.y + 22} textAnchor={p.anchor} fontSize={12} fill="#a78bfa" fontFamily="inherit">
+                  {subio ? '↑' : '↓'} {Math.abs(delta!).toFixed(1)} cm
                 </text>
               )}
             </g>
