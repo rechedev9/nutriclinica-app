@@ -113,6 +113,45 @@ func (s *Server) handleCreateCategoria(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, c)
 }
 
+func (s *Server) handleUpdateCategoria(w http.ResponseWriter, r *http.Request) {
+	id, err := pathInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "id inválido")
+		return
+	}
+	var in struct {
+		Nombre string `json:"nombre"`
+	}
+	if err := decodeJSON(r, &in); err != nil {
+		writeError(w, http.StatusBadRequest, "JSON inválido")
+		return
+	}
+	in.Nombre = strings.TrimSpace(in.Nombre)
+	if in.Nombre == "" {
+		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
+		return
+	}
+	c, err := s.db().UpdateCategoria(id, in.Nombre)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, c)
+}
+
+func (s *Server) handleDeleteCategoria(w http.ResponseWriter, r *http.Request) {
+	id, err := pathInt(r, "id")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "id inválido")
+		return
+	}
+	if err := s.db().DeleteCategoria(id); err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, ok(nil))
+}
+
 // --- Proveedores ---
 
 func (s *Server) handleListProveedores(w http.ResponseWriter, r *http.Request) {

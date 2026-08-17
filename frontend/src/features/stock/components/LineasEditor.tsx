@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import type { LineaInput, Producto } from '@/types'
-import { Select, Input } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
+import { ProductoCombobox } from './ProductoCombobox'
 
 interface Props {
   productos: Producto[]
@@ -32,9 +33,8 @@ export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
     keys.current = keys.current.filter((_, idx) => idx !== i)
     onChange(lineas.filter((_, idx) => idx !== i))
   }
-  function onProducto(i: number, productoId: number) {
-    const prod = productos.find((p) => p.id === productoId)
-    update(i, { producto_id: productoId, precio_unitario: prod ? precioDe(prod) : 0 })
+  function onProducto(i: number, prod: Producto) {
+    update(i, { producto_id: prod.id, precio_unitario: precioDe(prod) })
   }
 
   const total = lineas.reduce((s, l) => s + l.cantidad * (l.precio_unitario ?? 0), 0)
@@ -51,14 +51,7 @@ export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
       )}
       {lineas.map((l, i) => (
         <div key={keys.current[i]} className="grid grid-cols-[1fr_80px_100px_36px] items-center gap-2 max-md:grid-cols-2">
-          <Select value={l.producto_id} onChange={(e) => onProducto(i, Number(e.target.value))}>
-            <option value={0}>Producto…</option>
-            {productos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </Select>
+          <ProductoCombobox productos={productos} value={l.producto_id} onSelect={(p) => onProducto(i, p)} />
           <Input
             type="number"
             step="0.1"

@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select } from '@/components/ui/Field'
-import {
-  useCategorias,
-  useCreateCategoria,
-  useCreateProducto,
-  useProveedores,
-  useUpdateProducto,
-} from '../hooks/useStock'
+import { useCategorias, useCreateProducto, useProveedores, useUpdateProducto } from '../hooks/useStock'
 import type { Producto, ProductoInput } from '@/types'
 
 interface Props {
@@ -37,8 +31,6 @@ export function ProductoModal({ open, onClose, producto }: Props) {
   const { data: proveedores = [] } = useProveedores()
   const create = useCreateProducto()
   const update = useUpdateProducto()
-  const createCat = useCreateCategoria()
-  const [nuevaCat, setNuevaCat] = useState('')
   const { register, handleSubmit, reset } = useForm<FormValues>()
 
   useEffect(() => {
@@ -96,24 +88,6 @@ export function ProductoModal({ open, onClose, producto }: Props) {
               ))}
             </Select>
           </Field>
-        </div>
-
-        <div className="flex items-end gap-2">
-          <Field label="Nueva categoría" className="flex-1">
-            <Input value={nuevaCat} onChange={(e) => setNuevaCat(e.target.value)} placeholder="Crear categoría…" />
-          </Field>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!nuevaCat.trim()}
-            isLoading={createCat.isPending}
-            onClick={async () => {
-              await createCat.mutateAsync(nuevaCat.trim())
-              setNuevaCat('')
-            }}
-          >
-            Añadir
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

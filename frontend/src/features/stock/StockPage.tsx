@@ -3,9 +3,10 @@ import { cn } from '@/lib/cn'
 
 const tabs = [
   { to: 'almacen', label: 'Stock' },
+  { to: 'categorias', label: 'Categorías' },
+  { to: 'proveedores', label: 'Proveedores' },
   { to: 'compras', label: 'Compras' },
   { to: 'ventas', label: 'Ventas' },
-  { to: 'proveedores', label: 'Proveedores' },
   { to: 'mermas', label: 'Mermas' },
   { to: 'analisis', label: 'Análisis' },
 ]

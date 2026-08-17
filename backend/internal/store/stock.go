@@ -164,6 +164,19 @@ func (s *Store) CreateCategoria(nombre string) (*models.Categoria, error) {
 	return &models.Categoria{ID: id, Nombre: nombre}, nil
 }
 
+func (s *Store) UpdateCategoria(id int64, nombre string) (*models.Categoria, error) {
+	_, err := s.DB.Exec(`UPDATE stock_categorias SET nombre=$1 WHERE id=$2`, nombre, id)
+	if err != nil {
+		return nil, err
+	}
+	return &models.Categoria{ID: id, Nombre: nombre}, nil
+}
+
+func (s *Store) DeleteCategoria(id int64) error {
+	_, err := s.DB.Exec(`DELETE FROM stock_categorias WHERE id=$1`, id)
+	return err
+}
+
 // --- Proveedores ---
 
 func (s *Store) Proveedores() ([]models.Proveedor, error) {

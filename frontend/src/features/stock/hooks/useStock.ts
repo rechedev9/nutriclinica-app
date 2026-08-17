@@ -73,7 +73,35 @@ export function useCreateCategoria() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (nombre: string) => api<Categoria>('POST', '/api/stock/categorias', { nombre }),
-    onSuccess: () => invalidate(qc, [qk.stock.categorias]),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.categorias])
+      toast.success('Categoría creada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+export function useUpdateCategoria() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, nombre }: { id: number; nombre: string }) =>
+      api<Categoria>('PUT', `/api/stock/categorias/${id}`, { nombre }),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.categorias])
+      toast.success('Categoría actualizada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+export function useDeleteCategoria() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api('DELETE', `/api/stock/categorias/${id}`),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.categorias])
+      toast.success('Categoría eliminada')
+    },
     onError: (e) => toast.error(mensajeError(e)),
   })
 }
