@@ -1,6 +1,6 @@
 // Iniciales y color de avatar (port de iniciales/colorFor de la SPA original).
 
-// Paleta de avatares (coincide con theme.colors.avatar de tailwind.config).
+// Paleta de avatares: colores fijos, iguales en claro y oscuro.
 const AVATAR_COLORS = ['#0F7B92', '#7C3AED', '#DB2777', '#EA580C', '#0E9F6E', '#2563EB', '#D97706', '#DC2626']
 
 export function iniciales(n: string): string {

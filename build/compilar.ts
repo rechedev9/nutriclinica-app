@@ -46,7 +46,9 @@ async function escribirEntrada(): Promise<string> {
 
 async function compilar(entrada: string, objetivo: (typeof OBJETIVOS)[number]): Promise<void> {
   console.log(`    -> ${objetivo.target}`)
-  const comando = ['bun', 'build', '--compile', '--minify', `--target=${objetivo.target}`]
+  // Sin minificar identificadores: Elysia lee el código de cada handler para saber qué
+  // partes del contexto usa (cookie, body...) y con los nombres acortados deja de verlas.
+  const comando = ['bun', 'build', '--compile', '--minify-whitespace', '--minify-syntax', `--target=${objetivo.target}`]
   // El icono del .exe solo se puede incrustar compilando desde Windows.
   if (objetivo.target === 'bun-windows-x64' && process.platform === 'win32') {
     comando.push(`--windows-icon=${join(raiz, 'icono_nutri.ico')}`)
