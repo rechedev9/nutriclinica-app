@@ -25,7 +25,8 @@ const fmtDelta = (d: number | null) => (d != null ? (d > 0 ? `+${d}` : String(d)
 function SparkLine({ data }: { data: (number | null)[] }) {
   const vals = data.filter((v): v is number => v != null)
   if (vals.length < 2) return null
-  const W = 100, H = 40
+  const W = 100,
+    H = 40
   const min = Math.min(...vals)
   const max = Math.max(...vals)
   const range = max - min || 1
@@ -43,7 +44,11 @@ function SparkLine({ data }: { data: (number | null)[] }) {
     p = c
   }
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '100%' }}>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
       <defs>
         <linearGradient id="spark-peso-g" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#0F7B92" stopOpacity="0.22" />
@@ -108,9 +113,7 @@ export function AnalisisTab() {
   const { data: revs, isLoading, isError, error, refetch, isFetching } = useRevisiones(p.id)
   const edad = calcEdad(p.fecha_nac)
   const sexo = p.sexo
-  const [activas, setActivas] = useState<Set<string>>(
-    new Set(['per_cintura', 'per_caderas', 'per_muslo', 'per_pecho']),
-  )
+  const [activas, setActivas] = useState<Set<string>>(new Set(['per_cintura', 'per_caderas', 'per_muslo', 'per_pecho']))
 
   const grasaFn = useMemo(
     () => (r: Revision) =>
@@ -128,7 +131,10 @@ export function AnalisisTab() {
     const pg = buildMonthMultiData(asc, [(r) => r.peso, grasaFn])
 
     const activeMedidas = ALL_MEDIDAS.filter((m) => activas.has(m.key))
-    const perim = buildMonthMultiData(asc, activeMedidas.map((m) => (r: Revision) => r[m.key]))
+    const perim = buildMonthMultiData(
+      asc,
+      activeMedidas.map((m) => (r: Revision) => r[m.key]),
+    )
     const series: Serie[] = activeMedidas.map((m, i) => ({
       label: m.short,
       data: perim.datasets[i] ?? [],
@@ -153,7 +159,8 @@ export function AnalisisTab() {
   }, [revs, activas, grasaFn])
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el análisis" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el análisis" />
   if (!derived) return <EmptyState title="Sin datos para analizar" subtitle="Añade revisiones para ver la evolución." />
 
   const { first, last } = derived
@@ -165,20 +172,52 @@ export function AnalisisTab() {
 
   const filas = [
     { label: 'Peso (kg)', f: first.peso, a: prev?.peso ?? null, l: last.peso },
-    { label: 'IMC', f: calcIMC(first.peso, p.talla)?.val ?? null, a: prev ? (calcIMC(prev.peso, p.talla)?.val ?? null) : null, l: imcLast?.val ?? null },
+    {
+      label: 'IMC',
+      f: calcIMC(first.peso, p.talla)?.val ?? null,
+      a: prev ? (calcIMC(prev.peso, p.talla)?.val ?? null) : null,
+      l: imcLast?.val ?? null,
+    },
     { label: '% Grasa', f: grasaFn(first), a: grasaPrev, l: grasaLast },
-    { label: 'Peso graso (kg)', f: pesoGraso(first.peso, grasaFn(first)), a: prev ? pesoGraso(prev.peso, grasaPrev) : null, l: pesoGraso(last.peso, grasaLast) },
-    { label: 'Peso magro (kg)', f: pesoMagro(first.peso, grasaFn(first)), a: prev ? pesoMagro(prev.peso, grasaPrev) : null, l: pesoMagro(last.peso, grasaLast) },
+    {
+      label: 'Peso graso (kg)',
+      f: pesoGraso(first.peso, grasaFn(first)),
+      a: prev ? pesoGraso(prev.peso, grasaPrev) : null,
+      l: pesoGraso(last.peso, grasaLast),
+    },
+    {
+      label: 'Peso magro (kg)',
+      f: pesoMagro(first.peso, grasaFn(first)),
+      a: prev ? pesoMagro(prev.peso, grasaPrev) : null,
+      l: pesoMagro(last.peso, grasaLast),
+    },
   ]
 
   return (
     <div className="dash-area flex flex-col gap-4 p-6 print-content-area">
-
       {/* Cabecera profesional — solo visible al imprimir, se repite en cada página */}
       <div className="hidden print-running-header">
-        <div style={{ background: '#0F7B92', color: 'white', padding: '5mm 10mm 4mm', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            background: '#0F7B92',
+            color: 'white',
+            padding: '5mm 10mm 4mm',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#86efac" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="30"
+              height="30"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#86efac"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
               <path d="M12 6v6l4 2" />
               <path d="M8 14s1.5 2 4 2 4-2 4-2" />
@@ -189,14 +228,26 @@ export function AnalisisTab() {
             </div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', fontWeight: '600', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Informe de análisis</div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: '600',
+                opacity: 0.8,
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+              }}
+            >
+              Informe de análisis
+            </div>
             <div style={{ fontSize: '17px', fontWeight: '700', marginTop: '2px' }}>{p.nombre}</div>
           </div>
           <div style={{ textAlign: 'right', minWidth: '90px' }}>
             {derived.last?.fecha && (
               <>
                 <div style={{ fontSize: '11px', opacity: 0.75 }}>Última revisión</div>
-                <div style={{ fontSize: '13px', fontWeight: '700', marginTop: '2px' }}>{fmtFechaCorta(derived.last.fecha)}</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', marginTop: '2px' }}>
+                  {fmtFechaCorta(derived.last.fecha)}
+                </div>
               </>
             )}
           </div>
@@ -206,38 +257,90 @@ export function AnalisisTab() {
 
       <div className="flex items-center justify-between print-hide">
         <h3 className="text-lg font-bold">Análisis y evolución</h3>
-        <Button variant="outline" size="sm" onClick={() => {
-          const nombreFichero = p.nombre
-            .normalize('NFD').replace(/[̀-ͯ]/g, '')
-            .replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')
-          const fechaFichero = derived.last?.fecha
-            ? derived.last.fecha.replace(/-/g, '')
-            : ''
-          const titulo = fechaFichero ? `${nombreFichero}_${fechaFichero}` : nombreFichero
-          const tituloAnterior = document.title
-          document.title = titulo
-          window.print()
-          document.title = tituloAnterior
-        }}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const nombreFichero = p.nombre
+              .normalize('NFD')
+              .replace(/[̀-ͯ]/g, '')
+              .replace(/\s+/g, '_')
+              .replace(/[^a-zA-Z0-9_]/g, '')
+            const fechaFichero = derived.last?.fecha ? derived.last.fecha.replace(/-/g, '') : ''
+            const titulo = fechaFichero ? `${nombreFichero}_${fechaFichero}` : nombreFichero
+            const tituloAnterior = document.title
+            document.title = titulo
+            window.print()
+            document.title = tituloAnterior
+          }}
+        >
           Exportar PDF
         </Button>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="Peso actual" rawValue={last.peso} unit="kg" decimals={1} sparklineData={derived.asc.map(r => r.peso)} icon={
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3.5-3"/><path d="M12 5V3M5 13H3M21 13h-2"/></svg>
-        } />
-        <KpiCard label="IMC" rawValue={imcLast?.val ?? null} sub={imcLast?.etiq} decimals={1} icon={
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>
-        } />
+        <KpiCard
+          label="Peso actual"
+          rawValue={last.peso}
+          unit="kg"
+          decimals={1}
+          sparklineData={derived.asc.map((r) => r.peso)}
+          icon={
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="13" r="8" />
+              <path d="M12 13l3.5-3" />
+              <path d="M12 5V3M5 13H3M21 13h-2" />
+            </svg>
+          }
+        />
+        <KpiCard
+          label="IMC"
+          rawValue={imcLast?.val ?? null}
+          sub={imcLast?.etiq}
+          decimals={1}
+          icon={
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="3 12 7 12 10 5 14 19 17 12 21 12" />
+            </svg>
+          }
+        />
         <KpiCard
           label="% Grasa"
           rawValue={grasaLast}
           unit="%"
           decimals={1}
           icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z"/></svg>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3s6 6.4 6 10.5a6 6 0 0 1-12 0C6 9.4 12 3 12 3z" />
+            </svg>
           }
           sub={
             clase && (
@@ -247,93 +350,152 @@ export function AnalisisTab() {
             )
           }
         />
-        <KpiCard label="Peso graso" rawValue={pesoGraso(last.peso, grasaLast)} unit="kg" decimals={1} icon={
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c.5 3 3 4.5 3 8a3 3 0 0 1-6 0c0-1 .4-1.8 1-2.4C9 11 12 7 12 3z"/><path d="M12 3c2.5 3 5 5.5 5 9a5 5 0 0 1-10 0"/></svg>
-        } />
-        <KpiCard label="Peso magro" rawValue={pesoMagro(last.peso, grasaLast)} unit="kg" decimals={1} icon={
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11"/></svg>
-        } />
-        <KpiCard label="TMB" rawValue={calcTMB(last.peso, p.talla, edad, sexo)} unit="kcal" decimals={0} sub={<span className="text-ink-muted">en reposo</span>} icon={
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        } />
+        <KpiCard
+          label="Peso graso"
+          rawValue={pesoGraso(last.peso, grasaLast)}
+          unit="kg"
+          decimals={1}
+          icon={
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3c.5 3 3 4.5 3 8a3 3 0 0 1-6 0c0-1 .4-1.8 1-2.4C9 11 12 7 12 3z" />
+              <path d="M12 3c2.5 3 5 5.5 5 9a5 5 0 0 1-10 0" />
+            </svg>
+          }
+        />
+        <KpiCard
+          label="Peso magro"
+          rawValue={pesoMagro(last.peso, grasaLast)}
+          unit="kg"
+          decimals={1}
+          icon={
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 9v6M21 9v6M6.5 7v10M17.5 7v10M6.5 12h11" />
+            </svg>
+          }
+        />
+        <KpiCard
+          label="TMB"
+          rawValue={calcTMB(last.peso, p.talla, edad, sexo)}
+          unit="kcal"
+          decimals={0}
+          sub={<span className="text-ink-muted">en reposo</span>}
+          icon={
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          }
+        />
       </div>
 
       {/* Composición corporal + Tabla evolución en la misma fila */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_3fr]">
-        {grasaLast != null && last.peso != null && (() => {
-          const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
-          const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
-          const total = pGraso + pMagro
-          const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
-          const imcVal = imcLast?.val ?? null
-          const IMC_MIN = 14, IMC_MAX = 40
-          const imcPct = imcVal != null
-            ? Math.min(Math.max((imcVal - IMC_MIN) / (IMC_MAX - IMC_MIN) * 100, 0), 100)
-            : null
-          const imcZones = [
-            { label: 'Infrapeso', color: '#60a5fa', width: 17.3 },
-            { label: 'Normal',    color: '#34d399', width: 25.0 },
-            { label: 'Sobrepeso', color: '#fbbf24', width: 19.2 },
-            { label: 'Obesidad',  color: '#f87171', width: 38.5 },
-          ]
-          return (
-            <div className="rounded-card bg-surface p-4 shadow-card flex flex-col gap-2">
-              <div className="text-sm font-bold">Composición corporal</div>
+        {grasaLast != null &&
+          last.peso != null &&
+          (() => {
+            const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
+            const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
+            const total = pGraso + pMagro
+            const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
+            const imcVal = imcLast?.val ?? null
+            const IMC_MIN = 14,
+              IMC_MAX = 40
+            const imcPct =
+              imcVal != null ? Math.min(Math.max(((imcVal - IMC_MIN) / (IMC_MAX - IMC_MIN)) * 100, 0), 100) : null
+            const imcZones = [
+              { label: 'Infrapeso', color: '#60a5fa', width: 17.3 },
+              { label: 'Normal', color: '#34d399', width: 25.0 },
+              { label: 'Sobrepeso', color: '#fbbf24', width: 19.2 },
+              { label: 'Obesidad', color: '#f87171', width: 38.5 },
+            ]
+            return (
+              <div className="rounded-card bg-surface p-4 shadow-card flex flex-col gap-2">
+                <div className="text-sm font-bold">Composición corporal</div>
 
-              {/* Barra composición reducida */}
-              <div>
-                <div className="h-3 overflow-hidden rounded-full" style={{ background: '#fde68a' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-[1800ms] ease-out"
-                    style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
-                  />
-                </div>
-                <div className="mt-2 flex justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0F7B92' }} />
-                    <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
-                    <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+                {/* Barra composición reducida */}
+                <div>
+                  <div className="h-3 overflow-hidden rounded-full" style={{ background: '#fde68a' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-[1800ms] ease-out"
+                      style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
+                    />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
-                    <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
-                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#fbbf24' }} />
+                  <div className="mt-2 flex justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0F7B92' }} />
+                      <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
+                      <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
+                      <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#fbbf24' }} />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Escala de clasificación IMC */}
-              {imcVal != null && (
-                <div className="border-t border-border pt-6">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="text-sm font-bold">Clasificación IMC</span>
-                    <span className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
-                  </div>
-                  <div className="relative">
-                    <div className="flex h-4 overflow-hidden rounded-full">
+                {/* Escala de clasificación IMC */}
+                {imcVal != null && (
+                  <div className="border-t border-border pt-6">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="text-sm font-bold">Clasificación IMC</span>
+                      <span className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
+                    </div>
+                    <div className="relative">
+                      <div className="flex h-4 overflow-hidden rounded-full">
+                        {imcZones.map((z) => (
+                          <div key={z.label} style={{ width: `${z.width}%`, background: z.color }} />
+                        ))}
+                      </div>
+                      {imcPct != null && (
+                        <div
+                          className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-ink shadow-sm"
+                          style={{ left: `${imcPct}%` }}
+                        />
+                      )}
+                    </div>
+                    <div className="mt-1.5 flex text-xs">
                       {imcZones.map((z) => (
-                        <div key={z.label} style={{ width: `${z.width}%`, background: z.color }} />
+                        <div
+                          key={z.label}
+                          style={{ width: `${z.width}%`, color: z.color }}
+                          className="text-center font-bold"
+                        >
+                          {z.label}
+                        </div>
                       ))}
                     </div>
-                    {imcPct != null && (
-                      <div
-                        className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-ink shadow-sm"
-                        style={{ left: `${imcPct}%` }}
-                      />
-                    )}
                   </div>
-                  <div className="mt-1.5 flex text-xs">
-                    {imcZones.map((z) => (
-                      <div key={z.label} style={{ width: `${z.width}%`, color: z.color }} className="text-center font-bold">
-                        {z.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })()}
+                )}
+              </div>
+            )
+          })()}
 
         <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 text-sm font-bold">Evolución</div>
@@ -366,10 +528,22 @@ export function AnalisisTab() {
                     <td className="py-1.5 text-ink-muted">{f.f ?? '—'}</td>
                     <td className="py-1.5 text-ink-muted">{f.a ?? '—'}</td>
                     <td className="py-1.5 font-semibold">{f.l ?? '—'}</td>
-                    <td className={cn('py-1.5 font-semibold', deltaTotal != null && deltaTotal < 0 && 'text-success', deltaTotal != null && deltaTotal > 0 && 'text-danger')}>
+                    <td
+                      className={cn(
+                        'py-1.5 font-semibold',
+                        deltaTotal != null && deltaTotal < 0 && 'text-success',
+                        deltaTotal != null && deltaTotal > 0 && 'text-danger',
+                      )}
+                    >
                       {fmtDelta(deltaTotal)}
                     </td>
-                    <td className={cn('py-1.5 font-semibold', deltaAnt != null && deltaAnt < 0 && 'text-success', deltaAnt != null && deltaAnt > 0 && 'text-danger')}>
+                    <td
+                      className={cn(
+                        'py-1.5 font-semibold',
+                        deltaAnt != null && deltaAnt < 0 && 'text-success',
+                        deltaAnt != null && deltaAnt > 0 && 'text-danger',
+                      )}
+                    >
                       {fmtDelta(deltaAnt)}
                     </td>
                   </tr>
@@ -439,11 +613,7 @@ export function AnalisisTab() {
 
       {/* Perfil corporal con siluetas */}
       <div className="print-page-break">
-      <PerfilCorporal
-        last={derived.last}
-        prev={prev}
-        sexo={p.sexo ?? ''}
-      />
+        <PerfilCorporal last={derived.last} prev={prev} sexo={p.sexo ?? ''} />
       </div>
     </div>
   )

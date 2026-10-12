@@ -26,8 +26,7 @@ export function useCreatePaciente() {
 export function useUpdatePaciente() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: PacienteInput }) =>
-      pedir(servidor.pacientes({ id }).put(body)),
+    mutationFn: ({ id, body }: { id: number; body: PacienteInput }) => pedir(servidor.pacientes({ id }).put(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente actualizado')

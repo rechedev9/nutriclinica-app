@@ -100,7 +100,13 @@ describe('base de datos', () => {
     const db = abrirBD(':memory:')
     await sembrarUsuarios(db)
     await sembrarUsuarios(db)
-    expect(db.select().from(usuarios).all().map((u) => `${u.usuario}:${u.rol}`)).toEqual(['admin:admin', 'Jose:user'])
+    expect(
+      db
+        .select()
+        .from(usuarios)
+        .all()
+        .map((u) => `${u.usuario}:${u.rol}`),
+    ).toEqual(['admin:admin', 'Jose:user'])
     expect(await usuariosConPasswordInicial(db)).toEqual(['admin', 'Jose'])
 
     sembrarStock(db)

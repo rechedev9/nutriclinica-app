@@ -35,14 +35,20 @@ export function CompraModal({ open, onClose, compra }: Props) {
   useEffect(() => {
     if (open) {
       const fechaInit = compra?.fecha
-        ? compra.fecha.includes('T') ? compra.fecha.slice(0, 16) : compra.fecha + 'T00:00'
+        ? compra.fecha.includes('T')
+          ? compra.fecha.slice(0, 16)
+          : compra.fecha + 'T00:00'
         : nowLocal()
       setFecha(fechaInit)
       setProveedorId(compra?.proveedor_id != null ? String(compra.proveedor_id) : '')
       setNotas(compra?.notas ?? '')
       setLineas(
         compra?.lineas.length
-          ? compra.lineas.map((l) => ({ producto_id: l.producto_id, cantidad: l.cantidad, precio_unitario: l.precio_unitario }))
+          ? compra.lineas.map((l) => ({
+              producto_id: l.producto_id,
+              cantidad: l.cantidad,
+              precio_unitario: l.precio_unitario,
+            }))
           : [{ producto_id: 0, cantidad: 1, precio_unitario: 0 }],
       )
     }
@@ -55,9 +61,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
       notas: notas.trim() || null,
       lineas: lineas.filter((l) => l.producto_id > 0),
     }
-    const ok = await intentar(
-      compra ? update.mutateAsync({ id: compra.id, body }) : create.mutateAsync(body),
-    )
+    const ok = await intentar(compra ? update.mutateAsync({ id: compra.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
   }
 
@@ -65,7 +69,12 @@ export function CompraModal({ open, onClose, compra }: Props) {
   const invalido = errorLineas(lineas) !== null
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar compra' : 'Nueva compra'} className="w-[min(640px,94vw)]">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? 'Editar compra' : 'Nueva compra'}
+      className="w-[min(640px,94vw)]"
+    >
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Fecha y hora">

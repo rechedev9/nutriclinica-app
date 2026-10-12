@@ -102,7 +102,12 @@ const cajaIcono = (
 
 export function AlmacenTab() {
   const { data: almacen, isLoading, isError, error, refetch, isFetching } = useAlmacen()
-  const { data: productos = [], isError: errorProductos, error: errProductos, refetch: refetchProductos } = useProductos()
+  const {
+    data: productos = [],
+    isError: errorProductos,
+    error: errProductos,
+    refetch: refetchProductos,
+  } = useProductos()
   const del = useDeleteProducto()
   const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
@@ -124,8 +129,7 @@ export function AlmacenTab() {
   const filtradas = useMemo(() => {
     const term = normaliza(deferredQ)
     return rows.filter((p) => {
-      const coincideTexto =
-        !term || normaliza(p.nombre).includes(term) || normaliza(p.categoria ?? '').includes(term)
+      const coincideTexto = !term || normaliza(p.nombre).includes(term) || normaliza(p.categoria ?? '').includes(term)
       const coincideCat = !cat || p.categoria === cat
       return coincideTexto && coincideCat
     })
@@ -196,7 +200,15 @@ export function AlmacenTab() {
           )}
           {rows.length > 0 && (
             <div className="relative">
-              <svg className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
@@ -251,7 +263,12 @@ export function AlmacenTab() {
                     <td className="p-3 text-ink-muted">{p.categoria ?? '—'}</td>
                     <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '—'}</td>
                     <td className="p-3">
-                      <span className={cn('inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold', est.cls)}>
+                      <span
+                        className={cn(
+                          'inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold',
+                          est.cls,
+                        )}
+                      >
                         {est.label}
                       </span>
                     </td>
@@ -271,19 +288,19 @@ export function AlmacenTab() {
                     <td className="p-3 text-ink-muted">{fmtFecha(p.creado)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditing(productos.find((x) => x.id === p.id))
-                          setModalOpen(true)
-                        }}
-                      >
-                        Editar
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
-                        Borrar
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditing(productos.find((x) => x.id === p.id))
+                            setModalOpen(true)
+                          }}
+                        >
+                          Editar
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
+                          Borrar
+                        </Button>
                       </div>
                     </td>
                   </tr>

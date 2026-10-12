@@ -20,7 +20,10 @@ db.transaction((tx) => {
     if (fila === undefined) continue
     const mismaFecha = and(eq(revisiones.paciente_id, fila.id), eq(revisiones.fecha, revision.fecha))
     const existe = tx.select({ id: revisiones.id }).from(revisiones).where(mismaFecha).get()
-    if (existe === undefined) tx.insert(revisiones).values({ ...revision, paciente_id: fila.id }).run()
+    if (existe === undefined)
+      tx.insert(revisiones)
+        .values({ ...revision, paciente_id: fila.id })
+        .run()
   }
 })
 

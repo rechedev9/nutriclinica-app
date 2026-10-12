@@ -35,5 +35,7 @@ export function usuarioDeSesion(db: BD, token: string, ahora: number = Date.now(
 }
 
 export function cerrarSesion(db: BD, token: string): void {
-  db.delete(sesiones).where(eq(sesiones.token_hash, hashToken(token))).run()
+  db.delete(sesiones)
+    .where(eq(sesiones.token_hash, hashToken(token)))
+    .run()
 }

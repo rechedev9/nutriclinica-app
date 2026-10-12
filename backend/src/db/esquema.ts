@@ -105,10 +105,7 @@ export const stock_productos = sqliteTable(
     activo: integer().notNull().default(1),
     creado: text().default(ahora),
   },
-  (t) => [
-    index('idx_productos_categoria').on(t.categoria_id),
-    index('idx_productos_proveedor').on(t.proveedor_id),
-  ],
+  (t) => [index('idx_productos_categoria').on(t.categoria_id), index('idx_productos_proveedor').on(t.proveedor_id)],
 )
 
 export const stock_compras = sqliteTable(
@@ -136,10 +133,7 @@ export const stock_compras_lineas = sqliteTable(
     cantidad: real().notNull(),
     precio_unitario: real().notNull().default(0),
   },
-  (t) => [
-    index('idx_compras_lineas_compra').on(t.compra_id),
-    index('idx_compras_lineas_producto').on(t.producto_id),
-  ],
+  (t) => [index('idx_compras_lineas_compra').on(t.compra_id), index('idx_compras_lineas_producto').on(t.producto_id)],
 )
 
 export const stock_ventas = sqliteTable(
@@ -167,10 +161,7 @@ export const stock_ventas_lineas = sqliteTable(
     cantidad: real().notNull(),
     precio_unitario: real().notNull().default(0),
   },
-  (t) => [
-    index('idx_ventas_lineas_venta').on(t.venta_id),
-    index('idx_ventas_lineas_producto').on(t.producto_id),
-  ],
+  (t) => [index('idx_ventas_lineas_venta').on(t.venta_id), index('idx_ventas_lineas_producto').on(t.producto_id)],
 )
 
 export const stock_mermas = sqliteTable(
@@ -189,10 +180,7 @@ export const stock_mermas = sqliteTable(
   },
   (t) => [
     index('idx_mermas_producto').on(t.producto_id),
-    check(
-      'stock_mermas_motivo',
-      sql`${t.motivo} IN ('caducidad', 'accidente_rotura', 'devolucion_cliente')`,
-    ),
+    check('stock_mermas_motivo', sql`${t.motivo} IN ('caducidad', 'accidente_rotura', 'devolucion_cliente')`),
   ],
 )
 

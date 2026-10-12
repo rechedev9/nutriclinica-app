@@ -37,12 +37,18 @@ export function LoginPage() {
       className="flex min-h-screen items-center justify-center p-4"
       style={{ background: 'linear-gradient(135deg, #0a3d4a 0%, #0F7B92 50%, #1aaccc 100%)' }}
     >
-      <form
-        onSubmit={onSubmit}
-        className="w-[min(400px,92vw)] rounded-card bg-surface p-8 shadow-md"
-      >
+      <form onSubmit={onSubmit} className="w-[min(400px,92vw)] rounded-card bg-surface p-8 shadow-md">
         <div className="mb-6 flex items-center gap-2">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0F7B92" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#0F7B92"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
             <path d="M12 6v6l4 2" />
             <path d="M8 14s1.5 2 4 2 4-2 4-2" />

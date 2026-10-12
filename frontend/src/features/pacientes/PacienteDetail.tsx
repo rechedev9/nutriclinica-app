@@ -39,7 +39,8 @@ export function PacienteDetail() {
   const [editing, setEditing] = useState(false)
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el paciente" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el paciente" />
   const paciente = pacientes?.find((p) => p.id === pid)
   if (!paciente) {
     return (
@@ -75,25 +76,37 @@ export function PacienteDetail() {
           onClick={() => void navigate({ to: '/pacientes' })}
           className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="m15 18-6-6 6-6" />
           </svg>
           Pacientes
         </button>
         <div className="flex items-center gap-3.5 max-md:flex-wrap">
-          <Avatar nombre={paciente.nombre} className="h-[52px] w-[52px] text-xl shadow-[0_6px_16px_-4px_rgba(15,123,146,.45)]" />
-        <div className="flex-1">
-          <div className="text-[22px] font-bold">{paciente.nombre}</div>
-          <div className="text-sm text-ink-muted">
-            {paciente.fecha_nac ? `Nac. ${fmtFecha(paciente.fecha_nac)}` : 'Sin fecha de nacimiento'}
+          <Avatar
+            nombre={paciente.nombre}
+            className="h-[52px] w-[52px] text-xl shadow-[0_6px_16px_-4px_rgba(15,123,146,.45)]"
+          />
+          <div className="flex-1">
+            <div className="text-[22px] font-bold">{paciente.nombre}</div>
+            <div className="text-sm text-ink-muted">
+              {paciente.fecha_nac ? `Nac. ${fmtFecha(paciente.fecha_nac)}` : 'Sin fecha de nacimiento'}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {paciente.peso != null && <Stat value={String(paciente.peso)} label="kg" />}
+              {paciente.talla != null && <Stat value={String(paciente.talla)} label="cm" />}
+              {edad != null && <Stat value={String(edad)} label="años" />}
+              {paciente.sexo && <Stat value={paciente.sexo} label="" />}
+            </div>
           </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {paciente.peso != null && <Stat value={String(paciente.peso)} label="kg" />}
-            {paciente.talla != null && <Stat value={String(paciente.talla)} label="cm" />}
-            {edad != null && <Stat value={String(edad)} label="años" />}
-            {paciente.sexo && <Stat value={paciente.sexo} label="" />}
-          </div>
-        </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               Editar

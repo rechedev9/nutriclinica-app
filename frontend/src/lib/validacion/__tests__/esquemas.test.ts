@@ -76,13 +76,17 @@ describe('errorLineas', () => {
   it('exige una línea con producto, cantidad > 0 y respeta el stock', () => {
     expect(errorLineas([{ producto_id: 0, cantidad: 1 }])).toBe('Añade al menos una línea con producto')
     expect(errorLineas([{ producto_id: 1, cantidad: 0 }])).toBe('La cantidad debe ser mayor que 0')
-    expect(errorLineas([{ producto_id: 1, cantidad: 1, precio_unitario: -1 }])).toBe(
-      'El precio no puede ser negativo',
-    )
+    expect(errorLineas([{ producto_id: 1, cantidad: 1, precio_unitario: -1 }])).toBe('El precio no puede ser negativo')
     const stock = new Map([[1, 3]])
-    expect(errorLineas([{ producto_id: 1, cantidad: 2 }, { producto_id: 1, cantidad: 2 }], stock)).toBe(
-      'Supera el stock disponible (3)',
-    )
+    expect(
+      errorLineas(
+        [
+          { producto_id: 1, cantidad: 2 },
+          { producto_id: 1, cantidad: 2 },
+        ],
+        stock,
+      ),
+    ).toBe('Supera el stock disponible (3)')
     expect(errorLineas([{ producto_id: 1, cantidad: 3 }], stock)).toBeNull()
   })
 })

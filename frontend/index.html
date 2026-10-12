@@ -6,7 +6,7 @@
     <title>NutriClínica</title>
     <script>
       // Anti-flash: aplica la clase de tema antes de pintar React.
-      (function () {
+      ;(function () {
         try {
           var t = localStorage.getItem('nutri-theme') || 'system'
           var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)

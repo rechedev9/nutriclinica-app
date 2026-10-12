@@ -150,7 +150,15 @@ function Cabecera({
       <div className="flex items-center gap-2">
         {!sinBusqueda && (
           <div className="relative">
-            <svg className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>

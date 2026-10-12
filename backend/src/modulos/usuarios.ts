@@ -1,13 +1,7 @@
 import { Elysia, t } from 'elysia'
 import type { Contexto } from '../contexto'
 import { listarAuditoria } from '../datos/auditoria'
-import {
-  actualizarUsuario,
-  cambiarPassword,
-  crearUsuario,
-  eliminarUsuario,
-  listarUsuarios,
-} from '../datos/usuarios'
+import { actualizarUsuario, cambiarPassword, crearUsuario, eliminarUsuario, listarUsuarios } from '../datos/usuarios'
 import { ErrorHttp } from '../lib/errores'
 import { hashPassword } from '../lib/password'
 import { idParams, passwordEntrada, usuarioEdicionEntrada, usuarioNuevoEntrada } from '../modelos'

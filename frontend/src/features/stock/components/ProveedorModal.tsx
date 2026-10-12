@@ -21,7 +21,12 @@ export function ProveedorModal({ open, onClose, proveedor }: Props) {
   const isEdit = !!proveedor
   const create = useCreateProveedor()
   const update = useUpdateProveedor()
-  const { register, handleSubmit, reset, formState } = useForm<{ nombre: string; telefono: string; email: string; notas: string }>({
+  const { register, handleSubmit, reset, formState } = useForm<{
+    nombre: string
+    telefono: string
+    email: string
+    notas: string
+  }>({
     resolver: zodResolver(esquemaProveedor),
   })
 
@@ -42,9 +47,7 @@ export function ProveedorModal({ open, onClose, proveedor }: Props) {
       email: nil(v.email),
       notas: nil(v.notas),
     }
-    const ok = await intentar(
-      proveedor ? update.mutateAsync({ id: proveedor.id, body }) : create.mutateAsync(body),
-    )
+    const ok = await intentar(proveedor ? update.mutateAsync({ id: proveedor.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
   }
 

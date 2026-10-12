@@ -2,18 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type {
-  CompraInput,
-  MermaInput,
-  ProductoInput,
-  ProveedorInput,
-  VentaInput,
-} from '@/types'
+import type { CompraInput, MermaInput, ProductoInput, ProveedorInput, VentaInput } from '@/types'
 
-const invalidate = (
-  qc: ReturnType<typeof useQueryClient>,
-  keys: ReadonlyArray<readonly unknown[]>,
-) => keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
+const invalidate = (qc: ReturnType<typeof useQueryClient>, keys: ReadonlyArray<readonly unknown[]>) =>
+  keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
 
 // --- Almacén / Productos ---
 export const useAlmacen = () =>
@@ -159,8 +151,7 @@ export function useCreateCompra() {
 export function useUpdateCompra() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: CompraInput }) =>
-      pedir(servidor.stock.compras({ id }).put(body)),
+    mutationFn: ({ id, body }: { id: number; body: CompraInput }) => pedir(servidor.stock.compras({ id }).put(body)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra actualizada')

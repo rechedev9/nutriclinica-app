@@ -79,7 +79,10 @@ export function MermaModal({ open, onClose }: { open: boolean; onClose: () => vo
             />
           </Field>
           <Field label="Motivo *">
-            <Select value={motivo} onChange={(e) => setMotivo(MOTIVOS.find((m) => m.value === e.target.value)?.value ?? motivo)}>
+            <Select
+              value={motivo}
+              onChange={(e) => setMotivo(MOTIVOS.find((m) => m.value === e.target.value)?.value ?? motivo)}
+            >
               {MOTIVOS.map((m) => (
                 <option key={m.value} value={m.value}>
                   {m.label}

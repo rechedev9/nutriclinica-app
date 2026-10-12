@@ -18,9 +18,7 @@ function migrar(sqlite: Database): void {
       for (const sentencia of migracion.sql.split(SEPARADOR)) {
         if (sentencia.trim() !== '') sqlite.run(sentencia)
       }
-      sqlite.run("INSERT INTO __migraciones (tag, aplicada) VALUES (?, datetime('now', 'localtime'))", [
-        migracion.tag,
-      ])
+      sqlite.run("INSERT INTO __migraciones (tag, aplicada) VALUES (?, datetime('now', 'localtime'))", [migracion.tag])
     })()
   }
 }

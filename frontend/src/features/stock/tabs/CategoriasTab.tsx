@@ -20,13 +20,15 @@ export function CategoriasTab() {
   const [busqueda, setBusqueda] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las categorías" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las categorías" />
   const rows = (categorias ?? []).filter((c) => normaliza(c.nombre).includes(normaliza(busqueda)))
 
   async function onDelete(id: number) {
     const ok = await confirm({
       title: '¿Eliminar categoría?',
-      message: 'Si hay productos usando esta categoría, no se podrá eliminar hasta que se les quite o se les asigne otra.',
+      message:
+        'Si hay productos usando esta categoría, no se podrá eliminar hasta que se les quite o se les asigne otra.',
       confirmText: 'Eliminar',
       danger: true,
     })

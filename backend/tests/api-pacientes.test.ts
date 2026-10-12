@@ -176,7 +176,12 @@ describe('fotos', () => {
   })
 
   test('las rutas que intentan salir de la carpeta de fotos no se sirven', async () => {
-    for (const ruta of ['..%2F..%2Fbbdd%2Fnutriclinica.db', '%2e%2e/secreto.png', 'C:%5Cwindows%5Cwin.ini', 'no-existe.png']) {
+    for (const ruta of [
+      '..%2F..%2Fbbdd%2Fnutriclinica.db',
+      '%2e%2e/secreto.png',
+      'C:%5Cwindows%5Cwin.ini',
+      'no-existe.png',
+    ]) {
       const respuesta = await pedir(`/fotos/${ruta}`)
       expect([400, 404]).toContain(respuesta.status)
     }

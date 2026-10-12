@@ -71,11 +71,9 @@ export function moduloStock(ctx: Contexto) {
     )
 
     .get('/categorias', () => listarCategorias(db))
-    .post(
-      '/categorias',
-      ({ body, status }) => status(201, crearCategoria(db, normalizarCategoria(body.nombre))),
-      { body: categoriaEntrada },
-    )
+    .post('/categorias', ({ body, status }) => status(201, crearCategoria(db, normalizarCategoria(body.nombre))), {
+      body: categoriaEntrada,
+    })
     .put(
       '/categorias/:id',
       ({ params, body }) => actualizarCategoria(db, params.id, normalizarCategoria(body.nombre)),
@@ -94,11 +92,10 @@ export function moduloStock(ctx: Contexto) {
     .post('/proveedores', ({ body, status }) => status(201, crearProveedor(db, normalizarProveedor(body))), {
       body: proveedorEntrada,
     })
-    .put(
-      '/proveedores/:id',
-      ({ params, body }) => actualizarProveedor(db, params.id, normalizarProveedor(body)),
-      { params: idParams, body: proveedorEntrada },
-    )
+    .put('/proveedores/:id', ({ params, body }) => actualizarProveedor(db, params.id, normalizarProveedor(body)), {
+      params: idParams,
+      body: proveedorEntrada,
+    })
     .delete(
       '/proveedores/:id',
       ({ params }) => {
@@ -109,11 +106,9 @@ export function moduloStock(ctx: Contexto) {
     )
 
     .get('/compras', () => listarCompras(db))
-    .post(
-      '/compras',
-      ({ body, status }) => status(201, { ...HECHO, id: crearCompra(db, normalizarCompra(body)) }),
-      { body: compraEntrada },
-    )
+    .post('/compras', ({ body, status }) => status(201, { ...HECHO, id: crearCompra(db, normalizarCompra(body)) }), {
+      body: compraEntrada,
+    })
     .put(
       '/compras/:id',
       ({ params, body }) => {
@@ -132,11 +127,9 @@ export function moduloStock(ctx: Contexto) {
     )
 
     .get('/ventas', () => listarVentas(db))
-    .post(
-      '/ventas',
-      ({ body, status }) => status(201, { ...HECHO, id: crearVenta(db, normalizarVenta(body)) }),
-      { body: ventaEntrada },
-    )
+    .post('/ventas', ({ body, status }) => status(201, { ...HECHO, id: crearVenta(db, normalizarVenta(body)) }), {
+      body: ventaEntrada,
+    })
     .delete(
       '/ventas/:id',
       ({ params }) => {
@@ -147,11 +140,9 @@ export function moduloStock(ctx: Contexto) {
     )
 
     .get('/mermas', () => listarMermas(db))
-    .post(
-      '/mermas',
-      ({ body, status }) => status(201, { ...HECHO, id: crearMerma(db, normalizarMerma(body)) }),
-      { body: mermaEntrada },
-    )
+    .post('/mermas', ({ body, status }) => status(201, { ...HECHO, id: crearMerma(db, normalizarMerma(body)) }), {
+      body: mermaEntrada,
+    })
     .delete(
       '/mermas/:id',
       ({ params }) => {

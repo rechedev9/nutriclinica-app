@@ -26,7 +26,15 @@ const accion: Record<string, string> = {
 export function AuditoriaPage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useAuditoria()
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el registro de auditoría" />
+  if (isError)
+    return (
+      <ErrorState
+        error={error}
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+        recurso="el registro de auditoría"
+      />
+    )
   const rows = data ?? []
 
   return (

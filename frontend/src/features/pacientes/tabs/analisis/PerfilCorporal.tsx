@@ -17,19 +17,19 @@ interface Punto {
 }
 
 const FRONTAL: Punto[] = [
-  { key: 'per_hombros', label: 'Hombros',  textX: 155, y: 78,  anchor: 'end',   bodyX: 315 },
-  { key: 'per_cintura', label: 'Cintura',  textX: 155, y: 135, anchor: 'end',   bodyX: 345 },
-  { key: 'per_muslo',   label: 'Muslo',    textX: 155, y: 199, anchor: 'end',   bodyX: 331 },
-  { key: 'per_pecho',   label: 'Pecho',    textX: 620, y: 86,  anchor: 'start', bodyX: 394 },
-  { key: 'per_gemelo',  label: 'Gemelo',   textX: 620, y: 270, anchor: 'start', bodyX: 433 },
+  { key: 'per_hombros', label: 'Hombros', textX: 155, y: 78, anchor: 'end', bodyX: 315 },
+  { key: 'per_cintura', label: 'Cintura', textX: 155, y: 135, anchor: 'end', bodyX: 345 },
+  { key: 'per_muslo', label: 'Muslo', textX: 155, y: 199, anchor: 'end', bodyX: 331 },
+  { key: 'per_pecho', label: 'Pecho', textX: 620, y: 86, anchor: 'start', bodyX: 394 },
+  { key: 'per_gemelo', label: 'Gemelo', textX: 620, y: 270, anchor: 'start', bodyX: 433 },
 ]
 
 const POSTERIOR: Punto[] = [
-  { key: 'per_hombros', label: 'Espalda', textX: 155, y: 78,  anchor: 'end',   bodyX: 366 },
-  { key: 'per_caderas', label: 'Caderas', textX: 155, y: 147, anchor: 'end',   bodyX: 340 },
-  { key: 'per_caderas', label: 'Glúteo',  textX: 620, y: 166, anchor: 'start', bodyX: 393 },
-  { key: 'per_muslo',   label: 'Femoral', textX: 620, y: 209, anchor: 'start', bodyX: 394 },
-  { key: 'per_gemelo',  label: 'Gemelo',  textX: 155, y: 264, anchor: 'end',   bodyX: 332 },
+  { key: 'per_hombros', label: 'Espalda', textX: 155, y: 78, anchor: 'end', bodyX: 366 },
+  { key: 'per_caderas', label: 'Caderas', textX: 155, y: 147, anchor: 'end', bodyX: 340 },
+  { key: 'per_caderas', label: 'Glúteo', textX: 620, y: 166, anchor: 'start', bodyX: 393 },
+  { key: 'per_muslo', label: 'Femoral', textX: 620, y: 209, anchor: 'start', bodyX: 394 },
+  { key: 'per_gemelo', label: 'Gemelo', textX: 155, y: 264, anchor: 'end', bodyX: 332 },
 ]
 
 function animarTextos(svg: SVGSVGElement, duration = 1800) {
@@ -80,14 +80,26 @@ function PanelSVG({
             <g key={`${p.key}-${i}`}>
               <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="var(--ink-muted)" strokeDasharray="4,3" />
               <circle cx={p.bodyX} cy={p.y} r={4} fill="#ef4444" />
-              <text x={p.textX} y={p.y - 16} textAnchor={p.anchor} fontSize={13} fill="var(--ink-muted)" fontFamily="inherit">
+              <text
+                x={p.textX}
+                y={p.y - 16}
+                textAnchor={p.anchor}
+                fontSize={13}
+                fill="var(--ink-muted)"
+                fontFamily="inherit"
+              >
                 {p.label}
               </text>
               <text
-                x={p.textX} y={p.y + 6}
+                x={p.textX}
+                y={p.y + 6}
                 textAnchor={p.anchor}
-                fontSize={26} fill="var(--ink)" fontFamily="inherit" fontWeight="700"
-                data-countup={val} data-dec="1"
+                fontSize={26}
+                fill="var(--ink)"
+                fontFamily="inherit"
+                fontWeight="700"
+                data-countup={val}
+                data-dec="1"
               >
                 {val.toFixed(1)} cm
               </text>
@@ -119,8 +131,22 @@ export function PerfilCorporal({ last, prev, sexo }: Props) {
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <PanelSVG imagen={imgFrontal} titulo="Perfil corporal frontal" puntos={FRONTAL} last={last} prev={prev} svgRef={frontalRef} />
-      <PanelSVG imagen={imgPosterior} titulo="Perfil corporal posterior" puntos={POSTERIOR} last={last} prev={prev} svgRef={posteriorRef} />
+      <PanelSVG
+        imagen={imgFrontal}
+        titulo="Perfil corporal frontal"
+        puntos={FRONTAL}
+        last={last}
+        prev={prev}
+        svgRef={frontalRef}
+      />
+      <PanelSVG
+        imagen={imgPosterior}
+        titulo="Perfil corporal posterior"
+        puntos={POSTERIOR}
+        last={last}
+        prev={prev}
+        svgRef={posteriorRef}
+      />
     </div>
   )
 }

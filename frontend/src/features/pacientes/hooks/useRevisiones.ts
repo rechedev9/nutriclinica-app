@@ -29,8 +29,7 @@ export function useCreateRevision(pid: number) {
 export function useUpdateRevision(pid: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: RevisionInput }) =>
-      pedir(servidor.revisiones({ id }).put(body)),
+    mutationFn: ({ id, body }: { id: number; body: RevisionInput }) => pedir(servidor.revisiones({ id }).put(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.revisiones(pid) })
       toast.success('Revisión actualizada')

@@ -233,7 +233,12 @@ export function AnalisisStockTab() {
       }
     })
 
-    return { productosFiltrados: filtrados, proveedoresDeProducto: proveedores, precioDatasets: series, precioLabels: fechas }
+    return {
+      productosFiltrados: filtrados,
+      proveedoresDeProducto: proveedores,
+      precioDatasets: series,
+      precioLabels: fechas,
+    }
   }, [compras, filtroProducto, filtroProv, busquedaProducto])
 
   const evolucionTitulo = useMemo(() => {
@@ -375,7 +380,6 @@ export function AnalisisStockTab() {
 
   return (
     <div className="flex flex-col gap-5 p-6">
-
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard label="Total ingresos" value={fmtMoneda(totalIngresos)} sub="acumulado ventas" />
@@ -417,7 +421,9 @@ export function AnalisisStockTab() {
             >
               <option value="">Últimos 12 meses</option>
               {anosDisponibles.map((a) => (
-                <option key={a} value={a}>{a}</option>
+                <option key={a} value={a}>
+                  {a}
+                </option>
               ))}
             </select>
             <select
@@ -431,7 +437,9 @@ export function AnalisisStockTab() {
               className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
             >
               {MESES_CORTOS.map((m, i) => (
-                <option key={i} value={i + 1}>{m}</option>
+                <option key={i} value={i + 1}>
+                  {m}
+                </option>
               ))}
             </select>
             <span className="text-sm text-ink-muted">–</span>
@@ -442,7 +450,9 @@ export function AnalisisStockTab() {
               className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
             >
               {MESES_CORTOS.map((m, i) => (
-                <option key={i} value={i + 1} disabled={i + 1 < filtroMesDesde}>{m}</option>
+                <option key={i} value={i + 1} disabled={i + 1 < filtroMesDesde}>
+                  {m}
+                </option>
               ))}
             </select>
           </>
@@ -534,11 +544,7 @@ export function AnalisisStockTab() {
                   datasets: [
                     {
                       data: Object.values(mermasPorMotivo),
-                      backgroundColor: [
-                        'rgba(245,158,11,0.85)',
-                        'rgba(232,93,74,0.85)',
-                        'rgba(15,123,146,0.85)',
-                      ],
+                      backgroundColor: ['rgba(245,158,11,0.85)', 'rgba(232,93,74,0.85)', 'rgba(15,123,146,0.85)'],
                       borderWidth: 0,
                     },
                   ],
@@ -554,14 +560,17 @@ export function AnalisisStockTab() {
               <input
                 type="text"
                 placeholder="Buscar producto…"
-                value={comboAbierto ? busquedaProducto : (filtroProducto || busquedaProducto)}
+                value={comboAbierto ? busquedaProducto : filtroProducto || busquedaProducto}
                 onFocus={() => {
                   setBusquedaProducto('')
                   setComboAbierto(true)
                 }}
                 onChange={(e) => {
                   setBusquedaProducto(e.target.value)
-                  if (filtroProducto) { setFiltroProducto(''); setFiltroProv('') }
+                  if (filtroProducto) {
+                    setFiltroProducto('')
+                    setFiltroProv('')
+                  }
                   setComboAbierto(true)
                 }}
                 className="w-full rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
@@ -597,12 +606,16 @@ export function AnalisisStockTab() {
             >
               <option value="">— Todos los proveedores —</option>
               {proveedoresDeProducto.map((p) => (
-                <option key={p} value={p}>{p}</option>
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
           </div>
           {!filtroProducto ? (
-            <p className="py-6 text-center text-sm text-ink-muted">Selecciona un producto para ver la evolución de su precio de compra.</p>
+            <p className="py-6 text-center text-sm text-ink-muted">
+              Selecciona un producto para ver la evolución de su precio de compra.
+            </p>
           ) : precioLabels.length === 0 ? (
             <p className="py-6 text-center text-sm text-ink-muted">Sin compras registradas para este producto.</p>
           ) : (

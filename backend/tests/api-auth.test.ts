@@ -1,5 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { CLAVE_ADMIN, CLAVE_USUARIO, clienteAdmin, clienteUsuario, crearCliente, crearEntorno, mensajeDe } from './apoyo'
+import {
+  CLAVE_ADMIN,
+  CLAVE_USUARIO,
+  clienteAdmin,
+  clienteUsuario,
+  crearCliente,
+  crearEntorno,
+  mensajeDe,
+} from './apoyo'
 import type { Entorno } from './apoyo'
 
 let entorno: Entorno

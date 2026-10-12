@@ -61,9 +61,7 @@ export function ProductoModal({ open, onClose, producto }: Props) {
       unidad: v.unidad.trim() || 'ud',
       stock_minimo: num(v.stock_minimo),
     }
-    const ok = await intentar(
-      producto ? update.mutateAsync({ id: producto.id, body }) : create.mutateAsync(body),
-    )
+    const ok = await intentar(producto ? update.mutateAsync({ id: producto.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
   }
 

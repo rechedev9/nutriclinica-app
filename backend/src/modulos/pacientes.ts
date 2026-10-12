@@ -3,12 +3,7 @@ import { dirname } from 'node:path'
 import { Elysia } from 'elysia'
 import type { Contexto } from '../contexto'
 import { actualizarPaciente, crearPaciente, eliminarPaciente, listarPacientes } from '../datos/pacientes'
-import {
-  actualizarRevision,
-  crearRevision,
-  eliminarRevision,
-  listarRevisiones,
-} from '../datos/revisiones'
+import { actualizarRevision, crearRevision, eliminarRevision, listarRevisiones } from '../datos/revisiones'
 import { ErrorHttp } from '../lib/errores'
 import { rutaSegura } from '../lib/rutas'
 import { idParams, pacienteEntrada, revisionEntrada } from '../modelos'
@@ -58,8 +53,7 @@ export function moduloPacientes(ctx: Contexto) {
     })
     .post(
       '/api/pacientes/:id/revisiones',
-      ({ params, body, status }) =>
-        status(201, crearRevision(db, params.id, normalizarRevision(body, new Date()))),
+      ({ params, body, status }) => status(201, crearRevision(db, params.id, normalizarRevision(body, new Date()))),
       { params: idParams, body: revisionEntrada },
     )
     .put(

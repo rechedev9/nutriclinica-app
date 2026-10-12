@@ -25,13 +25,21 @@ export function Modal({ open, onClose, title, children, className }: Props) {
             )}
           >
             <div className="mb-4 flex items-center justify-between">
-            <Dialog.Title className="text-lg font-bold text-ink">{title}</Dialog.Title>
-            <Dialog.Close className="rounded-md p-1 text-ink-muted hover:bg-surface-2" aria-label="Cerrar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </Dialog.Close>
-          </div>
+              <Dialog.Title className="text-lg font-bold text-ink">{title}</Dialog.Title>
+              <Dialog.Close className="rounded-md p-1 text-ink-muted hover:bg-surface-2" aria-label="Cerrar">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </Dialog.Close>
+            </div>
             {children}
           </Dialog.Content>
         </div>

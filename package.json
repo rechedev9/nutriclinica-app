@@ -1,7 +1,10 @@
 {
   "name": "nutriclinica",
   "private": true,
-  "workspaces": ["backend", "frontend"],
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c blue.bold,green.bold \"bun run --cwd backend dev\" \"bun run --cwd frontend dev\"",
     "build": "bun run --cwd frontend build",

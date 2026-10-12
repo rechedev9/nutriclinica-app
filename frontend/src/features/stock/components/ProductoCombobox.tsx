@@ -35,9 +35,7 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
     setOpen(false)
   }
 
-  const filtrados = query.trim()
-    ? productos.filter((p) => normaliza(p.nombre).includes(normaliza(query)))
-    : productos
+  const filtrados = query.trim() ? productos.filter((p) => normaliza(p.nombre).includes(normaliza(query))) : productos
   const hayCoincidenciaExacta = productos.some((p) => normaliza(p.nombre) === normaliza(query))
   const puedeCrear = query.trim().length > 0 && !hayCoincidenciaExacta
 
@@ -137,7 +135,15 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
           inputRef.current?.focus()
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
           <path d="M12 5v14M5 12h14" />
         </svg>
       </button>
@@ -168,7 +174,11 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                   onChange={(e) => setPrecioVenta(e.target.value)}
                 />
               </div>
-              {errorCreacion && <p role="alert" className="text-xs text-danger">{errorCreacion}</p>}
+              {errorCreacion && (
+                <p role="alert" className="text-xs text-danger">
+                  {errorCreacion}
+                </p>
+              )}
               <select
                 className="w-full rounded-lg border border-border bg-app px-3 py-2 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
                 value={unidad}
@@ -181,7 +191,15 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                 ))}
               </select>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" size="sm" onMouseDown={(e) => { e.preventDefault(); setCreando(false) }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setCreando(false)
+                  }}
+                >
                   Cancelar
                 </Button>
                 <Button
@@ -189,7 +207,10 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                   size="sm"
                   isLoading={create.isPending}
                   disabled={errorCreacion !== null}
-                  onMouseDown={(e) => { e.preventDefault(); confirmarCreacion() }}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    confirmarCreacion()
+                  }}
                 >
                   Crear y usar
                 </Button>

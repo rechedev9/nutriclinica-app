@@ -4,8 +4,7 @@ import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import type { UsuarioInput } from '@/types'
 
-export const useUsuarios = () =>
-  useQuery({ queryKey: qk.usuarios, queryFn: () => pedir(servidor.usuarios.get()) })
+export const useUsuarios = () => useQuery({ queryKey: qk.usuarios, queryFn: () => pedir(servidor.usuarios.get()) })
 
 export function useCreateUsuario() {
   const qc = useQueryClient()

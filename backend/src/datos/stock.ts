@@ -152,11 +152,7 @@ function proveedorEnUso(tx: Ejecutor, id: number): boolean {
     .from(stock_productos)
     .where(eq(stock_productos.proveedor_id, id))
     .get()
-  const compra = tx
-    .select({ id: stock_compras.id })
-    .from(stock_compras)
-    .where(eq(stock_compras.proveedor_id, id))
-    .get()
+  const compra = tx.select({ id: stock_compras.id }).from(stock_compras).where(eq(stock_compras.proveedor_id, id)).get()
   const merma = tx.select({ id: stock_mermas.id }).from(stock_mermas).where(eq(stock_mermas.proveedor_id, id)).get()
   return producto !== undefined || compra !== undefined || merma !== undefined
 }

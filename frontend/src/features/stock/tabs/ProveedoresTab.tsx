@@ -20,10 +20,9 @@ export function ProveedoresTab() {
   const [busqueda, setBusqueda] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los proveedores" />
-  const rows = (proveedores ?? []).filter((p) =>
-    normaliza(p.nombre).includes(normaliza(busqueda)),
-  )
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los proveedores" />
+  const rows = (proveedores ?? []).filter((p) => normaliza(p.nombre).includes(normaliza(busqueda)))
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar proveedor?', confirmText: 'Eliminar', danger: true })

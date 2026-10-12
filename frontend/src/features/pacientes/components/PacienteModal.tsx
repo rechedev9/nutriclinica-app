@@ -87,9 +87,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
       notas: nil(v.notas),
       consentimiento: v.consentimiento ? 1 : 0,
     }
-    const ok = await intentar(
-      paciente ? update.mutateAsync({ id: paciente.id, body }) : create.mutateAsync(body),
-    )
+    const ok = await intentar(paciente ? update.mutateAsync({ id: paciente.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
   }
 
@@ -117,8 +115,10 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           <Field label="Grupo sanguíneo">
             <Select {...register('grupo_sanguineo')}>
               <option value="">—</option>
-              {['A+','A-','B+','B-','AB+','AB-','0+','0-'].map((g) => (
-                <option key={g} value={g}>{g}</option>
+              {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
               ))}
             </Select>
           </Field>
@@ -151,11 +151,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           <Textarea {...register('notas')} />
         </Field>
         <label className="flex items-start gap-2.5 rounded-lg border border-border bg-app p-3 text-sm">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-            {...register('consentimiento')}
-          />
+          <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-primary" {...register('consentimiento')} />
           <span className="text-ink-muted">
             El paciente <span className="font-semibold text-ink">consiente</span> el tratamiento de sus datos de salud
             con fines de seguimiento nutricional (RGPD, art. 9.2.a).

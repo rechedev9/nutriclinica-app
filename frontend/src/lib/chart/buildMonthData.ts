@@ -34,6 +34,6 @@ export function buildMonthMultiData(revs: Revision[], seriesFns: ValueFn[]) {
   }
   const allYMs = [...new Set(maps.flatMap((m) => [...m.keys()]))].toSorted()
   const labels = allYMs.map((ym) => ymLabel(ym))
-  const datasets = maps.map((m) => allYMs.map((ym) => (m.get(ym) ?? null)))
+  const datasets = maps.map((m) => allYMs.map((ym) => m.get(ym) ?? null))
   return { labels, datasets }
 }

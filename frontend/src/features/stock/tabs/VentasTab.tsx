@@ -22,7 +22,8 @@ export function VentasTab() {
   const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las ventas" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las ventas" />
   const todos = ventas ?? []
 
   const rows = todos.filter((v) => {
@@ -81,7 +82,10 @@ export function VentasTab() {
         </div>
         {hayFiltro && (
           <button
-            onClick={() => { setDesde(''); setHasta('') }}
+            onClick={() => {
+              setDesde('')
+              setHasta('')
+            }}
             className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"
           >
             Limpiar
@@ -120,7 +124,10 @@ export function VentasTab() {
           subtitle="Prueba a ampliar el rango de fechas o limpia el filtro."
           action={
             <button
-              onClick={() => { setDesde(''); setHasta('') }}
+              onClick={() => {
+                setDesde('')
+                setHasta('')
+              }}
               className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
             >
               Limpiar filtro
@@ -131,7 +138,10 @@ export function VentasTab() {
         rows.map((v) => (
           <div key={v.id} className="rounded-card bg-surface shadow-card">
             <div className="flex items-center gap-3 p-4">
-              <button onClick={() => setExpanded(expanded === v.id ? null : v.id)} className="flex flex-1 items-center gap-3 text-left">
+              <button
+                onClick={() => setExpanded(expanded === v.id ? null : v.id)}
+                className="flex flex-1 items-center gap-3 text-left"
+              >
                 <div className="flex-1">
                   <div className="font-semibold">{v.fecha ? fmtFecha(v.fecha) : 'Sin fecha'}</div>
                   <div className="text-[13px] text-ink-muted">

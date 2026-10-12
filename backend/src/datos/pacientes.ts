@@ -11,8 +11,9 @@ import type { PacienteDatos } from '../validacion'
 const columnas = {
   ...getTableColumns(pacientes),
   num_fotos: sql`(select count(*) from ${fotos} where ${fotos}.paciente_id = ${pacientes}.id)`.mapWith(Number),
-  num_revisiones:
-    sql`(select count(*) from ${revisiones} where ${revisiones}.paciente_id = ${pacientes}.id)`.mapWith(Number),
+  num_revisiones: sql`(select count(*) from ${revisiones} where ${revisiones}.paciente_id = ${pacientes}.id)`.mapWith(
+    Number,
+  ),
 }
 
 export function listarPacientes(db: BD) {

@@ -74,14 +74,17 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
       per_muslo_cont: medida('per_muslo_cont'),
       per_gemelo: medida('per_gemelo'),
     }
-    const ok = await intentar(
-      revision ? update.mutateAsync({ id: revision.id, body }) : create.mutateAsync(body),
-    )
+    const ok = await intentar(revision ? update.mutateAsync({ id: revision.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar revisión' : 'Nueva revisión'} className="w-[min(720px,94vw)]">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? 'Editar revisión' : 'Nueva revisión'}
+      className="w-[min(720px,94vw)]"
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="grid grid-cols-3 gap-3 max-md:grid-cols-2">
           <Field label="Fecha *" error={errores.fecha?.message}>

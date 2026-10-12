@@ -29,14 +29,17 @@ export function CategoriaModal({ open, onClose, categoria }: Props) {
 
   async function onSubmit(v: { nombre: string }) {
     const nombre = v.nombre.trim()
-    const ok = await intentar(
-      categoria ? update.mutateAsync({ id: categoria.id, nombre }) : create.mutateAsync(nombre),
-    )
+    const ok = await intentar(categoria ? update.mutateAsync({ id: categoria.id, nombre }) : create.mutateAsync(nombre))
     if (ok) onClose()
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar categoría' : 'Nueva categoría'} className="w-[min(420px,92vw)]">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? 'Editar categoría' : 'Nueva categoría'}
+      className="w-[min(420px,92vw)]"
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         <Field label="Nombre *" error={formState.errors.nombre?.message}>
           <Input autoFocus {...register('nombre')} />

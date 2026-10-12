@@ -20,8 +20,7 @@ export function useMe() {
 export function useLogin() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: { usuario: string; password: string }) =>
-      pedir(servidor.login.post(body)),
+    mutationFn: (body: { usuario: string; password: string }) => pedir(servidor.login.post(body)),
     onSuccess: () => {
       sesionIniciada()
       return qc.invalidateQueries({ queryKey: qk.me })

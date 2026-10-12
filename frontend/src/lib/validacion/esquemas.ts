@@ -56,12 +56,7 @@ export const esquemaPaciente = z.object({
 const MSG_PLIEGUES = 'Los pliegues deben estar entre 0 y 100 mm'
 const MSG_PERIMETROS = 'Los perímetros deben estar entre 0 y 300 cm'
 
-const CLAVES_MEDIDA = [
-  'peso',
-  'envergadura',
-  ...PLIEGUES.map((m) => m.key),
-  ...PERIMETROS.map((m) => m.key),
-]
+const CLAVES_MEDIDA = ['peso', 'envergadura', ...PLIEGUES.map((m) => m.key), ...PERIMETROS.map((m) => m.key)]
 
 export function esquemaRevision() {
   const forma: Record<string, z.ZodTypeAny> = {
