@@ -53,7 +53,7 @@ export function VentaModal({ open, onClose }: { open: boolean; onClose: () => vo
           </Field>
           <Field label="Paciente (opcional)">
             <Select value={pacienteId} onChange={(e) => setPacienteId(e.target.value)}>
-              <option value="">—</option>
+              <option value="">Venta libre</option>
               {pacientes.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}

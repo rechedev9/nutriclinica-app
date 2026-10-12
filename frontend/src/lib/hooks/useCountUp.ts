@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 export function useCountUp(target: number | null, decimals: number, duration = 1800): string {
-  const [display, setDisplay] = useState<string>(target != null ? (0).toFixed(decimals) : '—')
+  const [display, setDisplay] = useState<string>(target != null ? (0).toFixed(decimals) : '-')
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (target == null) {
-      setDisplay('—')
+      setDisplay('-')
       return
     }
     const t0 = performance.now()

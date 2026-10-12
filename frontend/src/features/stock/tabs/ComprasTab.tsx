@@ -155,17 +155,7 @@ export function ComprasTab() {
                 className="flex flex-1 items-center gap-3 text-left"
               >
                 <div className="flex-1">
-                  <div className="font-semibold">
-                    {c.fecha
-                      ? c.fecha.includes('T')
-                        ? new Date(c.fecha).toLocaleDateString('es-ES', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : fmtFecha(c.fecha)
-                      : 'Sin fecha'}
-                  </div>
+                  <div className="font-semibold">{c.fecha ? fmtFecha(c.fecha) : 'Sin fecha'}</div>
                   <div className="text-[13px] text-ink-muted">
                     {c.proveedor_nombre ?? 'Sin proveedor'} · {c.lineas.length} línea(s)
                     {c.fecha?.includes('T') && <> · {c.fecha.slice(11, 16)}</>}

@@ -74,7 +74,7 @@ export function ProductoModal({ open, onClose, producto }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <Field label="Categoría">
             <Select {...register('categoria_id')}>
-              <option value="">—</option>
+              <option value="">Sin categoría</option>
               {categorias.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nombre}
@@ -84,7 +84,7 @@ export function ProductoModal({ open, onClose, producto }: Props) {
           </Field>
           <Field label="Proveedor">
             <Select {...register('proveedor_id')}>
-              <option value="">—</option>
+              <option value="">Sin proveedor</option>
               {proveedores.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}

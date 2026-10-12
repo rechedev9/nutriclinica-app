@@ -260,8 +260,8 @@ export function AlmacenTab() {
                 return (
                   <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
                     <td className="p-3 font-semibold">{p.nombre}</td>
-                    <td className="p-3 text-ink-muted">{p.categoria ?? '—'}</td>
-                    <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '—'}</td>
+                    <td className="p-3 text-ink-muted">{p.categoria ?? '-'}</td>
+                    <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '-'}</td>
                     <td className="p-3">
                       <span
                         className={cn(

@@ -173,9 +173,9 @@ export function MermasTab() {
             <tbody>
               {rows.map((m) => (
                 <tr key={m.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
-                  <td className="p-3 text-ink-muted">{m.fecha ? fmtFecha(m.fecha) : '—'}</td>
-                  <td className="p-3 font-semibold">{m.producto_nombre ?? '—'}</td>
-                  <td className="p-3 text-ink-muted">{m.proveedor_nombre ?? '—'}</td>
+                  <td className="p-3 text-ink-muted">{m.fecha ? fmtFecha(m.fecha) : '-'}</td>
+                  <td className="p-3 font-semibold">{m.producto_nombre ?? '-'}</td>
+                  <td className="p-3 text-ink-muted">{m.proveedor_nombre ?? '-'}</td>
                   <td className="p-3">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold ${MOTIVO_CLS[m.motivo]}`}
@@ -186,7 +186,7 @@ export function MermasTab() {
                   <td className="p-3 text-right tabular-nums font-bold">
                     {m.cantidad} <span className="font-normal text-ink-muted">{m.unidad ?? 'ud'}</span>
                   </td>
-                  <td className="p-3 text-ink-muted">{m.notas ?? '—'}</td>
+                  <td className="p-3 text-ink-muted">{m.notas ?? '-'}</td>
                   <td className="p-3 text-right">
                     <Button variant="danger" size="sm" onClick={() => onDelete(m.id)}>
                       Borrar

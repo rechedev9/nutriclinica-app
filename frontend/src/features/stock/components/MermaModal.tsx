@@ -56,7 +56,7 @@ export function MermaModal({ open, onClose }: { open: boolean; onClose: () => vo
       <div className="flex flex-col gap-3">
         <Field label="Producto *">
           <Select value={productoId} onChange={(e) => setProductoId(e.target.value)}>
-            <option value="">— Selecciona un producto —</option>
+            <option value="">Selecciona un producto</option>
             {productos.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nombre}
@@ -98,7 +98,7 @@ export function MermaModal({ open, onClose }: { open: boolean; onClose: () => vo
           </Field>
           <Field label="Proveedor (opcional)">
             <Select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}>
-              <option value="">—</option>
+              <option value="">Sin proveedor</option>
               {proveedores.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}

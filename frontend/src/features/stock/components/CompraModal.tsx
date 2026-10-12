@@ -82,7 +82,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
           </Field>
           <Field label="Proveedor">
             <Select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}>
-              <option value="">—</option>
+              <option value="">Sin proveedor</option>
               {proveedores.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}
