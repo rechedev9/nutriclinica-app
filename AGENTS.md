@@ -1,129 +1,134 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guía para agentes de código al trabajar en este repositorio.
 
-## What this is
+## Qué es
 
-NutriClínica is a single-practitioner desktop web app for a nutritionist (patients, anthropometric reviews, progress photos, and a small inventory/point-of-sale module).
-It runs locally on the practitioner's machine (Windows or macOS) and is distributed as a single self-contained binary that embeds the web UI and opens the browser.
-The whole codebase, UI, and domain vocabulary are in Spanish.
+NutriClínica es una aplicación web de escritorio para un nutricionista que trabaja solo (pacientes, revisiones antropométricas, fotos de progreso y un módulo pequeño de inventario y punto de venta).
+Se ejecuta en el equipo del profesional (Windows o macOS) y se distribuye como un único binario autónomo que lleva la interfaz web embebida y abre el navegador.
+Todo es TypeScript de extremo a extremo y los datos viven en un archivo SQLite local: la aplicación funciona sin conexión y no depende de ningún servicio externo.
+El código, la interfaz y el vocabulario del dominio están en español.
 
-The app was ported from a Flask + vanilla-JS monolith to a Go backend + React frontend.
-The original files (`app.py`, `templates/`, `static/`, `iniciar.*`) are kept only as a reference for behavior parity; the live app is `backend/` + `frontend/`.
+El proyecto nació como un monolito Flask, pasó por una versión Go + PostgreSQL (RDS) y hoy es un monorepo de Bun.
+De aquellas versiones no queda código; el historial de git las conserva.
 
-## Layout
+## Estructura
 
 ```
-backend/    Go 1.22 API + SQLite, embeds the built SPA, single binary
-frontend/   React + Vite + TypeScript + TanStack Query + Tailwind
-build/      build.ps1 / build.sh (build SPA + cross-compile binaries)
-bbdd/       SQLite DB (pacientes.db) — local patient data, gitignored
-fotos/      progress photos on disk — gitignored
-dist/       cross-compiled release binaries — gitignored
+backend/    API con Bun + Elysia + Drizzle sobre bun:sqlite. Sirve también la SPA.
+frontend/   React 19 + Vite + TanStack Router + TanStack Query + Zustand + Tailwind 4, cliente Eden.
+build/      compilar.ts: construye la SPA y compila un binario por plataforma.
+deploy/     Lanzadores que acompañan al binario (.bat, .ps1, .command) y LEEME.txt.
+diseño/     Maquetas de referencia. No forman parte de la aplicación.
+bbdd/       nutriclinica.db (SQLite). En .gitignore.
+fotos/      Fotos de progreso en disco. En .gitignore.
+dist/       Binarios y carpetas listas para distribuir. En .gitignore.
 ```
 
-## Commands
+Es un workspace de Bun (`backend` y `frontend`) con un único `bun.lock` en la raíz.
 
-Backend (from `backend/`):
-- `go build ./...` — compile. `go test ./...` — tests. `go vet ./...` — vet. `gofmt -l .` lists unformatted files; `gofmt -w .` fixes them (keep the tree gofmt-clean).
-- Single test: `go test ./internal/naming -run TestCarpeta`. Test packages today: `internal/naming`, `internal/store` (stock/audit on a temp DB), `internal/server` (rate limiter, password policy, anti-traversal), `internal/crypto` (envelope vault).
-- Run against real data: `go run ./cmd/nutriclinica` (serves http://127.0.0.1:5001, opens browser).
-- Flags: `--data-dir <path>`, `--port N`, `--no-browser`, `--fix-orphans`, `--cifrar` (encryption at rest: prompts for a master password in the browser; off by default).
+## Comandos
 
-Frontend (from `frontend/`, uses **pnpm**):
-- `pnpm install` then `pnpm dev:full` — starts **both** the Go backend (:5001) and the Vite dev server (:5173) together via `concurrently` (Ctrl+C stops both). Open http://localhost:5173. The backend uses the repo's `bbdd/` and `fotos/` (`--data-dir ..`).
-- `pnpm dev` runs only Vite (:5173); it proxies `/api` and `/fotos` to the backend on :5001, so the backend must already be running or proxied requests 500 with ECONNREFUSED. `/login` and `/logout` are SPA client routes; auth lives under `/api` (`POST /api/login`, `POST /api/logout`, `GET /api/me`).
-- `pnpm build` — typecheck (`tsc --noEmit`) + build the SPA into `backend/web/dist` (where Go embeds it).
-- `pnpm test` — Vitest (the clinical calc golden tests live in `src/lib/calc/__tests__`). Single file: `pnpm vitest run src/lib/calc`; single case: `pnpm vitest run -t "calcIMC"`.
-- pnpm gotcha (pnpm 11+): build-script approval lives in `frontend/pnpm-workspace.yaml` (`allowBuilds: esbuild: true`), not in `package.json`.
+Todos desde la raíz, con Bun (`bun install` la primera vez):
 
-Full release build: `pwsh build/build.ps1` (or `build/build.sh`) builds the SPA, cross-compiles `win-amd64`, `mac-arm64`, `mac-amd64` into `dist/`, and assembles ready-to-distribute folders `dist/NutriClinica-Windows/` and `dist/NutriClinica-macOS/`.
-Cross-compilation needs no C toolchain because the SQLite driver is pure-Go (`github.com/ncruces/go-sqlite3`, SQLite compiled to WASM and run via wazero).
-The distributable folders bundle the binary plus the launchers in `deploy/`: on Windows the end user double-clicks `Crear acceso directo.bat` (runs `crear-acceso-directo.ps1`) to drop a `NutriClínica` shortcut on the Desktop pointing at `NutriClinica.exe` with `icono_nutri.ico`; on macOS they use `NutriClinica.command`. The app is portable: `bbdd/` and `fotos/` are created next to the binary, so to migrate data the user copies those folders into the install dir.
+- `bun run dev`: arranca el backend (:5001, con recarga) y Vite (:5173) a la vez. Abre http://localhost:5173. El backend usa `bbdd/` y `fotos/` de la raíz (`--data-dir ..`).
+- `bun run build`: typecheck y build de la SPA en `frontend/dist`.
+- `bun run start`: sirve la API y la SPA ya construida en http://127.0.0.1:5001 y abre el navegador.
+- `bun run test`: tests del backend y del frontend con `bun test`. Un archivo: `bun test backend/tests/api-stock.test.ts`. Un caso: `bun test -t "calcIMC"`.
+- `bun run typecheck`, `bun run lint` (oxlint), `bun run format` y `bun run format:check` (oxfmt), `bun run knip` (código sin usar). Deja los cinco limpios antes de un commit.
+- `bun run seed`: carga pacientes de demostración. `bun run importar <ruta/pacientes.db> [--data-dir <carpeta>] [--reemplazar]`: importa una base SQLite anterior conservando los ids y sustituyendo todo el contenido del destino.
+- `bun run compilar [filtro...]`: construye la SPA y compila `win-amd64`, `mac-arm64`, `mac-amd64` y `linux-amd64` en `dist/`, y monta `dist/NutriClinica-Windows/` y `dist/NutriClinica-macOS/`. Con filtro compila solo lo que coincide (`bun run compilar linux`).
+- `bun run --cwd backend db:generate`: genera una migración a partir de `src/db/esquema.ts`.
 
-Login during development: `admin` / `admin` or `Jose` / `Jose123` (seeded on first run).
+Opciones del servidor (`bun run start --port 5002`, o directamente en el binario): `--data-dir <carpeta>`, `--host` (`0.0.0.0` en un contenedor), `--port N`, `--no-browser`, `--https` (marca la cookie de sesión como `Secure` detrás de TLS). Variable de entorno: `NUTRICLINICA_DATA`.
 
-## Backend architecture (`backend/`)
+La carpeta de datos se resuelve así: `--data-dir`, luego `NUTRICLINICA_DATA`, luego la carpeta del ejecutable (instalación portable) y, si no se puede escribir en ella, la carpeta de configuración del usuario. Dentro se crean `bbdd/nutriclinica.db` y `fotos/`.
 
-Standard-library `net/http` with the Go 1.22 `ServeMux` (method+path patterns like `GET /api/pacientes/{id}`).
-Entry point `cmd/nutriclinica/main.go`: resolve data dir → build the `abrir(dek)` callback (open DB → verify pragmas → integrity/FK check → migrate) → construct the server → serve embedded SPA → open browser, with a free-port fallback if 5001 is taken. With `--cifrar` the server starts **locked** (no DB) and `abrir` runs only after the master password is supplied via the unlock flow.
-- `internal/config` resolves the data directory: `--data-dir` > `NUTRICLINICA_DATA` env > portable folder next to the binary > OS user-config dir. `Paths` also exposes `VaultKey` (`bbdd/keyvault.json`).
-- `internal/store` owns the `*sql.DB`. `Open(dbPath, dek)`: with `dek=nil` the DB is plaintext; with a 32-byte `dek` it is encrypted at rest via the Adiantum VFS (`?vfs=adiantum&hexkey=…`, WAL + `locking_mode=EXCLUSIVE`). Opened with `foreign_keys=ON` and `busy_timeout`, and **`SetMaxOpenConns(1)`**.
-  - Critical consequence of the single connection: never run a query while iterating another query's rows (it deadlocks). List endpoints that need related data use subqueries (see `Pacientes()`) or materialize the parent rows first, then fetch children (see `Compras()`/`Ventas()`); `lineasPorPadre` batches lines with a single `WHERE … IN (…)`. Follow that pattern for any new list-with-children query.
-  - `IsUniqueViolation` uses the ncruces `*sqlite3.Error` extended code (`CONSTRAINT_UNIQUE`), not string matching.
-  - Migrations are versioned with `PRAGMA user_version` and embedded SQL in `internal/store/schema/` (target version in `migrate.go`). `0001` exact copy of the original schema; `0002` `usuarios` + seeds `admin`/`Jose`; `0003` FK indexes; `0004` `audit_log`; `0005` patient `consentimiento`/`consentimiento_fecha` (RGPD). `0001`/`0002` must stay byte-compatible with the original to preserve existing `pacientes.db`.
-- `internal/crypto` implements envelope encryption for the DB key: a random DEK (encrypts the DB) wrapped under both the master password and a recovery key (Argon2id + AES-256-GCM), persisted to `keyvault.json`. Either secret opens it; lose both and the data is unrecoverable. `store.CifrarBaseExistente` migrates an existing plaintext DB to encrypted via the SQLite backup API (leaves `<db>.plain-bak`, unencrypted, to delete by hand). Photos are also encrypted at rest in encrypted mode: a separate photo key is HKDF-derived from the DEK; `CifrarFichero`/`DescifrarFichero` (AES-256-GCM, `NUTRIENC1` marker) encrypt on upload and decrypt on serve, and existing plaintext photos are migrated on configure. The server keeps the photo key in `s.fotoKey` (nil when unencrypted).
-- `internal/naming` is a port of the original `nombre_a_prefijo` / `nombre_a_carpeta` (NFKD accent-strip). **Do not change its output**: photo folders already exist on disk keyed by `Carpeta(nombre)`; `naming_test.go` pins the real folder names.
-- `internal/models` uses pointer fields (`*float64`, `*string`) so optional columns serialize to JSON `null`, matching the original Flask output. Keep this when adding fields.
-- `internal/server` has one handler file per domain. The store lives in an `atomic.Pointer` (nil until unlocked); handlers read it via `s.db()`. Global middleware chain: `loggingMW → securityHeadersMW (CSP/X-Frame/etc.) → recoverMW → gateMW (503 on `/api/*` and `/fotos/*` while locked, except the lifecycle endpoints) → auditMW (logs mutations + exports to `audit_log`)`. `requireAuth`/`requireAdmin` gate `/api/*` and `/fotos/*` (the whole API requires a session). Login is timing-safe and rate-limited (`limitMW`); `validarPassword` enforces a minimum length. Lifecycle endpoints (no auth/gate): `GET /api/estado`, `POST /api/configurar`, `POST /api/unlock`. Excel export uses `excelize` (`export_handlers.go`).
-- `internal/auth` does bcrypt + gorilla/sessions cookies (`SameSite=Strict`; `Login` regenerates the session to avoid fixation); the signing key is generated once and persisted to `bbdd/secret.key`.
+En el primer arranque se crean los usuarios iniciales de `USUARIOS_INICIALES` (`backend/src/db/semilla.ts`); son valores de desarrollo y el servidor avisa por consola mientras conserven la contraseña inicial.
 
-## Frontend architecture (`frontend/src/`)
+## Arquitectura del backend (`backend/src/`)
 
-Organized by feature (`features/{auth,pacientes,stock,usuarios,cifrado,auditoria}`), with shared `components/ui`, `components/layout`, and `lib`.
-React Router models the navigation: the NavRail and patient tabs are **routes** (`/pacientes/:id/{ficha|revisiones|fotos|analisis}`, `/stock/{almacen|compras|ventas|proveedores}`), so the selected patient and active tab live in the URL, not in state. The stock module, Usuarios, Auditoría and the Análisis tab (which pulls in Chart.js) are `React.lazy` route chunks behind a `Suspense` in `AppShell`.
-`CifradoGate` (in `main.tsx`, around the router) reads `GET /api/estado` and shows the configure/unlock screen when the DB is encrypted-and-locked; in the default (unencrypted) mode the state is always `abierto`, so it is transparent. `RequireAuth` then gates the app via a `GET /api/me` query. A top-level `ErrorBoundary` keeps a render error from blanking the app.
+El orden de trabajo es esquema tipado, luego datos, luego rutas: el frontend recibe los tipos de las rutas sin escribir nada a mano.
 
-- Server state is TanStack Query. Query keys are centralized in `lib/api/queryKeys.ts`. Mutations invalidate the affected keys; note the cross-entity invalidations: a revisión/foto change also invalidates `pacientes` (the list carries counts), and a compra/venta also invalidates `stock.almacen` (stock is derived as sum(compras) − sum(ventas)).
-- All HTTP goes through `lib/api/client.ts` (`credentials: 'include'`); photo upload uses raw `FormData`. Excel/PDF are downloads triggered by navigation (`lib/api/downloads.ts` / `window.print()`).
-- The clinical calculations (`calcIMC`, Durnin-Womersley `calcGrasaDW` + Siri, `clasificarGrasa`, lean/fat mass) are a pure, tested port in `lib/calc`. They are clinical: change them only with the golden tests updated in lockstep.
-- Charts are `react-chartjs-2`; Chart.js is registered once in `lib/chart/chartSetup.ts`.
-- Styling is Tailwind; the original design tokens (primary `#0F7B92`, surfaces, `Hanken Grotesk`, `radius card 18px`, avatar palette) live in `tailwind.config.ts`. Search highlighting and any user-content rendering must stay escaped (no `dangerouslySetInnerHTML`).
+- `index.ts` arranca desde el código fuente y sirve la SPA de `frontend/dist`. `arranque.ts` hace el trabajo: lee las opciones (`config.ts`), abre la base, siembra, monta la app y escucha (si el puerto está ocupado busca uno libre). El binario compilado usa una entrada generada por `build/compilar.ts` que llama al mismo `arrancar` con la SPA embebida (`spa.ts`: `spaDeCarpeta` y `spaDeArchivos`).
+- `db/esquema.ts` es la fuente de verdad de las tablas (Drizzle, SQLite). `db/cliente.ts` abre `bun:sqlite` (API síncrona, claves foráneas activas) y aplica las migraciones embebidas de `db/migraciones.ts`, que se anotan en la tabla `__migraciones`. Al generar una migración nueva hay que añadirla a `MIGRACIONES` (un test lo comprueba).
+- `datos/*.ts` contiene las consultas por dominio. Dentro de una transacción se usa el ejecutor `tx` que recibe la función, nunca el `db` exterior. Las listas con hijos (compras, ventas) se cargan con una consulta por nivel y `WHERE ... IN (...)`, no con una consulta por fila. Las subconsultas correlacionadas en plantillas `sql` necesitan el nombre de la tabla calificado a mano (`${tabla}.columna`).
+- `validacion.ts` define los cuerpos con TypeBox (`t.Object`) y las funciones `normalizar*` con las reglas de dominio: rangos clínicos (peso 1 a 500 kg, talla 30 a 260 cm, pliegues y perímetros mayores que 0, fechas no futuras), productos y líneas (cantidad mayor que 0, precios no negativos) y longitud mínima de contraseña. Un dato inválido da 400 con el mensaje del contrato.
+- `modulos/*.ts` tiene un plugin de Elysia por dominio (`auth`, `pacientes`, `fotos`, `exportar`, `stock`, `usuarios`), montados en `app.ts`. `modulos/acceso.ts` aporta las macros `sesion` y `admin`: toda la API exige sesión salvo `GET /api/estado`, `POST /api/login` y `POST /api/logout`.
+- `app.ts` añade las cabeceras de seguridad (CSP, X-Frame-Options), traduce los errores a `{ error }` (`ErrorHttp`, validación, restricciones de SQLite) y registra en `audit_log` las mutaciones y las exportaciones después de responder. Login y logout se anotan como "Acceso" y "Salida". También sirve la SPA: cualquier ruta que no sea `/api` ni `/fotos` devuelve `index.html`.
+- `sesiones.ts` guarda las sesiones en la tabla `sesiones` (solo el hash del token); la cookie es `nutriclinica_session`, `HttpOnly` y `SameSite=Strict`. Las contraseñas usan bcrypt con `Bun.password` (`lib/password.ts`). El login tiene límite de intentos (`lib/limitador.ts`). Cambiar una contraseña cierra las demás sesiones de ese usuario.
+- Reglas de stock (`datos/stock.ts`, 409): una venta o una merma no puede superar las existencias, y borrar o reducir una compra no puede dejar el stock en negativo. Las categorías y los proveedores en uso no se borran. El stock se deriva como compras menos ventas menos mermas.
+- Usuarios: no se puede borrar la propia cuenta (400) ni borrar o degradar al último administrador (409).
+- `lib/naming.ts` es el port de `nombre_a_prefijo` y `nombre_a_carpeta` (quita acentos con NFKD). **No cambies su salida**: las carpetas de fotos ya existen en disco con ese nombre y los tests fijan los valores reales.
+- Fotos: se guardan en `fotos/<carpeta del paciente>/` y solo se aceptan y se sirven extensiones de imagen (`lib/imagen.ts`); las rutas se resuelven con `lib/rutas.ts` para impedir salir de la carpeta.
+- La exportación a Excel usa `exceljs` (`modulos/exportar.ts`).
+- Los tests (`backend/tests/`) montan la app sobre una base en memoria y una carpeta de fotos temporal (`apoyo.ts`) y la llaman con un cliente Eden, sin red.
 
-## Data, auth, and conventions
+## Arquitectura del frontend (`frontend/src/`)
 
-- `bbdd/` and `fotos/` hold real patient PII and are gitignored. The Go schema is designed to open the existing `pacientes.db` non-destructively; if FK orphans exist from the old FK-off era, the server logs them and `--fix-orphans` cleans them after a `VACUUM INTO` backup.
-- Git remotes: `origin` is the **private** repo `rechedev9/nutriclinica-app` (push here; default branch `master`). `upstream` points at `granrafael/nutriclinica`, the original author's private repo this checkout was cloned from, which the `rechedev9` account cannot reach (404), so do not push or fetch there. `rechedev9/nutriclinica` is an older private repo with a different, unrelated history (up to June 2026): leave it alone. `no-mistakes` is a local backup remote. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
-- Keep new code in Spanish (identifiers, UI strings, comments) to match the codebase.
-- Backend: add a route in the matching `handlers/*.go` and a method in the matching `store/*.go`. Frontend: add a feature file/hook alongside the existing ones; don't reach for global state when the URL or a parent's local state suffices.
+Organizado por funcionalidad (`features/{arranque,auth,pacientes,stock,usuarios,auditoria}`), con `components/ui`, `components/layout` y `lib` compartidos.
 
-## Convenciones de código (criterio)
+- Tipos de extremo a extremo: `lib/api/client.ts` crea el cliente Eden a partir del tipo `App` del backend (`@nutriclinica/backend`, solo tipos). `servidor` es el cliente y `pedir()` convierte su resultado en datos o en un `ApiError`. Eden no rechaza si falla la red: devuelve un error sin objeto `Response`, y `pedir` lo trata como "sin conexión". Los tipos de `src/types/` se derivan de las respuestas con `Treaty.Data<...>`; no se escriben a mano. Si un tipo no cuadra, corrige la ruta o el esquema en el backend.
+- Rutas: `router.tsx` define el árbol de TanStack Router en código. La navegación y las pestañas son rutas (`/pacientes/$id/{ficha|revisiones|fotos|analisis}`, `/stock/{almacen|compras|ventas|proveedores|categorias|mermas|analisis}`), así que el paciente seleccionado y la pestaña activa viven en la URL. `_sesion` exige sesión (`RequireAuth`) y `_admin` exige rol administrador (Usuarios y Auditoría). Stock, Usuarios, Auditoría y la pestaña Análisis (que arrastra Chart.js) se cargan con `lazyRouteComponent`. `NoEncontrada` es la ruta 404 y `ErrorRuta` el componente de error.
+- `features/arranque/ConexionGate.tsx` consulta `GET /api/estado` al cargar y solo muestra un aviso con reintento cuando no hay conexión con el servidor.
+- Un 401 fuera de `/api/me`, `/api/login` y `/api/logout` lo trata `lib/api/sesion.ts` de forma global (vacía la caché, redirige a `/login` y avisa una vez).
+- Estado del servidor con TanStack Query. Las claves están en `lib/api/queryKeys.ts`. Las mutaciones invalidan las claves afectadas, también entre entidades: un cambio en revisiones o fotos invalida `pacientes` (la lista lleva contadores) y una compra, venta o merma invalida `stock.almacen`. Las lecturas que fallan muestran `components/ui/ErrorState` con botón de reintento.
+- Estado del cliente: solo el tema usa Zustand (`lib/theme/useTheme.ts`, preferencia `light`, `dark` o `system` en `localStorage('nutri-theme')`, con script contra el parpadeo en `index.html`). No añadas estado global si basta la URL o el estado local de un componente.
+- Formularios con react-hook-form y Zod (`lib/validacion/esquemas.ts`, `lineas.ts`), con el error bajo cada campo; los errores del servidor se muestran con `mensajeError`. Los buscadores comparan con `normaliza()` (sin acentos ni mayúsculas).
+- Los cálculos clínicos (`calcIMC`, Durnin-Womersley `calcGrasaDW` con Siri, `clasificarGrasa`, masa magra y grasa) son un port puro y con tests en `lib/calc`. Cámbialos solo junto con sus tests de referencia.
+- Los gráficos son `react-chartjs-2`; Chart.js se registra una vez en `lib/chart/chartSetup.ts` y toma los colores de `lib/chart/useChartTheme.ts`.
+- Las descargas de Excel se lanzan por navegación (`lib/api/downloads.ts`) y el PDF con `window.print()`. La subida de fotos envía un `File` y Eden lo manda como `multipart`.
+- En desarrollo Vite hace de proxy de `/api` y `/fotos` hacia el backend en :5001.
 
-Adaptadas a este stack (Go + React/Vite/TS + Zod + Tailwind, app en español).
-Las reglas de otros entornos (Elysia/Eden, TypeBox, Lingui, mecánicas de juego como inventario, member badges o diminishing-returns) no aplican aquí y se omiten a propósito.
+## Datos, despliegue y convenciones
 
-### TypeScript / seguridad de tipos
-- La validación en runtime es con **Zod** (la librería elegida); no introduzcas otra librería de validación.
-- No uses `as any`, casts `as <Tipo>` para esquivar el chequeo, ni el operador `!` (non-null).
-El `tsconfig` es estricto con `noUncheckedIndexedAccess`: modela la nulabilidad de forma explícita.
-El backend Go emite `null` (campos puntero) y los tipos de `src/types/` lo reflejan con `| null`.
-- No hay inferencia de tipos extremo a extremo desde el backend (es Go), no hay equivalente a Eden.
-Los tipos de `src/types/` se mantienen a mano como espejo del JSON de Go; la fuente de verdad es el handler/modelo Go.
-Si un tipo no cuadra, corrige el tipo (o el handler), no lo fuerces con un cast; valida con Zod las respuestas críticas.
-- Evita los barrels de re-export.
-Los únicos agregadores permitidos son `src/types/index.ts` y `src/lib/calc/index.ts`; no añadas más, importa desde el módulo que define el símbolo y actualiza los imports al mover código.
-- Importa desde el subpaquete concreto, no desde un barrel (p. ej. `@radix-ui/react-dialog`).
-Este proyecto no usa lodash, date-fns, MUI ni una librería de iconos.
+- Los datos personales de los pacientes están en `bbdd/nutriclinica.db` y en `fotos/`, ambos fuera de git. La copia de seguridad consiste en copiar esas dos carpetas con la aplicación cerrada.
+- Remotos de git: `origin` es `rechedev9/nutriclinica-app` (repositorio privado, aquí se hace push). `upstream` apunta al repositorio original `granrafael/nutriclinica` y `no-mistakes` es un remoto local de respaldo.
+- No hay CI en pull requests: ejecuta lint, formato, knip, typecheck y tests en local antes de un commit.
+- Escribe el código nuevo en español (identificadores, textos de la interfaz y comentarios).
+- Backend: una ruta nueva va en el `modulos/*.ts` que corresponda, su consulta en `datos/*.ts` y su validación en `validacion.ts`. Frontend: añade el hook o el componente junto a los existentes de su funcionalidad.
 
-### Backend Go: transacciones y errores
-- Dentro de una transacción usa el handle `tx`, nunca el `s.DB` exterior (ver `CreateCompra`/`CreateVenta`/`DeleteCompra`/`DeletePaciente`).
-- El pool tiene una sola conexión (`SetMaxOpenConns(1)`), así que las escrituras ya están serializadas.
-Para invariantes multi-sentencia usa una transacción, y NUNCA ejecutes una query mientras iteras las filas de otra (deadlock; ver la sección de arquitectura).
-- Errores HTTP con `writeError(w, status, msg)`.
-Dentro de una transacción no escribas la respuesta: devuelve el error para hacer rollback y escribe el status en el handler, después del commit/rollback.
+## Convenciones de código
+
+### TypeScript
+
+- Estricto y sin atajos: nada de `any`, de casts `as` (salvo `as const`), del operador `!`, de `@ts-ignore`, de `@ts-expect-error` ni de comentarios para desactivar el linter. oxlint lo comprueba. Los tests pueden usar casts para construir mocks.
+- `noUncheckedIndexedAccess` está activo: modela la ausencia de valor de forma explícita (`?.`, `??`, `.at()`, una guarda) en lugar de afirmarla.
+- Validación en tiempo de ejecución: TypeBox en el backend (con Elysia) y Zod en el frontend. No añadas otra librería.
+- Sin barrels de reexportación. Los únicos agregadores permitidos son `frontend/src/types/index.ts` y `frontend/src/lib/calc/index.ts`. Importa desde el módulo que define el símbolo y desde el subpaquete concreto (`@radix-ui/react-dialog`).
+- Una función con más de dos parámetros recibe un único objeto de opciones tipado.
+- Los archivos nuevos del backend van en kebab-case. El frontend conserva su convención (componentes en PascalCase, hooks en camelCase).
+- Comentarios de una o dos líneas y solo para un motivo o un invariante que no sea evidente.
+- Este proyecto no usa lodash, date-fns, MUI ni una librería de iconos.
+
+### Errores y transacciones en el backend
+
+- Lanza `ErrorHttp(estado, mensaje)`; `app.ts` lo convierte en la respuesta. No construyas respuestas de error a mano en cada ruta.
+- Un invariante de varias sentencias va en una transacción (`db.transaction((tx) => ...)`), que con `bun:sqlite` es síncrona. Dentro usa siempre `tx`.
 
 ### Asíncrono
-- Frontend: usa `Promise.all` para operaciones independientes; encadenar `await` de cosas independientes es un bug de rendimiento (TanStack Query ya paraleliza las queries independientes).
-- Backend: las operaciones de BBDD van en secuencia (una sola conexión); no las paralelices con goroutines.
+
+- En el frontend usa `Promise.all` para operaciones independientes; TanStack Query ya ejecuta en paralelo las consultas independientes.
 
 ### Cambios numéricos
-- Si piden un ajuste ("+30%"), haz la aritmética y escribe la constante raíz resultante; no apiles un multiplicador encima del valor existente.
 
-### UI y estilo
-- Respeta los tokens de diseño de `tailwind.config.ts` (paleta `primary`/`surface`, radios `rounded-card`/`rounded-lg`, sombras `card`/`md`, fuente Hanken Grotesk).
-El redondeo es deliberado en este diseño: usa los radios del theme, no valores sueltos.
-- **Modo claro/oscuro** con `darkMode: 'class'`. Los tokens semánticos (`app`, `surface`, `surface-2`, `border`, `ink`, `ink-muted`, `primary-light`) son **variables CSS** definidas en `src/index.css` (`:root` y `.dark`), así que `bg-surface`/`text-ink`/`border-border` se adaptan solos. Usa siempre estos tokens para superficies y texto; nunca `bg-white` ni hex literales (rompen el dark). El tema lo gestiona `src/lib/theme/ThemeProvider.tsx` (preferencia `light`/`dark`/`system` en `localStorage('nutri-theme')`, con script anti-flash en `index.html`). Los gráficos Chart.js toman sus colores de `src/lib/chart/useChartTheme.ts` (grid/ticks/leyenda/tooltip) e incluyen el tema en las deps de `useMemo(options)`.
-- Modales (`components/ui/Modal.tsx`, `ConfirmDialog.tsx`): el `Content` de Radix se centra con un wrapper flex (`fixed inset-0 flex items-center justify-center`, `pointer-events-none` en el wrapper y `pointer-events-auto` en el `Content`), NUNCA con `-translate-x/y-1/2`: ese transform de centrado choca con el `transform` de la animación de entrada (`animate-slideUp`) y deja el modal anclado por una esquina.
-- Inputs: usan `bg-app` (look inset) con borde, para distinguirse de la tarjeta (`bg-surface`) en claro y oscuro; al enfocar pasan a `bg-surface`.
-- Iconos: SVG inline coherente con los componentes existentes; no añadas una librería de iconos.
-- En botones, indica la carga con la prop `isLoading` del componente `Button` (muestra un spinner en el color del texto, deshabilita y conserva el ancho); no cambies el texto del botón a mano ni añadas elementos que descuadren.
-- Nunca dejes texto en inglés visible para el usuario: todas las cadenas de UI van en español.
-No hay capa de i18n (app monolingüe), así que escribe el español directamente (sin envoltorios de traducción).
+- Si piden un ajuste ("+30 %"), haz la cuenta y escribe la constante resultante; no apiles un multiplicador sobre el valor existente.
+
+### Interfaz y estilo
+
+- Tailwind 4 se configura en CSS: los tokens de diseño están en `frontend/src/index.css` (`@theme`), no hay `tailwind.config`. Respétalos: paleta `primary` y `surface`, radios `rounded-card` y `rounded-lg`, sombras `shadow-card` y `shadow-md`, fuente Hanken Grotesk.
+- Modo claro y oscuro por clase (`.dark` en `<html>`). Los tokens semánticos (`app`, `surface`, `surface-2`, `border`, `ink`, `ink-muted`, `primary-light`) son variables CSS definidas en `:root` y `.dark`, así que `bg-surface`, `text-ink` o `border-border` se adaptan solos. Nunca uses `bg-white` ni colores hexadecimales sueltos para superficies y texto.
+- shadcn: `frontend/components.json` está configurado y los tokens de shadcn (`background`, `foreground`, `card`, `popover`, `muted`, `accent`, `destructive`, `input`, `ring`) apuntan a la paleta del proyecto. `Button` y `Badge` usan `class-variance-authority`. Al añadir un componente con `bunx shadcn add`, adáptalo antes de usarlo: iconos como SVG en línea (sin lucide), imports de Radix desde el subpaquete concreto y nombre de archivo según la convención del proyecto.
+- Modales (`components/ui/Modal.tsx`, `ConfirmDialog.tsx`): el `Content` de Radix se centra con un contenedor flex (`fixed inset-0 flex items-center justify-center`, `pointer-events-none` en el contenedor y `pointer-events-auto` en el `Content`), nunca con `-translate-x/y-1/2`: ese transform choca con el de la animación de entrada (`animate-slideUp`).
+- Los campos usan `bg-app` con borde y pasan a `bg-surface` al recibir el foco.
+- En los botones indica la carga con la propiedad `isLoading` de `Button`; no cambies el texto a mano.
+- Todo texto visible va en español. No hay capa de traducción.
+- El contenido del usuario se muestra siempre escapado (sin `dangerouslySetInnerHTML`).
 
 ### Imágenes
-- Para imágenes raster nuevas, prefiere **WebP** (lossless para pixel-art/iconos, lossy q85-90 para fotografía); PNG/JPEG solo para OG/social.
-No cambies la extensión de assets existentes.
-Las fotos de pacientes conservan el formato con que se suben (el backend preserva la extensión original).
+
+- Para imágenes rasterizadas nuevas prefiere WebP. No cambies la extensión de los recursos existentes. Las fotos de pacientes conservan el formato con el que se suben.
 
 ### Documentación
-- Mantén este CLAUDE.md al día: si un cambio deja obsoleta una referencia (ruta, función, flag), arregla todas las referencias muertas en el mismo turno.
+
+- Mantén este archivo y `CLAUDE.md` al día: si un cambio deja obsoleta una referencia (ruta, función, opción), corrígela en el mismo cambio.
