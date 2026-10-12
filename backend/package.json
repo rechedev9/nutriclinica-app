@@ -12,7 +12,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "seed": "bun run src/db/sembrar-demo.ts"
+    "seed": "bun run src/db/sembrar-demo.ts",
+    "importar": "bun run src/db/importar.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
