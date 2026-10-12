@@ -7,6 +7,7 @@
     "build": "bun run --cwd frontend build",
     "start": "bun run --cwd backend start",
     "seed": "bun run --cwd backend seed",
+    "compilar": "bun run build/compilar.ts",
     "test": "bun run --cwd backend test && bun run --cwd frontend test",
     "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck",
     "lint": "oxlint",

@@ -1,6 +1,6 @@
 import type { BD } from './db/cliente'
 
-// Lo que necesitan los módulos de la API. Se construye una vez en index.ts (o en cada test).
+// Lo que necesitan los módulos de la API. Se construye una vez en arranque.ts (o en cada test).
 export interface Contexto {
   db: BD
   fotosDir: string

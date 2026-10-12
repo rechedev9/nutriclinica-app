@@ -14,14 +14,12 @@ if (-not $exe) {
   exit 1
 }
 
-$launcher = Join-Path $here 'NutriClinica.bat'
-
 $desktop = [Environment]::GetFolderPath('Desktop')
 $lnkPath = Join-Path $desktop 'NutriClínica.lnk'
 
 $ws  = New-Object -ComObject WScript.Shell
 $lnk = $ws.CreateShortcut($lnkPath)
-$lnk.TargetPath       = if (Test-Path $launcher) { $launcher } else { $exe }
+$lnk.TargetPath       = $exe
 $lnk.WorkingDirectory = $here
 $lnk.Description       = 'NutriClínica - gestión de pacientes'
 $icon = Join-Path $here 'icono_nutri.ico'

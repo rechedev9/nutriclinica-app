@@ -2,36 +2,17 @@
 bbdd/
 fotos/
 
-# Credenciales reales del backup a S3 (solo la plantilla .example va al repo)
-deploy/aws-backup.env
-
-# Credenciales reales de conexión a PostgreSQL/RDS (solo la plantilla .example va al repo)
-backend/pg.env
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-venv/
-env/
-
 # Sistema
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Node / frontend
+# Dependencias y builds
 node_modules/
 frontend/dist/
-
-# Build artifacts
 /dist/
-# SPA embebido generado por el build (se conserva solo .gitkeep para que go:embed compile)
-backend/web/dist/*
-!backend/web/dist/.gitkeep
-
-# Go
 *.exe
-*.bak-*
+
+# Credenciales locales (también restos de la época Postgres/AWS que queden en disco)
+.env
+*.env
