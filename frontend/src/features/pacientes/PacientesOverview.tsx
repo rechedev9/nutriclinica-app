@@ -155,7 +155,7 @@ function Cabecera({
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
-              className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-surface"
+              className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
               placeholder="Buscar paciente…"
               value={q}
               onChange={(e) => setQ(e.target.value)}

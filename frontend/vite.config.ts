@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
@@ -7,7 +8,7 @@ import { fileURLToPath, URL } from 'node:url'
 // rutas de cliente del SPA; el auth vive bajo /api (/api/login, /api/logout).
 // El build se emite a frontend/dist, que el backend sirve y el binario embebe.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

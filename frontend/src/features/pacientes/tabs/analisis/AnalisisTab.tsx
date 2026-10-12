@@ -235,7 +235,7 @@ export function AnalisisTab() {
           }
           sub={
             clase && (
-              <span className="rounded px-1.5 py-0.5" style={{ background: clase.bg, color: clase.color }}>
+              <span className="rounded-sm px-1.5 py-0.5" style={{ background: clase.bg, color: clase.color }}>
                 {clase.etiq}
               </span>
             )
@@ -301,7 +301,7 @@ export function AnalisisTab() {
                 <div className="border-t border-border pt-6">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-sm font-bold">Clasificación IMC</span>
-                    <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
+                    <span className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
                   </div>
                   <div className="relative">
                     <div className="flex h-4 overflow-hidden rounded-full">
@@ -311,7 +311,7 @@ export function AnalisisTab() {
                     </div>
                     {imcPct != null && (
                       <div
-                        className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-ink shadow"
+                        className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-ink shadow-sm"
                         style={{ left: `${imcPct}%` }}
                       />
                     )}

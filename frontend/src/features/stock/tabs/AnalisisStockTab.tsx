@@ -410,7 +410,7 @@ export function AnalisisStockTab() {
                 setFiltroMesDesde(1)
                 setFiltroMesHasta(12)
               }}
-              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
             >
               <option value="">Últimos 12 meses</option>
               {anosDisponibles.map((a) => (
@@ -425,7 +425,7 @@ export function AnalisisStockTab() {
                 if (filtroMesHasta < val) setFiltroMesHasta(val)
               }}
               disabled={!filtroAnio}
-              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
+              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
             >
               {MESES_CORTOS.map((m, i) => (
                 <option key={i} value={i + 1}>{m}</option>
@@ -436,7 +436,7 @@ export function AnalisisStockTab() {
               value={filtroMesHasta}
               onChange={(e) => setFiltroMesHasta(Number(e.target.value))}
               disabled={!filtroAnio}
-              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
+              className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
             >
               {MESES_CORTOS.map((m, i) => (
                 <option key={i} value={i + 1} disabled={i + 1 < filtroMesDesde}>{m}</option>
@@ -561,7 +561,7 @@ export function AnalisisStockTab() {
                   if (filtroProducto) { setFiltroProducto(''); setFiltroProv('') }
                   setComboAbierto(true)
                 }}
-                className="w-full rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
               />
               {comboAbierto && (
                 <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-border bg-surface shadow-md">
@@ -590,7 +590,7 @@ export function AnalisisStockTab() {
               value={filtroProv}
               onChange={(e) => setFiltroProv(e.target.value)}
               disabled={!filtroProducto}
-              className="flex-1 rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
+              className="flex-1 rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
             >
               <option value="">— Todos los proveedores —</option>
               {proveedoresDeProducto.map((p) => (

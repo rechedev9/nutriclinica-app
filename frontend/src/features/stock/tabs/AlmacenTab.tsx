@@ -182,7 +182,7 @@ export function AlmacenTab() {
         <div className="flex items-center gap-2">
           {categorias.length > 0 && (
             <select
-              className="rounded-lg border border-border bg-app py-2 pl-3 pr-8 text-[15px] outline-none focus:border-primary focus:bg-surface"
+              className="rounded-lg border border-border bg-app py-2 pl-3 pr-8 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
               value={cat}
               onChange={(e) => setCat(e.target.value)}
             >
@@ -201,7 +201,7 @@ export function AlmacenTab() {
                 <path d="m21 21-4.35-4.35" />
               </svg>
               <input
-                className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-surface"
+                className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
                 placeholder="Buscar producto…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}

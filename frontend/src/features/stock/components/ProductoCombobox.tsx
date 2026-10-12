@@ -169,7 +169,7 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
               </div>
               {errorCreacion && <p role="alert" className="text-xs text-danger">{errorCreacion}</p>}
               <select
-                className="w-full rounded-lg border border-border bg-app px-3 py-2 text-[15px] outline-none focus:border-primary focus:bg-surface"
+                className="w-full rounded-lg border border-border bg-app px-3 py-2 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
                 value={unidad}
                 onChange={(e) => setUnidad(e.target.value)}
               >

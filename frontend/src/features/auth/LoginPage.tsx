@@ -56,7 +56,7 @@ export function LoginPage() {
             autoFocus
             name="usuario"
             autoComplete="username"
-            className="w-full rounded-lg border border-border bg-app px-3 py-2.5 outline-none focus:border-primary focus:bg-surface"
+            className="w-full rounded-lg border border-border bg-app px-3 py-2.5 outline-hidden focus:border-primary focus:bg-surface"
             placeholder="Usuario"
             value={usuario}
             onChange={(e) => setUsuario(e.target.value)}
@@ -65,7 +65,7 @@ export function LoginPage() {
             type="password"
             name="password"
             autoComplete="current-password"
-            className="w-full rounded-lg border border-border bg-app px-3 py-2.5 outline-none focus:border-primary focus:bg-surface"
+            className="w-full rounded-lg border border-border bg-app px-3 py-2.5 outline-hidden focus:border-primary focus:bg-surface"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

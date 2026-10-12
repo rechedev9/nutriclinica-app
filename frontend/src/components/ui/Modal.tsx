@@ -20,7 +20,7 @@ export function Modal({ open, onClose, title, children, className }: Props) {
           <Dialog.Content
             aria-describedby={undefined}
             className={cn(
-              'pointer-events-auto max-h-[90vh] w-[min(560px,92vw)] animate-slideUp overflow-y-auto rounded-card bg-surface p-6 shadow-md outline-none',
+              'pointer-events-auto max-h-[90vh] w-[min(560px,92vw)] animate-slideUp overflow-y-auto rounded-card bg-surface p-6 shadow-md outline-hidden',
               className,
             )}
           >

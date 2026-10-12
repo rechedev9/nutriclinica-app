@@ -80,15 +80,15 @@ function PanelSVG({
 
           return (
             <g key={`${p.key}-${i}`}>
-              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="rgb(var(--ink-muted))" strokeDasharray="4,3" />
+              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="var(--ink-muted)" strokeDasharray="4,3" />
               <circle cx={p.bodyX} cy={p.y} r={4} fill="#ef4444" />
-              <text x={p.textX} y={p.y - 16} textAnchor={p.anchor} fontSize={13} fill="rgb(var(--ink-muted))" fontFamily="inherit">
+              <text x={p.textX} y={p.y - 16} textAnchor={p.anchor} fontSize={13} fill="var(--ink-muted)" fontFamily="inherit">
                 {p.label}
               </text>
               <text
                 x={p.textX} y={p.y + 6}
                 textAnchor={p.anchor}
-                fontSize={26} fill="rgb(var(--ink))" fontFamily="inherit" fontWeight="700"
+                fontSize={26} fill="var(--ink)" fontFamily="inherit" fontWeight="700"
                 data-countup={val} data-dec="1"
               >
                 {val.toFixed(1)} cm

@@ -63,7 +63,7 @@ export function FichaTab() {
             value={
               imc ? (
                 <span
-                  className="rounded px-1.5 py-0.5"
+                  className="rounded-sm px-1.5 py-0.5"
                   style={{
                     background:
                       imc.cls === 'imc-normal'
