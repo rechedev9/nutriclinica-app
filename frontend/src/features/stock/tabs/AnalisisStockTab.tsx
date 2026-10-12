@@ -3,9 +3,11 @@ import '@/lib/chart/chartSetup'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
 import { useCompras, useVentas, useMermas, useAlmacen } from '../hooks/useStock'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { useChartTheme, tooltipPlugin } from '@/lib/chart/useChartTheme'
 import { fmtMoneda } from '@/lib/format/moneda'
 import type { ChartOptions } from 'chart.js'
+import { normaliza } from '@/lib/format/texto'
 
 const PALETTE = ['#0F7B92', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6']
 const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
@@ -65,10 +67,10 @@ function Section({
 }
 
 export function AnalisisStockTab() {
-  const { data: comprasData, isLoading: lc } = useCompras()
-  const { data: ventasData, isLoading: lv } = useVentas()
-  const { data: mermasData, isLoading: lm } = useMermas()
-  const { data: almacenData, isLoading: la } = useAlmacen()
+  const { data: comprasData, isLoading: lc, error: ec, refetch: rc, isFetching: fc } = useCompras()
+  const { data: ventasData, isLoading: lv, error: ev, refetch: rv, isFetching: fv } = useVentas()
+  const { data: mermasData, isLoading: lm, error: em, refetch: rm, isFetching: fm } = useMermas()
+  const { data: almacenData, isLoading: la, error: ea, refetch: ra, isFetching: fa } = useAlmacen()
   const t = useChartTheme()
 
   const [filtroAnio, setFiltroAnio] = useState('')
@@ -177,7 +179,7 @@ export function AnalisisStockTab() {
     const productosLista = Array.from(productosSet).sort()
 
     const productosFiltrados = busquedaProducto
-      ? productosLista.filter((p) => p.toLowerCase().includes(busquedaProducto.toLowerCase()))
+      ? productosLista.filter((p) => normaliza(p).includes(normaliza(busquedaProducto)))
       : productosLista
 
     if (!filtroProducto) {
@@ -346,6 +348,17 @@ export function AnalisisStockTab() {
   )
 
   if (lc || lv || lm || la) return <CenteredSpinner />
+  const errorCarga = ec ?? ev ?? em ?? ea
+  if (errorCarga) {
+    return (
+      <ErrorState
+        error={errorCarga}
+        onRetry={() => void Promise.all([rc(), rv(), rm(), ra()])}
+        isRetrying={fc || fv || fm || fa}
+        recurso="el análisis"
+      />
+    )
+  }
 
   const totalIngresos = ventas.reduce((s, v) => s + v.total, 0)
   const totalGastos = compras.reduce((s, c) => s + c.total, 0)

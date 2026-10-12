@@ -2,9 +2,13 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 
 	"nutriclinica/internal/models"
 )
+
+// ErrUltimoAdmin indica que la operación dejaría la app sin administradores.
+var ErrUltimoAdmin = errors.New("no puede quedar la app sin administradores")
 
 // UsuarioAuth incluye el hash de contraseña (solo para verificación interna).
 type UsuarioAuth struct {
@@ -64,9 +68,63 @@ func (s *Store) CreateUsuario(usuario, passwordHash, rol string) (*models.Usuari
 	return s.usuario(id)
 }
 
-// UpdateUsuario actualiza usuario y rol.
+// otrosAdmins cuenta, dentro de la transacción, los administradores distintos
+// de id. Bloquea a todos los admin en orden de id para que dos transacciones
+// simultáneas no se bloqueen entre sí en orden cruzado (interbloqueo).
+func otrosAdmins(tx *sql.Tx, id int64) (int, error) {
+	rows, err := tx.Query(`SELECT id FROM usuarios WHERE rol='admin' ORDER BY id FOR UPDATE`)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	n := 0
+	for rows.Next() {
+		var otro int64
+		if err := rows.Scan(&otro); err != nil {
+			return 0, err
+		}
+		if otro != id {
+			n++
+		}
+	}
+	return n, rows.Err()
+}
+
+// rolDe devuelve el rol del usuario id dentro de la transacción ("" si no existe).
+func rolDe(tx *sql.Tx, id int64) (string, error) {
+	var rol string
+	err := tx.QueryRow(`SELECT rol FROM usuarios WHERE id=$1`, id).Scan(&rol)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return rol, err
+}
+
+// UpdateUsuario actualiza usuario y rol. Devuelve ErrUltimoAdmin si se
+// quitaría el rol admin al único administrador.
 func (s *Store) UpdateUsuario(id int64, usuario, rol string) (*models.Usuario, error) {
-	if _, err := s.DB.Exec(`UPDATE usuarios SET usuario=$1, rol=$2 WHERE id=$3`, usuario, rol, id); err != nil {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	actual, err := rolDe(tx, id)
+	if err != nil {
+		return nil, err
+	}
+	if actual == "admin" && rol != "admin" {
+		otros, err := otrosAdmins(tx, id)
+		if err != nil {
+			return nil, err
+		}
+		if otros == 0 {
+			return nil, ErrUltimoAdmin
+		}
+	}
+	if _, err := tx.Exec(`UPDATE usuarios SET usuario=$1, rol=$2 WHERE id=$3`, usuario, rol, id); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return s.usuario(id)
@@ -88,10 +146,31 @@ func (s *Store) PasswordHash(id int64) (string, error) {
 	return h, err
 }
 
-// DeleteUsuario borra un usuario por id.
+// DeleteUsuario borra un usuario por id. Devuelve ErrUltimoAdmin si es el
+// único administrador.
 func (s *Store) DeleteUsuario(id int64) error {
-	_, err := s.DB.Exec(`DELETE FROM usuarios WHERE id=$1`, id)
-	return err
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	rol, err := rolDe(tx, id)
+	if err != nil {
+		return err
+	}
+	if rol == "admin" {
+		otros, err := otrosAdmins(tx, id)
+		if err != nil {
+			return err
+		}
+		if otros == 0 {
+			return ErrUltimoAdmin
+		}
+	}
+	if _, err := tx.Exec(`DELETE FROM usuarios WHERE id=$1`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // CountUsuarios cuenta los usuarios existentes (para impedir borrar el último).

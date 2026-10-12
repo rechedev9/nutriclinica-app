@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"nutriclinica/internal/models"
 )
@@ -37,6 +38,10 @@ func (s *Server) handleCreateRevision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeRevision(&rev)
+	if msg := validarRevision(&rev, time.Now()); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
 	created, err := s.db().CreateRevision(pid, &rev)
 	if err != nil {
 		serverError(w, err)
@@ -57,6 +62,10 @@ func (s *Server) handleUpdateRevision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizeRevision(&rev)
+	if msg := validarRevision(&rev, time.Now()); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
 	updated, err := s.db().UpdateRevision(id, &rev)
 	if err != nil {
 		serverError(w, err)

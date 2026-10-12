@@ -5,9 +5,11 @@ import type { PacientesOutletCtx } from './PacientesPage'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { calcIMC, type IMCClase } from '@/lib/calc'
 import { calcEdad, fmtFecha } from '@/lib/format/fecha'
+import { normaliza } from '@/lib/format/texto'
 import type { Paciente } from '@/types'
 
 function meta(p: Paciente): string {
@@ -31,23 +33,30 @@ function imcStyle(cls: IMCClase): { background: string; color: string } {
 }
 
 export function PacientesOverview() {
-  const { data: pacientes = [], isLoading } = usePacientes()
+  const { data: pacientes = [], isLoading, isError, error, refetch, isFetching } = usePacientes()
   const { onNew } = useOutletContext<PacientesOutletCtx>()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const deferredQ = useDeferredValue(q)
 
   const filtrados = useMemo(() => {
-    const term = deferredQ.trim().toLowerCase()
+    const term = normaliza(deferredQ)
     if (!term) return pacientes
-    return pacientes.filter((p) => p.nombre.toLowerCase().includes(term))
+    return pacientes.filter((p) => normaliza(p.nombre).includes(term))
   }, [pacientes, deferredQ])
 
   if (isLoading) return <CenteredSpinner />
+  if (isError)
+    return (
+      <div className="flex flex-1 flex-col p-6">
+        <Cabecera onNew={onNew} q={q} setQ={setQ} sinBusqueda />
+        <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los pacientes" />
+      </div>
+    )
 
   if (pacientes.length === 0) {
     return (
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col p-6">
         <Cabecera onNew={onNew} q={q} setQ={setQ} sinBusqueda />
         <EmptyState
           icon={

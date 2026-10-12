@@ -3,12 +3,15 @@ import { useAlmacen, useProductos, useDeleteProducto } from '../hooks/useStock'
 import { ProductoModal } from '../components/ProductoModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/cn'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { fmtFecha } from '@/lib/format/fecha'
 import type { AlmacenRow, Producto } from '@/types'
+import { intentar } from '@/lib/api/intentar'
+import { normaliza } from '@/lib/format/texto'
 
 type SortKey =
   | 'nombre'
@@ -98,8 +101,8 @@ const cajaIcono = (
 )
 
 export function AlmacenTab() {
-  const { data: almacen, isLoading } = useAlmacen()
-  const { data: productos = [] } = useProductos()
+  const { data: almacen, isLoading, isError, error, refetch, isFetching } = useAlmacen()
+  const { data: productos = [], isError: errorProductos, error: errProductos, refetch: refetchProductos } = useProductos()
   const del = useDeleteProducto()
   const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
@@ -119,10 +122,10 @@ export function AlmacenTab() {
     [rows],
   )
   const filtradas = useMemo(() => {
-    const term = deferredQ.trim().toLowerCase()
+    const term = normaliza(deferredQ)
     return rows.filter((p) => {
       const coincideTexto =
-        !term || p.nombre.toLowerCase().includes(term) || (p.categoria ?? '').toLowerCase().includes(term)
+        !term || normaliza(p.nombre).includes(term) || normaliza(p.categoria ?? '').includes(term)
       const coincideCat = !cat || p.categoria === cat
       return coincideTexto && coincideCat
     })
@@ -140,6 +143,16 @@ export function AlmacenTab() {
   }, [filtradas, sort])
 
   if (isLoading) return <CenteredSpinner />
+  if (isError || errorProductos) {
+    return (
+      <ErrorState
+        error={isError ? error : errProductos}
+        onRetry={() => void Promise.all([refetch(), refetchProductos()])}
+        isRetrying={isFetching}
+        recurso="el almacén"
+      />
+    )
+  }
 
   const sinStock = rows.filter((p) => p.stock_actual <= p.stock_minimo).length
   const valCoste = rows.reduce((s, p) => s + Math.max(0, p.stock_actual) * p.precio_coste, 0)
@@ -152,7 +165,7 @@ export function AlmacenTab() {
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar producto?', confirmText: 'Eliminar', danger: true })
-    if (ok) await del.mutateAsync(id)
+    if (ok) await intentar(del.mutateAsync(id))
   }
 
   return (
@@ -238,7 +251,7 @@ export function AlmacenTab() {
                     <td className="p-3 text-ink-muted">{p.categoria ?? '—'}</td>
                     <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '—'}</td>
                     <td className="p-3">
-                      <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold', est.cls)}>
+                      <span className={cn('inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold', est.cls)}>
                         {est.label}
                       </span>
                     </td>
@@ -257,6 +270,7 @@ export function AlmacenTab() {
                     <td className="p-3 text-right font-semibold tabular-nums">{fmtMoneda(valorStock)}</td>
                     <td className="p-3 text-ink-muted">{fmtFecha(p.creado)}</td>
                     <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -270,6 +284,7 @@ export function AlmacenTab() {
                       <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
                         Borrar
                       </Button>
+                      </div>
                     </td>
                   </tr>
                 )

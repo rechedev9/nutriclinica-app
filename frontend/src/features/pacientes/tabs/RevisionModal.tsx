@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Textarea } from '@/components/ui/Field'
 import { PLIEGUES, PERIMETROS } from '@/types'
 import type { Revision, RevisionInput } from '@/types'
+import { intentar } from '@/lib/api/intentar'
+import { esquemaRevision } from '@/lib/validacion/esquemas'
 import { useCreateRevision, useUpdateRevision } from '../hooks/useRevisiones'
 
 interface Props {
@@ -17,12 +20,16 @@ interface Props {
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
 
 const MEDIDA_KEYS = [...PLIEGUES, ...PERIMETROS].map((m) => m.key)
+const esquema = esquemaRevision()
 
 export function RevisionModal({ open, onClose, pid, revision }: Props) {
   const isEdit = !!revision
   const create = useCreateRevision(pid)
   const update = useUpdateRevision(pid)
-  const { register, handleSubmit, reset } = useForm<Record<string, string>>()
+  const { register, handleSubmit, reset, formState } = useForm<Record<string, string>>({
+    resolver: zodResolver(esquema),
+  })
+  const errores = formState.errors
 
   useEffect(() => {
     if (!open) return
@@ -34,7 +41,8 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
     }
     for (const k of MEDIDA_KEYS) {
       const val = revision?.[k]
-      v[k] = val != null ? String(val) : ''
+      // Un 0 heredado de datos antiguos se muestra vacío: el contrato exige mayor que 0.
+      v[k] = val != null && val !== 0 ? String(val) : ''
     }
     reset(v)
   }, [open, revision, reset])
@@ -50,22 +58,23 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
     for (const k of MEDIDA_KEYS) {
       ;(body as Record<string, unknown>)[k] = num(v[k] ?? '')
     }
-    if (isEdit) await update.mutateAsync({ id: revision!.id, body })
-    else await create.mutateAsync(body)
-    onClose()
+    const ok = await intentar(
+      isEdit ? update.mutateAsync({ id: revision!.id, body }) : create.mutateAsync(body),
+    )
+    if (ok) onClose()
   }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar revisión' : 'Nueva revisión'} className="w-[min(720px,94vw)]">
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="grid grid-cols-3 gap-3 max-md:grid-cols-2">
-          <Field label="Fecha *">
-            <Input type="date" {...register('fecha', { required: true })} />
+          <Field label="Fecha *" error={errores.fecha?.message}>
+            <Input type="date" {...register('fecha')} />
           </Field>
-          <Field label="Peso (kg)">
+          <Field label="Peso (kg)" error={errores.peso?.message}>
             <Input type="number" step="0.1" {...register('peso')} />
           </Field>
-          <Field label="Envergadura (cm)">
+          <Field label="Envergadura (cm)" error={errores.envergadura?.message}>
             <Input type="number" step="0.1" {...register('envergadura')} />
           </Field>
         </div>
@@ -74,7 +83,7 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
           <div className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-muted">Pliegues cutáneos (mm)</div>
           <div className="grid grid-cols-4 gap-2.5 max-md:grid-cols-2">
             {PLIEGUES.map((m) => (
-              <Field key={m.key} label={m.short}>
+              <Field key={m.key} label={m.short} error={errores[m.key]?.message}>
                 <Input type="number" step="0.1" {...register(m.key)} />
               </Field>
             ))}
@@ -85,14 +94,14 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
           <div className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-muted">Perímetros (cm)</div>
           <div className="grid grid-cols-4 gap-2.5 max-md:grid-cols-2">
             {PERIMETROS.map((m) => (
-              <Field key={m.key} label={m.short}>
+              <Field key={m.key} label={m.short} error={errores[m.key]?.message}>
                 <Input type="number" step="0.1" {...register(m.key)} />
               </Field>
             ))}
           </div>
         </div>
 
-        <Field label="Notas">
+        <Field label="Notas" error={errores.notas?.message}>
           <Textarea {...register('notas')} />
         </Field>
 

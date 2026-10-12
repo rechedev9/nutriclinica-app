@@ -2,7 +2,10 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"sort"
+	"strconv"
 
 	"nutriclinica/internal/models"
 )
@@ -155,18 +158,63 @@ func (s *Store) Categorias() ([]models.Categoria, error) {
 	return out, rows.Err()
 }
 
+// ErrCategoriaDuplicada indica que ya existe una categoría con ese nombre
+// (sin distinguir mayúsculas ni espacios sobrantes).
+var ErrCategoriaDuplicada = errors.New("ya existe una categoría con ese nombre")
+
+// existeCategoria comprueba si hay otra categoría (id distinto de excepto) con el mismo nombre normalizado.
+func existeCategoria(tx *sql.Tx, nombre string, excepto int64) (bool, error) {
+	// El lock de asesoría serializa altas y renombrados simultáneos hasta el commit.
+	if _, err := tx.Exec(`SELECT pg_advisory_xact_lock(hashtext('stock_categorias'))`); err != nil {
+		return false, err
+	}
+	var n int
+	err := tx.QueryRow(
+		`SELECT COUNT(*) FROM stock_categorias WHERE lower(btrim(nombre))=lower(btrim($1)) AND id<>$2`,
+		nombre, excepto).Scan(&n)
+	return n > 0, err
+}
+
 func (s *Store) CreateCategoria(nombre string) (*models.Categoria, error) {
-	var id int64
-	err := s.DB.QueryRow(`INSERT INTO stock_categorias (nombre) VALUES ($1) RETURNING id`, nombre).Scan(&id)
+	tx, err := s.DB.Begin()
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	dup, err := existeCategoria(tx, nombre, 0)
+	if err != nil {
+		return nil, err
+	}
+	if dup {
+		return nil, ErrCategoriaDuplicada
+	}
+	var id int64
+	if err := tx.QueryRow(`INSERT INTO stock_categorias (nombre) VALUES ($1) RETURNING id`, nombre).Scan(&id); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return &models.Categoria{ID: id, Nombre: nombre}, nil
 }
 
 func (s *Store) UpdateCategoria(id int64, nombre string) (*models.Categoria, error) {
-	_, err := s.DB.Exec(`UPDATE stock_categorias SET nombre=$1 WHERE id=$2`, nombre, id)
+	tx, err := s.DB.Begin()
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	dup, err := existeCategoria(tx, nombre, id)
+	if err != nil {
+		return nil, err
+	}
+	if dup {
+		return nil, ErrCategoriaDuplicada
+	}
+	if _, err := tx.Exec(`UPDATE stock_categorias SET nombre=$1 WHERE id=$2`, nombre, id); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return &models.Categoria{ID: id, Nombre: nombre}, nil
@@ -347,6 +395,16 @@ func (s *Store) UpdateCompra(id int64, in models.CompraInput) error {
 		return err
 	}
 	defer tx.Rollback()
+	afectados, err := productosDeCompra(tx, id)
+	if err != nil {
+		return err
+	}
+	for _, l := range in.Lineas {
+		afectados = append(afectados, l.ProductoID)
+	}
+	if err := bloquearProductos(tx, afectados); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(`UPDATE stock_compras SET fecha=$1, proveedor_id=$2, notas=$3, total=$4 WHERE id=$5`,
 		in.Fecha, in.ProveedorID, in.Notas, total, id); err != nil {
 		return err
@@ -361,6 +419,9 @@ func (s *Store) UpdateCompra(id int64, in models.CompraInput) error {
 			return err
 		}
 	}
+	if err := comprobarStockNoNegativo(tx, afectados); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -371,10 +432,20 @@ func (s *Store) DeleteCompra(id int64) error {
 		return err
 	}
 	defer tx.Rollback()
+	afectados, err := productosDeCompra(tx, id)
+	if err != nil {
+		return err
+	}
+	if err := bloquearProductos(tx, afectados); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(`DELETE FROM stock_compras_lineas WHERE compra_id=$1`, id); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM stock_compras WHERE id=$1`, id); err != nil {
+		return err
+	}
+	if err := comprobarStockNoNegativo(tx, afectados); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -430,6 +501,10 @@ func (s *Store) CreateVenta(in models.VentaInput) (int64, error) {
 	}
 	defer tx.Rollback()
 
+	if err := verificarStockSalida(tx, in.Lineas); err != nil {
+		return 0, err
+	}
+
 	var vid int64
 	err = tx.QueryRow(`INSERT INTO stock_ventas (fecha, paciente_id, notas, total) VALUES ($1,$2,$3,$4) RETURNING id`,
 		in.Fecha, in.PacienteID, in.Notas, total).Scan(&vid)
@@ -447,6 +522,9 @@ func (s *Store) CreateVenta(in models.VentaInput) (int64, error) {
 }
 
 // --- Mermas ---
+
+// ErrMotivoInvalido indica un motivo de merma fuera de la lista admitida.
+var ErrMotivoInvalido = errors.New("motivo de merma no válido")
 
 var motivosValidos = map[string]bool{
 	"caducidad":          true,
@@ -480,13 +558,24 @@ func (s *Store) Mermas() ([]models.Merma, error) {
 
 func (s *Store) CreateMerma(in models.MermaInput) (int64, error) {
 	if !motivosValidos[in.Motivo] {
-		return 0, fmt.Errorf("motivo inválido: %s", in.Motivo)
+		return 0, ErrMotivoInvalido
+	}
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	if err := verificarStockSalida(tx, []models.LineaInput{{ProductoID: in.ProductoID, Cantidad: in.Cantidad}}); err != nil {
+		return 0, err
 	}
 	var id int64
-	err := s.DB.QueryRow(
+	err = tx.QueryRow(
 		`INSERT INTO stock_mermas (producto_id, proveedor_id, cantidad, motivo, fecha, notas) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
 		in.ProductoID, in.ProveedorID, in.Cantidad, in.Motivo, in.Fecha, in.Notas).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+	return id, tx.Commit()
 }
 
 func (s *Store) DeleteMerma(id int64) error {
@@ -508,4 +597,134 @@ func (s *Store) DeleteVenta(id int64) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// StockInsuficienteError indica que una venta supera las existencias.
+type StockInsuficienteError struct {
+	Producto string
+	Quedan   float64
+}
+
+func (e *StockInsuficienteError) Error() string {
+	return fmt.Sprintf("Stock insuficiente de «%s»: quedan %s", e.Producto, formatCantidad(e.Quedan))
+}
+
+func formatCantidad(v float64) string {
+	return strconv.FormatFloat(v, 'f', -1, 64)
+}
+
+// ErrProductoNoDisponible indica que el producto no existe o está dado de baja.
+var ErrProductoNoDisponible = errors.New("el producto no existe o está dado de baja")
+
+// StockNegativoError indica que borrar o reducir una compra dejaría el stock
+// de un producto por debajo de cero (ya se vendieron o mermaron esas unidades).
+type StockNegativoError struct {
+	Producto string
+}
+
+func (e *StockNegativoError) Error() string {
+	return fmt.Sprintf("No se puede modificar la compra: las unidades de «%s» ya se han vendido o dado de baja", e.Producto)
+}
+
+// stockProducto calcula compras - ventas - mermas de un producto.
+func stockProducto(tx *sql.Tx, id int64) (float64, error) {
+	var stock float64
+	err := tx.QueryRow(`
+		SELECT COALESCE((SELECT SUM(cantidad) FROM stock_compras_lineas WHERE producto_id=$1), 0)
+		     - COALESCE((SELECT SUM(cantidad) FROM stock_ventas_lineas WHERE producto_id=$1), 0)
+		     - COALESCE((SELECT SUM(cantidad) FROM stock_mermas WHERE producto_id=$1), 0)`, id).Scan(&stock)
+	return stock, err
+}
+
+// idsOrdenados devuelve los ids sin repetir y ordenados, para bloquear filas
+// siempre en el mismo orden y evitar interbloqueos.
+func idsOrdenados(ids []int64) []int64 {
+	visto := map[int64]bool{}
+	out := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if !visto[id] {
+			visto[id] = true
+			out = append(out, id)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
+
+// productosDeCompra devuelve los productos de las líneas de una compra.
+func productosDeCompra(tx *sql.Tx, compraID int64) ([]int64, error) {
+	rows, err := tx.Query(`SELECT producto_id FROM stock_compras_lineas WHERE compra_id=$1`, compraID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// bloquearProductos toma FOR UPDATE sobre los productos, en orden de id.
+func bloquearProductos(tx *sql.Tx, ids []int64) error {
+	for _, id := range idsOrdenados(ids) {
+		var x int64
+		err := tx.QueryRow(`SELECT id FROM stock_productos WHERE id=$1 FOR UPDATE`, id).Scan(&x)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	}
+	return nil
+}
+
+// comprobarStockNoNegativo falla si algún producto queda con stock < 0.
+func comprobarStockNoNegativo(tx *sql.Tx, ids []int64) error {
+	for _, id := range idsOrdenados(ids) {
+		stock, err := stockProducto(tx, id)
+		if err != nil {
+			return err
+		}
+		if stock < 0 {
+			var nombre string
+			if err := tx.QueryRow(`SELECT nombre FROM stock_productos WHERE id=$1`, id).Scan(&nombre); err != nil {
+				return err
+			}
+			return &StockNegativoError{Producto: nombre}
+		}
+	}
+	return nil
+}
+
+// verificarStockSalida (ventas y mermas) bloquea las filas de producto en
+// orden de id y comprueba que existen, están activas y que cada cantidad
+// cabe en las existencias.
+func verificarStockSalida(tx *sql.Tx, lineas []models.LineaInput) error {
+	pedido := map[int64]float64{}
+	ids := make([]int64, 0, len(lineas))
+	for _, l := range lineas {
+		pedido[l.ProductoID] += l.Cantidad
+		ids = append(ids, l.ProductoID)
+	}
+	for _, id := range idsOrdenados(ids) {
+		var nombre string
+		err := tx.QueryRow(`SELECT nombre FROM stock_productos WHERE id=$1 AND activo=1 FOR UPDATE`, id).Scan(&nombre)
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrProductoNoDisponible
+		}
+		if err != nil {
+			return err
+		}
+		stock, err := stockProducto(tx, id)
+		if err != nil {
+			return err
+		}
+		if pedido[id] > stock {
+			return &StockInsuficienteError{Producto: nombre, Quedan: stock}
+		}
+	}
+	return nil
 }

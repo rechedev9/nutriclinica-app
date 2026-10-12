@@ -3,18 +3,13 @@ import type { FocusEvent, KeyboardEvent } from 'react'
 import { Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { useCreateProducto } from '../hooks/useStock'
+import { normaliza } from '@/lib/format/texto'
 import type { Producto } from '@/types'
 
 interface Props {
   productos: Producto[]
   value: number
   onSelect: (producto: Producto) => void
-}
-
-const DIACRITICOS = new RegExp('[\\u0300-\\u036f]', 'g')
-
-function normaliza(s: string): string {
-  return s.normalize('NFD').replace(DIACRITICOS, '').toLowerCase().trim()
 }
 
 const unidades = ['ud', 'bote', 'saco', 'bolsa', 'caja', 'kg', 'gr', 'l', 'ml']
@@ -60,6 +55,9 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
     setQuery('')
   }
 
+  const negativo = (s: string) => s.trim() !== '' && !(Number(s) >= 0)
+  const errorCreacion = negativo(precioCoste) || negativo(precioVenta) ? 'El precio no puede ser negativo' : null
+
   function empezarCreacion() {
     setCreando(true)
     setPrecioCoste('')
@@ -70,13 +68,18 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
   async function confirmarCreacion() {
     const nombre = query.trim()
     if (!nombre) return
-    const producto = await create.mutateAsync({
-      nombre,
-      precio_coste: precioCoste.trim() === '' ? null : Number(precioCoste),
-      precio_venta: precioVenta.trim() === '' ? null : Number(precioVenta),
-      unidad,
-    })
-    seleccionar(producto)
+    if (errorCreacion) return
+    try {
+      const producto = await create.mutateAsync({
+        nombre,
+        precio_coste: precioCoste.trim() === '' ? null : Number(precioCoste),
+        precio_venta: precioVenta.trim() === '' ? null : Number(precioVenta),
+        unidad,
+      })
+      seleccionar(producto)
+    } catch {
+      // El aviso lo muestra el onError del hook; se conserva el formulario de alta.
+    }
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -149,6 +152,7 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                 <Input
                   type="number"
                   step="0.01"
+                  min="0"
                   placeholder="Precio coste"
                   value={precioCoste}
                   onChange={(e) => setPrecioCoste(e.target.value)}
@@ -157,11 +161,13 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                 <Input
                   type="number"
                   step="0.01"
+                  min="0"
                   placeholder="Precio venta"
                   value={precioVenta}
                   onChange={(e) => setPrecioVenta(e.target.value)}
                 />
               </div>
+              {errorCreacion && <p role="alert" className="text-xs text-danger">{errorCreacion}</p>}
               <select
                 className="w-full rounded-lg border border-border bg-app px-3 py-2 text-[15px] outline-none focus:border-primary focus:bg-surface"
                 value={unidad}
@@ -181,6 +187,7 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                   type="button"
                   size="sm"
                   isLoading={create.isPending}
+                  disabled={errorCreacion !== null}
                   onMouseDown={(e) => { e.preventDefault(); confirmarCreacion() }}
                 >
                   Crear y usar

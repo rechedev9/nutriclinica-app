@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
+import { intentar } from '@/lib/api/intentar'
+import { esquemaPaciente } from '@/lib/validacion/esquemas'
 import { useCreatePaciente, useUpdatePaciente } from '../hooks/usePacientes'
 import type { Paciente, PacienteInput } from '@/types'
 
@@ -58,6 +61,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
   const create = useCreatePaciente()
   const update = useUpdatePaciente()
   const { register, handleSubmit, reset, formState } = useForm<FormValues>({
+    resolver: zodResolver(esquemaPaciente),
     defaultValues: toForm(paciente),
   })
 
@@ -83,19 +87,20 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
       notas: nil(v.notas),
       consentimiento: v.consentimiento ? 1 : 0,
     }
-    if (isEdit) await update.mutateAsync({ id: paciente!.id, body })
-    else await create.mutateAsync(body)
-    onClose()
+    const ok = await intentar(
+      isEdit ? update.mutateAsync({ id: paciente!.id, body }) : create.mutateAsync(body),
+    )
+    if (ok) onClose()
   }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar paciente' : 'Nuevo paciente'}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <Field label="Nombre *" error={formState.errors.nombre && 'Obligatorio'}>
-          <Input autoFocus {...register('nombre', { required: true })} />
+        <Field label="Nombre *" error={formState.errors.nombre?.message}>
+          <Input autoFocus {...register('nombre')} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Fecha de nacimiento">
+          <Field label="Fecha de nacimiento" error={formState.errors.fecha_nac?.message}>
             <Input type="date" {...register('fecha_nac')} />
           </Field>
           <Field label="Sexo">
@@ -123,10 +128,10 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           <Field label="Email">
             <Input type="email" {...register('email')} />
           </Field>
-          <Field label="Peso inicial (kg)">
+          <Field label="Peso inicial (kg)" error={formState.errors.peso?.message}>
             <Input type="number" step="0.1" {...register('peso')} />
           </Field>
-          <Field label="Talla (cm)">
+          <Field label="Talla (cm)" error={formState.errors.talla?.message}>
             <Input type="number" step="0.1" {...register('talla')} />
           </Field>
           <Field label="Objetivo">

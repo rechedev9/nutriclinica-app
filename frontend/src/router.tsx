@@ -2,6 +2,9 @@ import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/features/auth/RequireAuth'
+import { RequireAdmin } from '@/features/auth/RequireAdmin'
+import { ErrorRuta } from '@/components/ErrorRuta'
+import { NoEncontrada } from '@/components/NoEncontrada'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { PacientesPage } from '@/features/pacientes/PacientesPage'
 import { PacientesOverview } from '@/features/pacientes/PacientesOverview'
@@ -33,10 +36,11 @@ const UsuariosPage = lazyNamed(() => import('@/features/usuarios/UsuariosPage'),
 const AuditoriaPage = lazyNamed(() => import('@/features/auditoria/AuditoriaPage'), 'AuditoriaPage')
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <LoginPage />, errorElement: <ErrorRuta /> },
   {
     path: '/',
     element: <RequireAuth />,
+    errorElement: <ErrorRuta />,
     children: [
       {
         element: <AppShell />,
@@ -74,10 +78,16 @@ export const router = createBrowserRouter([
               { path: 'analisis', element: <AnalisisStockTab /> },
             ],
           },
-          { path: 'usuarios', element: <UsuariosPage /> },
-          { path: 'auditoria', element: <AuditoriaPage /> },
+          {
+            element: <RequireAdmin />,
+            children: [
+              { path: 'usuarios', element: <UsuariosPage /> },
+              { path: 'auditoria', element: <AuditoriaPage /> },
+            ],
+          },
         ],
       },
     ],
   },
+  { path: '*', element: <NoEncontrada />, errorElement: <ErrorRuta /> },
 ])

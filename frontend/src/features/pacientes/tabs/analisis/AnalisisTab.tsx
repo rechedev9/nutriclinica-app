@@ -5,6 +5,7 @@ import '@/lib/chart/chartSetup'
 import { usePacienteContext } from '../context'
 import { useRevisiones } from '../../hooks/useRevisiones'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { calcEdad, fmtFechaCorta } from '@/lib/format/fecha'
@@ -99,7 +100,7 @@ function KpiCard({
 
 export function AnalisisTab() {
   const p = usePacienteContext()
-  const { data: revs, isLoading } = useRevisiones(p.id)
+  const { data: revs, isLoading, isError, error, refetch, isFetching } = useRevisiones(p.id)
   const edad = calcEdad(p.fecha_nac)
   const sexo = p.sexo
   const [activas, setActivas] = useState<Set<string>>(
@@ -146,6 +147,7 @@ export function AnalisisTab() {
   }, [revs, activas, grasaFn])
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el análisis" />
   if (!derived) return <EmptyState title="Sin datos para analizar" subtitle="Añade revisiones para ver la evolución." />
 
   const { first, last } = derived

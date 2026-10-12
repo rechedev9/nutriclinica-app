@@ -4,13 +4,15 @@ import { useVentas, useDeleteVenta } from '../hooks/useStock'
 import { VentaModal } from '../components/VentaModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
+import { intentar } from '@/lib/api/intentar'
 
 export function VentasTab() {
-  const { data: ventas, isLoading } = useVentas()
+  const { data: ventas, isLoading, isError, error, refetch, isFetching } = useVentas()
   const del = useDeleteVenta()
   const confirm = useConfirm()
   const navigate = useNavigate()
@@ -20,6 +22,7 @@ export function VentasTab() {
   const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las ventas" />
   const todos = ventas ?? []
 
   const rows = todos.filter((v) => {
@@ -31,10 +34,11 @@ export function VentasTab() {
 
   const totalIngresado = rows.reduce((s, v) => s + v.total, 0)
   const hayFiltro = desde !== '' || hasta !== ''
+  const rangoInvalido = desde !== '' && hasta !== '' && desde > hasta
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar venta?', confirmText: 'Eliminar', danger: true })
-    if (ok) await del.mutateAsync(id)
+    if (ok) await intentar(del.mutateAsync(id))
   }
 
   return (
@@ -82,6 +86,11 @@ export function VentasTab() {
           >
             Limpiar
           </button>
+        )}
+        {rangoInvalido && (
+          <span role="alert" className="text-sm text-danger">
+            La fecha «Desde» es posterior a «Hasta».
+          </span>
         )}
       </div>
 

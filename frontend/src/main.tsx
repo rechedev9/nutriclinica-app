@@ -2,9 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
-import { Toaster } from 'sonner'
 import { queryClient } from '@/lib/api/queryClient'
 import { router } from '@/router'
+import '@/lib/api/sesion'
+import { ToasterTema } from '@/components/ui/ToasterTema'
 import { ThemeProvider } from '@/lib/theme/ThemeProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { CifradoGate } from '@/features/cifrado/CifradoGate'
@@ -21,7 +22,7 @@ ReactDOM.createRoot(rootEl).render(
           <CifradoGate>
             <RouterProvider router={router} />
           </CifradoGate>
-          <Toaster position="top-right" richColors />
+          <ToasterTema />
         </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>

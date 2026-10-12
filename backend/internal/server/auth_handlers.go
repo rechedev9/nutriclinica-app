@@ -45,6 +45,9 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	if rec, ok := w.(*statusRecorder); ok {
+		rec.usuario = u.Usuario
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "usuario": u.Usuario, "rol": u.Rol})
 }
 

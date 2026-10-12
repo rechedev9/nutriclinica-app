@@ -3,14 +3,37 @@ import { usePacienteContext } from './context'
 import { useFotos, useUploadFoto, useDeleteFoto } from '../hooks/useFotos'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
+import { Modal } from '@/components/ui/Modal'
 import { fmtDatetime } from '@/lib/format/fecha'
 import { cn } from '@/lib/cn'
 import type { Foto } from '@/types'
+import { intentar } from '@/lib/api/intentar'
+
+function FotoImg({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [fallo, setFallo] = useState(false)
+  if (fallo) {
+    return (
+      <div
+        role="img"
+        aria-label="Foto no disponible"
+        className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-2 p-2 text-center text-[11px] text-ink-muted"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="m3 3 18 18" />
+        </svg>
+        Archivo no disponible
+      </div>
+    )
+  }
+  return <img src={src} alt={alt} className={className} loading="lazy" onError={() => setFallo(true)} />
+}
 
 export function FotosTab() {
   const p = usePacienteContext()
-  const { data: fotos, isLoading } = useFotos(p.id)
+  const { data: fotos, isLoading, isError, error, refetch, isFetching } = useFotos(p.id)
   const upload = useUploadFoto(p.id)
   const del = useDeleteFoto(p.id)
   const confirm = useConfirm()
@@ -21,6 +44,7 @@ export function FotosTab() {
   const [lightbox, setLightbox] = useState<Foto | null>(null)
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las fotos" />
 
   function addFiles(files: FileList | null) {
     if (!files) return
@@ -29,7 +53,7 @@ export function FotosTab() {
 
   async function subir() {
     for (const file of pending) {
-      await upload.mutateAsync({ file, nota })
+      if (!(await intentar(upload.mutateAsync({ file, nota })))) return
     }
     setPending([])
     setNota('')
@@ -38,8 +62,7 @@ export function FotosTab() {
   async function borrar(f: Foto) {
     const ok = await confirm({ title: '¿Eliminar foto?', confirmText: 'Eliminar', danger: true })
     if (ok) {
-      await del.mutateAsync(f.id)
-      setLightbox(null)
+      if (await intentar(del.mutateAsync(f.id))) setLightbox(null)
     }
   }
 
@@ -126,11 +149,10 @@ export function FotosTab() {
                       onClick={() => setLightbox(f)}
                       className="group relative h-28 overflow-hidden rounded-card bg-surface-2 shadow-card"
                     >
-                      <img
+                      <FotoImg
                         src={`/fotos/${f.filename}`}
                         alt={f.nota ?? ''}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        loading="lazy"
                       />
                     </button>
                   ))}
@@ -141,25 +163,28 @@ export function FotosTab() {
         </div>
       )}
 
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setLightbox(null)}
-        >
-          <div className="max-h-[90vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
-            <img src={`/fotos/${lightbox.filename}`} alt="" className="max-h-[80vh] rounded-lg object-contain" />
-            <div className="mt-3 flex items-center justify-between text-white">
+      <Modal open={lightbox != null} onClose={() => setLightbox(null)} title="Foto" className="w-[min(900px,92vw)]">
+        {lightbox && (
+          <div>
+            <div className="flex max-h-[70vh] justify-center">
+              <FotoImg
+                src={`/fotos/${lightbox.filename}`}
+                alt={lightbox.nota ?? 'Foto de progreso'}
+                className="max-h-[70vh] rounded-lg object-contain"
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3">
               <div className="text-sm">
                 {lightbox.fecha && <span>{fmtDatetime(lightbox.fecha)}</span>}
-                {lightbox.nota && <span className="ml-2 opacity-80">· {lightbox.nota}</span>}
+                {lightbox.nota && <span className="ml-2 text-ink-muted">· {lightbox.nota}</span>}
               </div>
               <Button variant="danger" size="sm" onClick={() => borrar(lightbox)}>
                 Eliminar
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   )
 }

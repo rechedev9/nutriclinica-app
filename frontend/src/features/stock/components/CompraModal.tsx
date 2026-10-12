@@ -3,6 +3,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { LineasEditor } from './LineasEditor'
+import { intentar } from '@/lib/api/intentar'
+import { errorLineas } from '@/lib/validacion/lineas'
 import { useCreateCompra, useUpdateCompra, useProductos, useProveedores } from '../hooks/useStock'
 import type { Compra, LineaInput } from '@/types'
 
@@ -52,10 +54,14 @@ export function CompraModal({ open, onClose, compra }: Props) {
       notas: notas.trim() || null,
       lineas: lineas.filter((l) => l.producto_id > 0),
     }
-    if (isEdit) await update.mutateAsync({ id: compra!.id, body })
-    else await create.mutateAsync(body)
-    onClose()
+    const ok = await intentar(
+      isEdit ? update.mutateAsync({ id: compra!.id, body }) : create.mutateAsync(body),
+    )
+    if (ok) onClose()
   }
+
+  const sinProducto = !lineas.some((l) => l.producto_id > 0)
+  const invalido = errorLineas(lineas) !== null
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar compra' : 'Nueva compra'} className="w-[min(640px,94vw)]">
@@ -76,6 +82,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
           </Field>
         </div>
         <LineasEditor productos={productos} lineas={lineas} onChange={setLineas} precioDe={(p) => p.precio_coste} />
+        {sinProducto && <p className="text-xs text-ink-muted">Añade al menos una línea con producto.</p>}
         <Field label="Notas">
           <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} />
         </Field>
@@ -83,7 +90,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} isLoading={create.isPending || update.isPending}>
+          <Button onClick={submit} isLoading={create.isPending || update.isPending} disabled={invalido}>
             {isEdit ? 'Guardar cambios' : 'Registrar compra'}
           </Button>
         </div>

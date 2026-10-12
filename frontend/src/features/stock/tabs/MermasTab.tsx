@@ -3,10 +3,12 @@ import { useMermas, useDeleteMerma } from '../hooks/useStock'
 import { MermaModal } from '../components/MermaModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import type { MotivoMerma } from '@/types'
+import { intentar } from '@/lib/api/intentar'
 
 const MOTIVO_LABEL: Record<MotivoMerma, string> = {
   caducidad: 'Caducidad',
@@ -29,7 +31,7 @@ const alertaIcono = (
 )
 
 export function MermasTab() {
-  const { data: mermas, isLoading } = useMermas()
+  const { data: mermas, isLoading, isError, error, refetch, isFetching } = useMermas()
   const del = useDeleteMerma()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
@@ -37,6 +39,7 @@ export function MermasTab() {
   const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las mermas" />
   const todos = mermas ?? []
 
   const rows = todos.filter((m) => {
@@ -47,13 +50,14 @@ export function MermasTab() {
   })
 
   const hayFiltro = desde !== '' || hasta !== ''
+  const rangoInvalido = desde !== '' && hasta !== '' && desde > hasta
   const totalCaducidad = rows.filter((m) => m.motivo === 'caducidad').length
   const totalAccidente = rows.filter((m) => m.motivo === 'accidente_rotura').length
   const totalDevolucion = rows.filter((m) => m.motivo === 'devolucion_cliente').length
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar merma?', confirmText: 'Eliminar', danger: true })
-    if (ok) await del.mutateAsync(id)
+    if (ok) await intentar(del.mutateAsync(id))
   }
 
   return (
@@ -109,6 +113,11 @@ export function MermasTab() {
           >
             Limpiar
           </button>
+        )}
+        {rangoInvalido && (
+          <span role="alert" className="text-sm text-danger">
+            La fecha «Desde» es posterior a «Hasta».
+          </span>
         )}
       </div>
 

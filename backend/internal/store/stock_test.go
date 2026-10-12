@@ -1,9 +1,12 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -179,5 +182,194 @@ func TestAuditoria(t *testing.T) {
 	// Más recientes primero.
 	if entradas[0].Metodo != "DELETE" || entradas[0].Ruta != "/api/pacientes/3" {
 		t.Errorf("la primera entrada debería ser el DELETE más reciente, es %+v", entradas[0])
+	}
+}
+
+func TestCategoriaDuplicadaYEnUso(t *testing.T) {
+	st := abrirTest(t)
+
+	c, err := st.CreateCategoria("Batidos")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateCategoria("  batidos "); !errors.Is(err, ErrCategoriaDuplicada) {
+		t.Fatalf("crear duplicada: quería ErrCategoriaDuplicada, obtuve %v", err)
+	}
+	otra, err := st.CreateCategoria("Barritas")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.UpdateCategoria(otra.ID, "BATIDOS"); !errors.Is(err, ErrCategoriaDuplicada) {
+		t.Fatalf("renombrar a duplicada: quería ErrCategoriaDuplicada, obtuve %v", err)
+	}
+	if _, err := st.UpdateCategoria(c.ID, "Batidos"); err != nil {
+		t.Fatalf("renombrar a su mismo nombre debe valer: %v", err)
+	}
+
+	if _, err := st.CreateProducto(models.ProductoInput{Nombre: "Batido", CategoriaID: &c.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.DeleteCategoria(c.ID); !IsForeignKeyViolation(err) {
+		t.Fatalf("borrar categoría en uso: quería violación de clave ajena, obtuve %v", err)
+	}
+}
+
+func TestProveedorEnUso(t *testing.T) {
+	st := abrirTest(t)
+
+	prov, err := st.CreateProveedor(models.ProveedorInput{Nombre: "Proveedor B"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateProducto(models.ProductoInput{Nombre: "Barrita", ProveedorID: &prov.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.DeleteProveedor(prov.ID); !IsForeignKeyViolation(err) {
+		t.Fatalf("borrar proveedor en uso: quería violación de clave ajena, obtuve %v", err)
+	}
+}
+
+func TestVentaStockInsuficiente(t *testing.T) {
+	st := abrirTest(t)
+
+	prod, err := st.CreateProducto(models.ProductoInput{Nombre: "Proteína", PrecioVenta: f64(10)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateCompra(models.CompraInput{
+		Lineas: []models.LineaInput{{ProductoID: prod.ID, Cantidad: 8, PrecioUnitario: f64(5)}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	venta := func(cant ...float64) error {
+		var ls []models.LineaInput
+		for _, c := range cant {
+			ls = append(ls, models.LineaInput{ProductoID: prod.ID, Cantidad: c, PrecioUnitario: f64(10)})
+		}
+		_, err := st.CreateVenta(models.VentaInput{Lineas: ls})
+		return err
+	}
+
+	antes, err := st.Ventas()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sinStock *StockInsuficienteError
+	if err := venta(99999); !errors.As(err, &sinStock) {
+		t.Fatalf("quería StockInsuficienteError, obtuve %v", err)
+	}
+	if sinStock.Producto != "Proteína" || sinStock.Quedan != 8 {
+		t.Errorf("error inesperado: %+v", sinStock)
+	}
+	if got := sinStock.Error(); got != "Stock insuficiente de «Proteína»: quedan 8" {
+		t.Errorf("mensaje = %q", got)
+	}
+	// Dos líneas del mismo producto se suman: 5 + 5 > 8.
+	if err := venta(5, 5); !errors.As(err, &sinStock) {
+		t.Fatalf("líneas repetidas deben sumarse, obtuve %v", err)
+	}
+	if err := venta(8); err != nil {
+		t.Fatalf("vender exactamente el stock debe valer: %v", err)
+	}
+	if err := venta(1); !errors.As(err, &sinStock) || sinStock.Quedan != 0 {
+		t.Fatalf("stock agotado: obtuve %v", err)
+	}
+	ventas, err := st.Ventas()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ventas) != len(antes)+1 {
+		t.Errorf("solo debe añadirse la venta válida: antes %d, ahora %d", len(antes), len(ventas))
+	}
+}
+
+func TestVentasConcurrentesNoSuperanStock(t *testing.T) {
+	st := abrirTest(t)
+
+	prod, err := st.CreateProducto(models.ProductoInput{Nombre: "Barrita"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateCompra(models.CompraInput{
+		Lineas: []models.LineaInput{{ProductoID: prod.ID, Cantidad: 5}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	var exitos atomic.Int32
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := st.CreateVenta(models.VentaInput{
+				Lineas: []models.LineaInput{{ProductoID: prod.ID, Cantidad: 1}},
+			}); err == nil {
+				exitos.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if exitos.Load() != 5 {
+		t.Errorf("se esperaban 5 ventas correctas, hubo %d", exitos.Load())
+	}
+}
+
+func TestComprasYMermasNoDejanStockNegativo(t *testing.T) {
+	st := abrirTest(t)
+
+	prod, err := st.CreateProducto(models.ProductoInput{Nombre: "Colágeno", PrecioVenta: f64(10)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	compra := func(cant float64) models.CompraInput {
+		return models.CompraInput{Lineas: []models.LineaInput{{ProductoID: prod.ID, Cantidad: cant, PrecioUnitario: f64(5)}}}
+	}
+	cid, err := st.CreateCompra(compra(10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateVenta(models.VentaInput{
+		Lineas: []models.LineaInput{{ProductoID: prod.ID, Cantidad: 6, PrecioUnitario: f64(10)}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	var negativo *StockNegativoError
+	if err := st.DeleteCompra(cid); !errors.As(err, &negativo) {
+		t.Fatalf("borrar compra ya vendida: quería StockNegativoError, obtuve %v", err)
+	}
+	if err := st.UpdateCompra(cid, compra(5)); !errors.As(err, &negativo) {
+		t.Fatalf("reducir compra por debajo de lo vendido: obtuve %v", err)
+	}
+	if err := st.UpdateCompra(cid, compra(6)); err != nil {
+		t.Fatalf("reducir hasta lo vendido debe valer: %v", err)
+	}
+
+	var sinStock *StockInsuficienteError
+	merma := models.MermaInput{ProductoID: prod.ID, Cantidad: 1, Motivo: "caducidad"}
+	if _, err := st.CreateMerma(merma); !errors.As(err, &sinStock) {
+		t.Fatalf("merma sin stock: quería StockInsuficienteError, obtuve %v", err)
+	}
+}
+
+func TestVentaProductoInexistenteOInactivo(t *testing.T) {
+	st := abrirTest(t)
+
+	linea := func(id int64) models.VentaInput {
+		return models.VentaInput{Lineas: []models.LineaInput{{ProductoID: id, Cantidad: 1, PrecioUnitario: f64(1)}}}
+	}
+	if _, err := st.CreateVenta(linea(999999)); !errors.Is(err, ErrProductoNoDisponible) {
+		t.Fatalf("producto inexistente: obtuve %v", err)
+	}
+	prod, err := st.CreateProducto(models.ProductoInput{Nombre: "Descatalogado"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.SoftDeleteProducto(prod.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateVenta(linea(prod.ID)); !errors.Is(err, ErrProductoNoDisponible) {
+		t.Fatalf("producto de baja: obtuve %v", err)
 	}
 }

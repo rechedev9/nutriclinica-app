@@ -4,12 +4,15 @@ import { CategoriaModal } from '../components/CategoriaModal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Field'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import type { Categoria } from '@/types'
+import { intentar } from '@/lib/api/intentar'
+import { normaliza } from '@/lib/format/texto'
 
 export function CategoriasTab() {
-  const { data: categorias, isLoading } = useCategorias()
+  const { data: categorias, isLoading, isError, error, refetch, isFetching } = useCategorias()
   const del = useDeleteCategoria()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
@@ -17,7 +20,8 @@ export function CategoriasTab() {
   const [busqueda, setBusqueda] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  const rows = (categorias ?? []).filter((c) => c.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las categorías" />
+  const rows = (categorias ?? []).filter((c) => normaliza(c.nombre).includes(normaliza(busqueda)))
 
   async function onDelete(id: number) {
     const ok = await confirm({
@@ -26,7 +30,7 @@ export function CategoriasTab() {
       confirmText: 'Eliminar',
       danger: true,
     })
-    if (ok) await del.mutateAsync(id)
+    if (ok) await intentar(del.mutateAsync(id))
   }
 
   function nueva() {

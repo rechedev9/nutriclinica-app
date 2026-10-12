@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useLogin } from './useAuth'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { useLogin, useMe } from './useAuth'
+import { CenteredSpinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
 import { ApiError } from '@/lib/api/client'
 
@@ -10,17 +11,26 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const login = useLogin()
   const navigate = useNavigate()
+  const { data: me, isLoading: cargandoSesion } = useMe()
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!usuario.trim() || !password) {
+      setError('Introduce usuario y contraseña')
+      return
+    }
     try {
-      await login.mutateAsync({ usuario, password })
+      await login.mutateAsync({ usuario: usuario.trim(), password })
       navigate('/pacientes', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Error al iniciar sesión')
     }
   }
+
+  // Con la sesión ya iniciada no tiene sentido mostrar el formulario.
+  if (cargandoSesion) return <CenteredSpinner />
+  if (me) return <Navigate to="/pacientes" replace />
 
   return (
     <div

@@ -4,12 +4,14 @@ import { useRevisiones, useDeleteRevision } from '../hooks/useRevisiones'
 import { RevisionModal } from './RevisionModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import { descargarExcelRevision } from '@/lib/api/downloads'
 import { ALL_MEDIDAS } from '@/types'
 import type { Revision } from '@/types'
+import { intentar } from '@/lib/api/intentar'
 
 function RevisionCard({
   rev,
@@ -34,7 +36,7 @@ function RevisionCard({
             </svg>
           </div>
           <div className="flex-1">
-            <div className="font-semibold">{rev.fecha ? fmtFecha(rev.fecha) : 'Sin fecha'}</div>
+            <div className="font-semibold">{rev.fecha ? fmtFecha(rev.fecha) : '—'}</div>
             <div className="text-[13px] text-ink-muted">
               {rev.peso != null && `${rev.peso} kg`}
               {medidas.length > 0 && ` · ${medidas.length} medidas`}
@@ -99,17 +101,18 @@ function RevisionCard({
 
 export function RevisionesTab() {
   const p = usePacienteContext()
-  const { data: revs, isLoading } = useRevisiones(p.id)
+  const { data: revs, isLoading, isError, error, refetch, isFetching } = useRevisiones(p.id)
   const del = useDeleteRevision(p.id)
   const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Revision | undefined>()
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las revisiones" />
 
   async function onDelete(rev: Revision) {
     const ok = await confirm({ title: '¿Eliminar revisión?', confirmText: 'Eliminar', danger: true })
-    if (ok) await del.mutateAsync(rev.id)
+    if (ok) await intentar(del.mutateAsync(rev.id))
   }
 
   return (

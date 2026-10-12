@@ -8,8 +8,12 @@ export function Header() {
   const navigate = useNavigate()
 
   async function onLogout() {
-    await logout.mutateAsync()
-    navigate('/login', { replace: true })
+    try {
+      await logout.mutateAsync()
+      navigate('/login', { replace: true })
+    } catch {
+      // El aviso al usuario lo muestra el onError de useLogout.
+    }
   }
 
   return (

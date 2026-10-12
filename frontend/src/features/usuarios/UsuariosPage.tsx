@@ -1,21 +1,26 @@
 import { useState } from 'react'
 import { useUsuarios, useDeleteUsuario } from './useUsuarios'
+import { useMe } from '@/features/auth/useAuth'
 import { UsuarioModal } from './UsuarioModal'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import type { Usuario } from '@/types'
+import { intentar } from '@/lib/api/intentar'
 
 export function UsuariosPage() {
-  const { data: usuarios, isLoading } = useUsuarios()
+  const { data: usuarios, isLoading, isError, error, refetch, isFetching } = useUsuarios()
   const del = useDeleteUsuario()
+  const { data: me } = useMe()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Usuario | undefined>()
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los usuarios" />
   const rows = usuarios ?? []
 
   async function onDelete(u: Usuario) {
@@ -24,7 +29,7 @@ export function UsuariosPage() {
       confirmText: 'Eliminar',
       danger: true,
     })
-    if (ok) await del.mutateAsync(u.id)
+    if (ok) await intentar(del.mutateAsync(u.id))
   }
 
   return (
@@ -74,9 +79,11 @@ export function UsuariosPage() {
                   >
                     Editar
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => onDelete(u)}>
-                    Borrar
-                  </Button>
+                  {u.id !== me?.id && (
+                    <Button variant="danger" size="sm" onClick={() => onDelete(u)}>
+                      Borrar
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}

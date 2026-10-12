@@ -18,6 +18,7 @@ export function Modal({ open, onClose, title, children, className }: Props) {
         {/* Wrapper flex que centra sin usar transform (así no choca con la animación). */}
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
           <Dialog.Content
+            aria-describedby={undefined}
             className={cn(
               'pointer-events-auto max-h-[90vh] w-[min(560px,92vw)] animate-slideUp overflow-y-auto rounded-card bg-surface p-6 shadow-md outline-none',
               className,

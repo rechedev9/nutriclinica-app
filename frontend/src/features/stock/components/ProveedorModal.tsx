@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Textarea } from '@/components/ui/Field'
+import { intentar } from '@/lib/api/intentar'
+import { esquemaProveedor } from '@/lib/validacion/esquemas'
 import { useCreateProveedor, useUpdateProveedor } from '../hooks/useStock'
 import type { Proveedor, ProveedorInput } from '@/types'
 
@@ -18,7 +21,9 @@ export function ProveedorModal({ open, onClose, proveedor }: Props) {
   const isEdit = !!proveedor
   const create = useCreateProveedor()
   const update = useUpdateProveedor()
-  const { register, handleSubmit, reset } = useForm<{ nombre: string; telefono: string; email: string; notas: string }>()
+  const { register, handleSubmit, reset, formState } = useForm<{ nombre: string; telefono: string; email: string; notas: string }>({
+    resolver: zodResolver(esquemaProveedor),
+  })
 
   useEffect(() => {
     if (open)
@@ -37,16 +42,17 @@ export function ProveedorModal({ open, onClose, proveedor }: Props) {
       email: nil(v.email),
       notas: nil(v.notas),
     }
-    if (isEdit) await update.mutateAsync({ id: proveedor!.id, body })
-    else await create.mutateAsync(body)
-    onClose()
+    const ok = await intentar(
+      isEdit ? update.mutateAsync({ id: proveedor!.id, body }) : create.mutateAsync(body),
+    )
+    if (ok) onClose()
   }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar proveedor' : 'Nuevo proveedor'}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <Field label="Nombre *">
-          <Input autoFocus {...register('nombre', { required: true })} />
+        <Field label="Nombre *" error={formState.errors.nombre?.message}>
+          <Input autoFocus {...register('nombre')} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Teléfono">

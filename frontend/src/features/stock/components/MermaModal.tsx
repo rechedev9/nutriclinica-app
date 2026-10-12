@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
+import { intentar } from '@/lib/api/intentar'
 import { useCreateMerma, useProductos, useProveedores } from '../hooks/useStock'
 import type { MotivoMerma } from '@/types'
 
@@ -35,15 +36,17 @@ export function MermaModal({ open, onClose }: { open: boolean; onClose: () => vo
   }, [open])
 
   async function submit() {
-    await create.mutateAsync({
-      producto_id: Number(productoId),
-      proveedor_id: proveedorId ? Number(proveedorId) : null,
-      cantidad: Number(cantidad),
-      motivo,
-      fecha: fecha || null,
-      notas: notas.trim() || null,
-    })
-    onClose()
+    const ok = await intentar(
+      create.mutateAsync({
+        producto_id: Number(productoId),
+        proveedor_id: proveedorId ? Number(proveedorId) : null,
+        cantidad: Number(cantidad),
+        motivo,
+        fecha: fecha || null,
+        notas: notas.trim() || null,
+      }),
+    )
+    if (ok) onClose()
   }
 
   const valido = productoId !== '' && Number(cantidad) > 0
@@ -63,7 +66,10 @@ export function MermaModal({ open, onClose }: { open: boolean; onClose: () => vo
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Cantidad *">
+          <Field
+            label="Cantidad *"
+            error={cantidad.trim() !== '' && !(Number(cantidad) > 0) ? 'La cantidad debe ser mayor que 0' : undefined}
+          >
             <Input
               type="number"
               min="0.01"

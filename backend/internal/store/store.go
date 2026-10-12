@@ -69,3 +69,13 @@ func IsUniqueViolation(err error) bool {
 	}
 	return false
 }
+
+// IsForeignKeyViolation indica si err corresponde a una violación de clave
+// ajena de PostgreSQL (código 23503): borrar una fila que otras referencian.
+func IsForeignKeyViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23503"
+	}
+	return false
+}

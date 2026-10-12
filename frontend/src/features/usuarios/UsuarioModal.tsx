@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select } from '@/components/ui/Field'
+import { intentar } from '@/lib/api/intentar'
 import { useCreateUsuario, useUpdateUsuario, useSetPassword } from './useUsuarios'
 import type { Usuario } from '@/types'
 
@@ -29,13 +30,17 @@ export function UsuarioModal({ open, onClose, usuario }: Props) {
   }, [open, usuario])
 
   async function submit() {
+    const ok = await intentar(guardar())
+    if (ok) onClose()
+  }
+
+  async function guardar() {
     if (isEdit) {
       await update.mutateAsync({ id: usuario!.id, usuario: nombre.trim(), rol })
       if (password.trim()) await setPwd.mutateAsync({ id: usuario!.id, password: password.trim() })
     } else {
       await create.mutateAsync({ usuario: nombre.trim(), password: password.trim(), rol })
     }
-    onClose()
   }
 
   const disabled = !nombre.trim() || (!isEdit && !password.trim())

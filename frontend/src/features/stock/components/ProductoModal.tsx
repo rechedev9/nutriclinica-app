@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select } from '@/components/ui/Field'
+import { intentar } from '@/lib/api/intentar'
+import { esquemaProducto } from '@/lib/validacion/esquemas'
 import { useCategorias, useCreateProducto, useProveedores, useUpdateProducto } from '../hooks/useStock'
 import type { Producto, ProductoInput } from '@/types'
 
@@ -31,7 +34,9 @@ export function ProductoModal({ open, onClose, producto }: Props) {
   const { data: proveedores = [] } = useProveedores()
   const create = useCreateProducto()
   const update = useUpdateProducto()
-  const { register, handleSubmit, reset } = useForm<FormValues>()
+  const { register, handleSubmit, reset, formState } = useForm<FormValues>({
+    resolver: zodResolver(esquemaProducto),
+  })
 
   useEffect(() => {
     if (open)
@@ -56,16 +61,17 @@ export function ProductoModal({ open, onClose, producto }: Props) {
       unidad: v.unidad.trim() || 'ud',
       stock_minimo: num(v.stock_minimo),
     }
-    if (isEdit) await update.mutateAsync({ id: producto!.id, body })
-    else await create.mutateAsync(body)
-    onClose()
+    const ok = await intentar(
+      isEdit ? update.mutateAsync({ id: producto!.id, body }) : create.mutateAsync(body),
+    )
+    if (ok) onClose()
   }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar producto' : 'Nuevo producto'}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <Field label="Nombre *">
-          <Input autoFocus {...register('nombre', { required: true })} />
+        <Field label="Nombre *" error={formState.errors.nombre?.message}>
+          <Input autoFocus {...register('nombre')} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Categoría">
@@ -91,10 +97,10 @@ export function ProductoModal({ open, onClose, producto }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Precio coste (€)">
+          <Field label="Precio coste (€)" error={formState.errors.precio_coste?.message}>
             <Input type="number" step="0.01" {...register('precio_coste')} />
           </Field>
-          <Field label="Precio venta (€)">
+          <Field label="Precio venta (€)" error={formState.errors.precio_venta?.message}>
             <Input type="number" step="0.01" {...register('precio_venta')} />
           </Field>
           <Field label="Unidad">
@@ -110,7 +116,7 @@ export function ProductoModal({ open, onClose, producto }: Props) {
               <option value="ml">ml</option>
             </Select>
           </Field>
-          <Field label="Stock mínimo">
+          <Field label="Stock mínimo" error={formState.errors.stock_minimo?.message}>
             <Input type="number" step="0.1" {...register('stock_minimo')} />
           </Field>
         </div>

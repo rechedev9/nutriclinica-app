@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { fmtDatetime } from '@/lib/format/fecha'
 import type { AuditEntry } from '@/types'
 
@@ -12,17 +13,21 @@ function useAuditoria() {
   })
 }
 
-// Etiqueta legible para el método HTTP.
+// Etiqueta legible para la acción guardada: el servidor anota "Acceso" y
+// "Salida" y, para el resto, el método HTTP.
 const accion: Record<string, string> = {
   POST: 'Alta',
   PUT: 'Edición',
   DELETE: 'Borrado',
   GET: 'Exportación',
+  Acceso: 'Acceso',
+  Salida: 'Salida',
 }
 
 export function AuditoriaPage() {
-  const { data, isLoading } = useAuditoria()
+  const { data, isLoading, isError, error, refetch, isFetching } = useAuditoria()
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el registro de auditoría" />
   const rows = data ?? []
 
   return (

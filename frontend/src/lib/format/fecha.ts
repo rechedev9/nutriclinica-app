@@ -5,10 +5,12 @@ export function fmtFecha(d: string | null | undefined): string {
   // Acepta tanto fechas (YYYY-MM-DD) como datetimes (YYYY-MM-DD HH:MM:SS / con 'T').
   const s = (d.split('T')[0] ?? '').split(' ')[0] ?? ''
   const [y, m, dd] = s.split('-')
+  if (!y || !m || !dd) return '—'
   return `${dd}/${m}/${y}`
 }
 
 export function fmtFechaCorta(iso: string): string {
+  if (Number.isNaN(new Date(iso).getTime())) return '—'
   return new Date(iso).toLocaleDateString('es-ES', {
     day: '2-digit',
     month: 'short',
@@ -18,6 +20,7 @@ export function fmtFechaCorta(iso: string): string {
 
 export function fmtDatetime(iso: string): string {
   const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
   return (
     d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) +
     ' ' +

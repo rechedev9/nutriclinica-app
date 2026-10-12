@@ -1,10 +1,12 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"nutriclinica/internal/models"
+	"nutriclinica/internal/store"
 )
 
 // --- Almacén ---
@@ -36,8 +38,8 @@ func (s *Server) handleCreateProducto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in.Nombre = strings.TrimSpace(in.Nombre)
-	if in.Nombre == "" {
-		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
+	if msg := validarProducto(&in); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 	p, err := s.db().CreateProducto(in)
@@ -60,6 +62,10 @@ func (s *Server) handleUpdateProducto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in.Nombre = strings.TrimSpace(in.Nombre)
+	if msg := validarProducto(&in); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
 	p, err := s.db().UpdateProducto(id, in)
 	if err != nil {
 		serverError(w, err)
@@ -107,6 +113,10 @@ func (s *Server) handleCreateCategoria(w http.ResponseWriter, r *http.Request) {
 	}
 	c, err := s.db().CreateCategoria(in.Nombre)
 	if err != nil {
+		if errors.Is(err, store.ErrCategoriaDuplicada) {
+			writeError(w, http.StatusConflict, "Ya existe una categoría con ese nombre")
+			return
+		}
 		serverError(w, err)
 		return
 	}
@@ -133,6 +143,10 @@ func (s *Server) handleUpdateCategoria(w http.ResponseWriter, r *http.Request) {
 	}
 	c, err := s.db().UpdateCategoria(id, in.Nombre)
 	if err != nil {
+		if errors.Is(err, store.ErrCategoriaDuplicada) {
+			writeError(w, http.StatusConflict, "Ya existe una categoría con ese nombre")
+			return
+		}
 		serverError(w, err)
 		return
 	}
@@ -146,6 +160,10 @@ func (s *Server) handleDeleteCategoria(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.db().DeleteCategoria(id); err != nil {
+		if store.IsForeignKeyViolation(err) {
+			writeError(w, http.StatusConflict, "No se puede eliminar: hay productos que usan esta categoría")
+			return
+		}
 		serverError(w, err)
 		return
 	}
@@ -216,6 +234,10 @@ func (s *Server) handleDeleteProveedor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.db().DeleteProveedor(id); err != nil {
+		if store.IsForeignKeyViolation(err) {
+			writeError(w, http.StatusConflict, "No se puede eliminar: hay productos o compras de este proveedor")
+			return
+		}
 		serverError(w, err)
 		return
 	}
@@ -241,6 +263,10 @@ func (s *Server) handleCreateCompra(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Notas = emptyToNil(in.Notas)
 	in.Fecha = emptyToNil(in.Fecha)
+	if msg := validarLineas(in.Lineas, "compra"); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
 	id, err := s.db().CreateCompra(in)
 	if err != nil {
 		serverError(w, err)
@@ -262,8 +288,12 @@ func (s *Server) handleUpdateCompra(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Notas = emptyToNil(in.Notas)
 	in.Fecha = emptyToNil(in.Fecha)
+	if msg := validarLineas(in.Lineas, "compra"); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
 	if err := s.db().UpdateCompra(id, in); err != nil {
-		serverError(w, err)
+		errorStock(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, ok(nil))
@@ -276,7 +306,7 @@ func (s *Server) handleDeleteCompra(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.db().DeleteCompra(id); err != nil {
-		serverError(w, err)
+		errorStock(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, ok(nil))
@@ -306,12 +336,12 @@ func (s *Server) handleCreateMerma(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Cantidad <= 0 {
-		writeError(w, http.StatusBadRequest, "La cantidad debe ser mayor que cero")
+		writeError(w, http.StatusBadRequest, "La cantidad debe ser mayor que 0")
 		return
 	}
 	id, err := s.db().CreateMerma(in)
 	if err != nil {
-		serverError(w, err)
+		errorStock(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, ok(map[string]any{"id": id}))
@@ -349,9 +379,13 @@ func (s *Server) handleCreateVenta(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Notas = emptyToNil(in.Notas)
 	in.Fecha = emptyToNil(in.Fecha)
+	if msg := validarLineas(in.Lineas, "venta"); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
 	id, err := s.db().CreateVenta(in)
 	if err != nil {
-		serverError(w, err)
+		errorStock(w, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, ok(map[string]any{"id": id}))
@@ -368,4 +402,22 @@ func (s *Server) handleDeleteVenta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, ok(nil))
+}
+
+// errorStock traduce los errores de reglas de stock a 400/409; el resto, a 500.
+func errorStock(w http.ResponseWriter, err error) {
+	var sinStock *store.StockInsuficienteError
+	var negativo *store.StockNegativoError
+	switch {
+	case errors.As(err, &sinStock):
+		writeError(w, http.StatusConflict, sinStock.Error())
+	case errors.As(err, &negativo):
+		writeError(w, http.StatusConflict, negativo.Error())
+	case errors.Is(err, store.ErrMotivoInvalido):
+		writeError(w, http.StatusBadRequest, "El motivo de la merma no es válido")
+	case errors.Is(err, store.ErrProductoNoDisponible):
+		writeError(w, http.StatusBadRequest, "El producto no existe o está dado de baja")
+	default:
+		serverError(w, err)
+	}
 }

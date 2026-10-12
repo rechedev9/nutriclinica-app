@@ -6,11 +6,13 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { calcEdad, fmtFecha } from '@/lib/format/fecha'
 import { cn } from '@/lib/cn'
 import { useNavigate } from 'react-router-dom'
 import type { Paciente } from '@/types'
+import { intentar } from '@/lib/api/intentar'
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -30,15 +32,26 @@ const tabs = [
 export function PacienteDetail() {
   const { id } = useParams()
   const pid = Number(id)
-  const { data: pacientes, isLoading } = usePacientes()
+  const { data: pacientes, isLoading, isError, error, refetch, isFetching } = usePacientes()
   const del = useDeletePaciente()
   const confirm = useConfirm()
   const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el paciente" />
   const paciente = pacientes?.find((p) => p.id === pid)
-  if (!paciente) return <div className="p-8 text-ink-muted">Paciente no encontrado</div>
+  if (!paciente) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
+        <h2 className="text-xl font-semibold text-ink">Paciente no encontrado</h2>
+        <p className="text-sm text-ink-muted">Este paciente no existe o se ha eliminado.</p>
+        <Button variant="outline" onClick={() => navigate('/pacientes')}>
+          Volver a Pacientes
+        </Button>
+      </div>
+    )
+  }
 
   const edad = calcEdad(paciente.fecha_nac)
 
@@ -50,8 +63,7 @@ export function PacienteDetail() {
       danger: true,
     })
     if (ok) {
-      await del.mutateAsync(paciente!.id)
-      navigate('/pacientes')
+      if (await intentar(del.mutateAsync(paciente!.id))) navigate('/pacientes')
     }
   }
 

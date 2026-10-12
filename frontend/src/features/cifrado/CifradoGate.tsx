@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
-import { ApiError } from '@/lib/api/client'
+import { ApiError, MENSAJE_SIN_CONEXION, esErrorDeRed } from '@/lib/api/client'
 import { useConfigurar, useEstadoCifrado, useRefrescarEstado, useUnlock } from './useCifrado'
 
 // Marco común: fondo degradado + tarjeta centrada (igual que el login).
@@ -31,7 +31,7 @@ const inputCls =
 // CifradoGate decide la pantalla según el estado del cifrado en reposo. En modo
 // no cifrado el estado es "abierto" y se renderiza la app directamente.
 export function CifradoGate({ children }: { children: ReactNode }) {
-  const { data, isLoading, isError } = useEstadoCifrado()
+  const { data, isLoading, isError, error, refetch, isFetching } = useEstadoCifrado()
 
   if (isLoading) {
     return (
@@ -43,7 +43,21 @@ export function CifradoGate({ children }: { children: ReactNode }) {
     )
   }
 
-  // Si el endpoint fallara, no bloquear: el backend ya impone el cierre.
+  if (isError && esErrorDeRed(error)) {
+    return (
+      <Marco>
+        <h1 className="mb-2 text-xl font-extrabold text-ink">{MENSAJE_SIN_CONEXION}</h1>
+        <p className="mb-5 text-sm text-ink-muted">
+          Comprueba que la aplicación sigue en marcha y vuelve a intentarlo.
+        </p>
+        <Button className="w-full" isLoading={isFetching} onClick={() => void refetch()}>
+          Reintentar
+        </Button>
+      </Marco>
+    )
+  }
+
+  // Si el endpoint fallara con otro error, no bloquear: el backend ya impone el cierre.
   const estado = isError ? 'abierto' : (data?.estado ?? 'abierto')
 
   if (estado === 'abierto') return <>{children}</>

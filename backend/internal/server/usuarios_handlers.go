@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -79,6 +80,10 @@ func (s *Server) handleUpdateUsuario(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := s.db().UpdateUsuario(id, in.Usuario, in.Rol)
 	if err != nil {
+		if errors.Is(err, store.ErrUltimoAdmin) {
+			writeError(w, http.StatusConflict, "Debe quedar al menos un administrador")
+			return
+		}
 		serverError(w, err)
 		return
 	}
@@ -91,16 +96,15 @@ func (s *Server) handleDeleteUsuario(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "id inválido")
 		return
 	}
-	n, err := s.db().CountUsuarios()
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-	if n <= 1 {
-		writeError(w, http.StatusBadRequest, "No se puede borrar el último usuario")
+	if actual, ok := s.sessions.Current(r); ok && actual.ID == id {
+		writeError(w, http.StatusBadRequest, "No puedes eliminar tu propia cuenta")
 		return
 	}
 	if err := s.db().DeleteUsuario(id); err != nil {
+		if errors.Is(err, store.ErrUltimoAdmin) {
+			writeError(w, http.StatusConflict, "No se puede eliminar al último administrador")
+			return
+		}
 		serverError(w, err)
 		return
 	}

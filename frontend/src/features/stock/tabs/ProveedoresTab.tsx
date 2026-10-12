@@ -4,12 +4,15 @@ import { ProveedorModal } from '../components/ProveedorModal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Field'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import type { Proveedor } from '@/types'
+import { intentar } from '@/lib/api/intentar'
+import { normaliza } from '@/lib/format/texto'
 
 export function ProveedoresTab() {
-  const { data: proveedores, isLoading } = useProveedores()
+  const { data: proveedores, isLoading, isError, error, refetch, isFetching } = useProveedores()
   const del = useDeleteProveedor()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
@@ -17,13 +20,14 @@ export function ProveedoresTab() {
   const [busqueda, setBusqueda] = useState('')
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los proveedores" />
   const rows = (proveedores ?? []).filter((p) =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()),
+    normaliza(p.nombre).includes(normaliza(busqueda)),
   )
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar proveedor?', confirmText: 'Eliminar', danger: true })
-    if (ok) await del.mutateAsync(id)
+    if (ok) await intentar(del.mutateAsync(id))
   }
 
   function nuevo() {

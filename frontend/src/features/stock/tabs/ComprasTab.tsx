@@ -3,14 +3,16 @@ import { useCompras, useDeleteCompra } from '../hooks/useStock'
 import { CompraModal } from '../components/CompraModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
+import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import type { Compra } from '@/types'
+import { intentar } from '@/lib/api/intentar'
 
 export function ComprasTab() {
-  const { data: compras, isLoading } = useCompras()
+  const { data: compras, isLoading, isError, error, refetch, isFetching } = useCompras()
   const del = useDeleteCompra()
   const confirm = useConfirm()
   const [open, setOpen] = useState(false)
@@ -31,6 +33,7 @@ export function ComprasTab() {
   const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
+  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las compras" />
   const todos = compras ?? []
 
   const rows = todos.filter((c) => {
@@ -42,10 +45,11 @@ export function ComprasTab() {
 
   const totalGastado = rows.reduce((s, c) => s + c.total, 0)
   const hayFiltro = desde !== '' || hasta !== ''
+  const rangoInvalido = desde !== '' && hasta !== '' && desde > hasta
 
   async function onDelete(id: number) {
     const ok = await confirm({ title: '¿Eliminar compra?', confirmText: 'Eliminar', danger: true })
-    if (ok) await del.mutateAsync(id)
+    if (ok) await intentar(del.mutateAsync(id))
   }
 
   return (
@@ -93,6 +97,11 @@ export function ComprasTab() {
           >
             Limpiar
           </button>
+        )}
+        {rangoInvalido && (
+          <span role="alert" className="text-sm text-danger">
+            La fecha «Desde» es posterior a «Hasta».
+          </span>
         )}
       </div>
 

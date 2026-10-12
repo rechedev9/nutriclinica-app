@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"nutriclinica/internal/models"
 	"nutriclinica/internal/naming"
@@ -52,8 +53,8 @@ func (s *Server) handleCreatePaciente(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizePaciente(&in)
-	if in.Nombre == "" {
-		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
+	if msg := validarPaciente(&in, time.Now()); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 	p, err := s.db().CreatePaciente(in)
@@ -76,8 +77,8 @@ func (s *Server) handleUpdatePaciente(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	normalizePaciente(&in)
-	if in.Nombre == "" {
-		writeError(w, http.StatusBadRequest, "El nombre es obligatorio")
+	if msg := validarPaciente(&in, time.Now()); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
 		return
 	}
 	p, err := s.db().UpdatePaciente(id, in)

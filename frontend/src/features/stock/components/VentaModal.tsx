@@ -3,13 +3,16 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { LineasEditor } from './LineasEditor'
-import { useCreateVenta, useProductos } from '../hooks/useStock'
+import { intentar } from '@/lib/api/intentar'
+import { errorLineas } from '@/lib/validacion/lineas'
+import { useAlmacen, useCreateVenta, useProductos } from '../hooks/useStock'
 import { usePacientes } from '@/features/pacientes/hooks/usePacientes'
 import type { LineaInput } from '@/types'
 
 export function VentaModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: productos = [] } = useProductos()
   const { data: pacientes = [] } = usePacientes()
+  const { data: almacen = [] } = useAlmacen()
   const create = useCreateVenta()
   const [fecha, setFecha] = useState('')
   const [pacienteId, setPacienteId] = useState('')
@@ -26,14 +29,20 @@ export function VentaModal({ open, onClose }: { open: boolean; onClose: () => vo
   }, [open])
 
   async function submit() {
-    await create.mutateAsync({
-      fecha: fecha || null,
-      paciente_id: pacienteId ? Number(pacienteId) : null,
-      notas: notas.trim() || null,
-      lineas: lineas.filter((l) => l.producto_id > 0),
-    })
-    onClose()
+    const ok = await intentar(
+      create.mutateAsync({
+        fecha: fecha || null,
+        paciente_id: pacienteId ? Number(pacienteId) : null,
+        notas: notas.trim() || null,
+        lineas: lineas.filter((l) => l.producto_id > 0),
+      }),
+    )
+    if (ok) onClose()
   }
+
+  const stock = new Map(almacen.map((r) => [r.id, r.stock_actual]))
+  const sinProducto = !lineas.some((l) => l.producto_id > 0)
+  const invalido = errorLineas(lineas, stock) !== null
 
   return (
     <Modal open={open} onClose={onClose} title="Nueva venta" className="w-[min(640px,94vw)]">
@@ -53,7 +62,8 @@ export function VentaModal({ open, onClose }: { open: boolean; onClose: () => vo
             </Select>
           </Field>
         </div>
-        <LineasEditor productos={productos} lineas={lineas} onChange={setLineas} precioDe={(p) => p.precio_venta} />
+        <LineasEditor productos={productos} lineas={lineas} onChange={setLineas} precioDe={(p) => p.precio_venta} stock={stock} />
+        {sinProducto && <p className="text-xs text-ink-muted">Añade al menos una línea con producto.</p>}
         <Field label="Notas">
           <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} />
         </Field>
@@ -61,7 +71,7 @@ export function VentaModal({ open, onClose }: { open: boolean; onClose: () => vo
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={submit} isLoading={create.isPending}>
+          <Button onClick={submit} isLoading={create.isPending} disabled={invalido}>
             Registrar venta
           </Button>
         </div>

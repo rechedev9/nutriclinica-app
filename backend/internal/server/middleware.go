@@ -40,6 +40,9 @@ func (s *Server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
+	// usuario lo rellena el handler de login: la sesión nueva aún no está en
+	// la petición, así que auditMW no puede leerla.
+	usuario string
 }
 
 func (r *statusRecorder) WriteHeader(code int) {
@@ -57,14 +60,29 @@ func (s *Server) auditMW(next http.Handler) http.Handler {
 		if !esAuditable(r) {
 			return
 		}
-		usuario := ""
-		if u, ok := s.sessions.Current(r); ok {
+		usuario := rec.usuario
+		// En /api/login no se usa la sesión previa: un intento fallido no es de ese usuario.
+		if u, ok := s.sessions.Current(r); ok && usuario == "" && r.URL.Path != "/api/login" {
 			usuario = u.Usuario
 		}
-		if err := s.db().RegistrarAuditoria(usuario, r.Method, r.URL.Path, rec.status); err != nil {
+		if err := s.db().RegistrarAuditoria(usuario, accionAuditoria(r), r.URL.Path, rec.status); err != nil {
 			log.Printf("auditoría: no se pudo registrar %s %s: %v", r.Method, r.URL.Path, err)
 		}
 	})
+}
+
+// accionAuditoria devuelve lo que se guarda como acción: login y logout se
+// anotan como "Acceso" y "Salida"; el resto, el método HTTP.
+func accionAuditoria(r *http.Request) string {
+	if r.Method == http.MethodPost {
+		switch r.URL.Path {
+		case "/api/login":
+			return "Acceso"
+		case "/api/logout":
+			return "Salida"
+		}
+	}
+	return r.Method
 }
 
 // esAuditable decide si la petición debe quedar en el registro: mutaciones de

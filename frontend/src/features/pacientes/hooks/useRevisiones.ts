@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, mensajeError } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
+import { limpiaRevision } from '@/lib/format/revision'
 import type { Revision, RevisionInput } from '@/types'
 
 export function useRevisiones(pid: number) {
   return useQuery({
     queryKey: qk.revisiones(pid),
-    queryFn: () => api<Revision[]>('GET', `/api/pacientes/${pid}/revisiones`),
+    queryFn: async () => (await api<Revision[]>('GET', `/api/pacientes/${pid}/revisiones`)).map(limpiaRevision),
     enabled: pid > 0,
   })
 }
