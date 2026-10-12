@@ -85,7 +85,7 @@ React Router models the navigation: the NavRail and patient tabs are **routes** 
 ## Data, auth, and conventions
 
 - Patient PII now lives in PostgreSQL/RDS (not in a local file); `bbdd/` only holds `secret.key` and the S3-backup state file, and `fotos/` still holds the photos on disk — both gitignored.
-- Git remotes: `origin` is the owner's **private** repo (`granrafael/nutriclinica`) — push here. It used to point at `rechedev9/nutriclinica`, a friend's account from when he was collaborating on the project; that repo is gone now that the owner works on it solo, so `origin` was repointed to `granrafael/nutriclinica`. `upstream` points at the same repo (harmless duplicate) and `no-mistakes` is a local backup remote. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
+- Git remotes: `origin` is the **private** repo `rechedev9/nutriclinica-app` (push here; default branch `master`). `upstream` points at `granrafael/nutriclinica`, the original author's private repo this checkout was cloned from, which the `rechedev9` account cannot reach (404), so do not push or fetch there. `rechedev9/nutriclinica` is an older private repo with a different, unrelated history (up to June 2026): leave it alone. `no-mistakes` is a local backup remote. The seed users (`admin`/`admin`, `Jose`/`Jose123`) are dev defaults; rotate them in-app before real use.
 - Keep new code in Spanish (identifiers, UI strings, comments) to match the codebase.
 - Backend: add a route in the matching `handlers/*.go` and a method in the matching `store/*.go`. Frontend: add a feature file/hook alongside the existing ones; don't reach for global state when the URL or a parent's local state suffices.
 
