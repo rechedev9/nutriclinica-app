@@ -8,9 +8,7 @@ export type ProductoBase = Treaty.Data<typeof servidor.stock.productos.post>
 export type Categoria = Treaty.Data<typeof servidor.stock.categorias.get>[number]
 export type Proveedor = Treaty.Data<typeof servidor.stock.proveedores.get>[number]
 export type Compra = Treaty.Data<typeof servidor.stock.compras.get>[number]
-export type Venta = Treaty.Data<typeof servidor.stock.ventas.get>[number]
-export type Linea = Compra['lineas'][number]
-export type Merma = Treaty.Data<typeof servidor.stock.mermas.get>[number]
+type Merma = Treaty.Data<typeof servidor.stock.mermas.get>[number]
 export type MotivoMerma = Merma['motivo']
 
 export interface ProductoInput {

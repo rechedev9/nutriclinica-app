@@ -12,7 +12,7 @@ export interface Opciones {
 }
 
 // true cuando corre como binario compilado (bun build --compile) y no con el runtime de Bun.
-export function esBinario(): boolean {
+function esBinario(): boolean {
   return !/^bun(\.exe)?$/i.test(basename(process.execPath))
 }
 

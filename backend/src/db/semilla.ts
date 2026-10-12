@@ -14,7 +14,7 @@ import {
 } from './esquema'
 
 // Usuarios de desarrollo de una instalación nueva. Hay que cambiar sus contraseñas antes del uso real.
-export const USUARIOS_INICIALES = [
+const USUARIOS_INICIALES = [
   { usuario: 'admin', password: 'admin', rol: 'admin' },
   { usuario: 'Jose', password: 'Jose123', rol: 'user' },
 ] as const

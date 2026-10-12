@@ -7,7 +7,7 @@ function pad(n: number): string {
   return String(n).padStart(2, '0')
 }
 
-export function fechaLocal(d: Date): string {
+function fechaLocal(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
@@ -19,7 +19,7 @@ function esFechaReal(s: string): boolean {
   return f.getFullYear() === Number(a) && f.getMonth() === Number(me) - 1 && f.getDate() === Number(d)
 }
 
-export function numeroEnRango(min: number, max: number, mensaje: string, exclusivoMin = false) {
+function numeroEnRango(min: number, max: number, mensaje: string, exclusivoMin = false) {
   return z.string().refine((s) => {
     if (s.trim() === '') return true
     const n = Number(s)

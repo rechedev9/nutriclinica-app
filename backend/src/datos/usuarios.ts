@@ -1,4 +1,4 @@
-import { and, count, eq, ne } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import type { BD, Ejecutor } from '../db/cliente'
 import { sesiones, usuarios } from '../db/esquema'
 import { ErrorHttp } from '../lib/errores'
@@ -16,10 +16,6 @@ const publico = {
 
 export function listarUsuarios(db: BD) {
   return porNombre(db.select(publico).from(usuarios).all(), (u) => u.usuario)
-}
-
-export function contarUsuarios(db: BD): number {
-  return db.select({ n: count() }).from(usuarios).get()?.n ?? 0
 }
 
 // buscarUsuario devuelve el usuario con su hash, solo para autenticar.

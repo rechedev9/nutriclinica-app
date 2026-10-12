@@ -34,6 +34,6 @@ export function abrirBD(ruta: string) {
 }
 
 export type BD = ReturnType<typeof abrirBD>
-export type Tx = Parameters<Parameters<BD['transaction']>[0]>[0]
+type Tx = Parameters<Parameters<BD['transaction']>[0]>[0]
 // Ejecutor es la BD o una transacción abierta: lo que aceptan las funciones de consulta.
 export type Ejecutor = BD | Tx

@@ -7,7 +7,7 @@ export const COOKIE_SESION = 'nutriclinica_session'
 export const DURACION_SESION_S = 12 * 60 * 60
 
 // En la BD solo se guarda el SHA-256 del token: una copia de la BD no sirve para suplantar sesiones.
-export function hashToken(token: string): string {
+function hashToken(token: string): string {
   return new Bun.CryptoHasher('sha256').update(token).digest('hex')
 }
 

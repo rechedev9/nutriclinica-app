@@ -16,7 +16,7 @@ import type {
 // Reglas de negocio de las entradas. Equivalen a los esquemas Zod del frontend y
 // responden siempre 400 con el mensaje del contrato.
 
-export const MIN_PASSWORD = 8
+const MIN_PASSWORD = 8
 
 export const PLIEGUES = [
   'pl_bicipital',
