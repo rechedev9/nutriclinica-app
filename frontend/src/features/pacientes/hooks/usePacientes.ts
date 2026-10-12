@@ -1,20 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, mensajeError } from '@/lib/api/client'
+import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type { Paciente, PacienteInput } from '@/types'
+import type { PacienteInput } from '@/types'
 
 export function usePacientes() {
   return useQuery({
     queryKey: qk.pacientes,
-    queryFn: () => api<Paciente[]>('GET', '/api/pacientes'),
+    queryFn: () => pedir(servidor.pacientes.get()),
   })
 }
 
 export function useCreatePaciente() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: PacienteInput) => api<Paciente>('POST', '/api/pacientes', body),
+    mutationFn: (body: PacienteInput) => pedir(servidor.pacientes.post(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente creado')
@@ -27,7 +27,7 @@ export function useUpdatePaciente() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: PacienteInput }) =>
-      api<Paciente>('PUT', `/api/pacientes/${id}`, body),
+      pedir(servidor.pacientes({ id }).put(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente actualizado')
@@ -39,7 +39,7 @@ export function useUpdatePaciente() {
 export function useDeletePaciente() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/pacientes/${id}`),
+    mutationFn: (id: number) => pedir(servidor.pacientes({ id }).delete()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Paciente eliminado')

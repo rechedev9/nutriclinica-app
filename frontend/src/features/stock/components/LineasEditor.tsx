@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import type { LineaInput, Producto } from '@/types'
+import type { LineaInput, Producto, ProductoBase } from '@/types'
 import { Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { ProductoCombobox } from './ProductoCombobox'
@@ -10,7 +10,7 @@ interface Props {
   productos: Producto[]
   lineas: LineaInput[]
   onChange: (lineas: LineaInput[]) => void
-  precioDe: (p: Producto) => number // precio por defecto (coste o venta)
+  precioDe: (p: ProductoBase) => number // precio por defecto (coste o venta)
   stock?: StockPorProducto // solo en ventas: avisa si la cantidad lo supera
 }
 
@@ -36,7 +36,7 @@ export function LineasEditor({ productos, lineas, onChange, precioDe, stock }: P
     keys.current = keys.current.filter((_, idx) => idx !== i)
     onChange(lineas.filter((_, idx) => idx !== i))
   }
-  function onProducto(i: number, prod: Producto) {
+  function onProducto(i: number, prod: ProductoBase) {
     update(i, { producto_id: prod.id, precio_unitario: precioDe(prod) })
   }
 

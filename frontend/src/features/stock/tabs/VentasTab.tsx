@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useVentas, useDeleteVenta } from '../hooks/useStock'
 import { VentaModal } from '../components/VentaModal'
 import { Button } from '@/components/ui/Button'
@@ -141,12 +141,12 @@ export function VentasTab() {
                         tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation()
-                          navigate(`/pacientes/${v.paciente_id}`)
+                          void navigate({ to: '/pacientes/$id', params: { id: String(v.paciente_id) } })
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.stopPropagation()
-                            navigate(`/pacientes/${v.paciente_id}`)
+                            void navigate({ to: '/pacientes/$id', params: { id: String(v.paciente_id) } })
                           }
                         }}
                         className="cursor-pointer font-medium text-primary hover:underline"

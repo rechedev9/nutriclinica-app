@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useMe, useLogout } from '@/features/auth/useAuth'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
@@ -10,7 +10,7 @@ export function Header() {
   async function onLogout() {
     try {
       await logout.mutateAsync()
-      navigate('/login', { replace: true })
+      await navigate({ to: '/login', replace: true })
     } catch {
       // El aviso al usuario lo muestra el onError de useLogout.
     }

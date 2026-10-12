@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { usePacientes } from './hooks/usePacientes'
-import type { PacientesOutletCtx } from './PacientesPage'
+import { PacienteModal } from './components/PacienteModal'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
@@ -33,8 +33,17 @@ function imcStyle(cls: IMCClase): { background: string; color: string } {
 }
 
 export function PacientesOverview() {
+  const [modalOpen, setModalOpen] = useState(false)
+  return (
+    <>
+      <Listado onNew={() => setModalOpen(true)} />
+      <PacienteModal open={modalOpen} onClose={() => setModalOpen(false)} />
+    </>
+  )
+}
+
+function Listado({ onNew }: { onNew: () => void }) {
   const { data: pacientes = [], isLoading, isError, error, refetch, isFetching } = usePacientes()
-  const { onNew } = useOutletContext<PacientesOutletCtx>()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const deferredQ = useDeferredValue(q)
@@ -87,7 +96,7 @@ export function PacientesOverview() {
             return (
               <button
                 key={p.id}
-                onClick={() => navigate(`/pacientes/${p.id}`)}
+                onClick={() => void navigate({ to: '/pacientes/$id', params: { id: String(p.id) } })}
                 className="flex flex-col gap-2.5 rounded-card border border-border bg-surface p-4 text-left shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">

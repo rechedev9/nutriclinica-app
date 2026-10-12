@@ -17,7 +17,7 @@ const ConfirmContext = createContext<ConfirmFn | null>(null)
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [opts, setOpts] = useState<ConfirmOptions>({ title: '' })
-  const resolver = useRef<(v: boolean) => void>()
+  const resolver = useRef<((v: boolean) => void) | null>(null)
 
   const confirm = useCallback<ConfirmFn>((o) => {
     setOpts(o)

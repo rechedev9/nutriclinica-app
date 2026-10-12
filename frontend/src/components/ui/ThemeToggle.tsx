@@ -1,4 +1,4 @@
-import { useTheme } from '@/lib/theme/ThemeProvider'
+import { useTheme } from '@/lib/theme/useTheme'
 
 // Botón sol/luna en el header. Alterna claro/oscuro.
 export function ThemeToggle() {

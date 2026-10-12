@@ -4,12 +4,12 @@ import { Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { useCreateProducto } from '../hooks/useStock'
 import { normaliza } from '@/lib/format/texto'
-import type { Producto } from '@/types'
+import type { Producto, ProductoBase } from '@/types'
 
 interface Props {
   productos: Producto[]
   value: number
-  onSelect: (producto: Producto) => void
+  onSelect: (producto: ProductoBase) => void
 }
 
 const unidades = ['ud', 'bote', 'saco', 'bolsa', 'caja', 'kg', 'gr', 'l', 'ml']
@@ -49,7 +49,7 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
     setOpen(true)
   }
 
-  function seleccionar(p: Producto) {
+  function seleccionar(p: ProductoBase) {
     onSelect(p)
     setOpen(false)
     setQuery('')

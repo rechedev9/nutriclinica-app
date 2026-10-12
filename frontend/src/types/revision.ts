@@ -1,30 +1,8 @@
-export interface Revision {
-  id: number
-  paciente_id: number
-  fecha: string | null
-  peso: number | null
-  talla: number | null
-  envergadura: number | null
-  pl_bicipital: number | null
-  pl_tricipital: number | null
-  pl_subescapular: number | null
-  pl_supraespinal: number | null
-  pl_supracrestal: number | null
-  pl_abdominal: number | null
-  pl_muslo_int: number | null
-  pl_pierna_med: number | null
-  per_antebrazo: number | null
-  per_brazo_rel: number | null
-  per_brazo_cont: number | null
-  per_hombros: number | null
-  per_pecho: number | null
-  per_cintura: number | null
-  per_caderas: number | null
-  per_muslo: number | null
-  per_muslo_cont: number | null
-  per_gemelo: number | null
-  notas: string | null
-}
+import type { Treaty } from '@elysiajs/eden'
+import type { servidor } from '@/lib/api/client'
+
+// Tipos derivados de las respuestas del backend (Eden): la fuente de verdad es la API.
+export type Revision = Treaty.Data<ReturnType<typeof servidor.pacientes>['revisiones']['get']>[number]
 
 export type RevisionInput = Omit<Revision, 'id' | 'paciente_id'>
 

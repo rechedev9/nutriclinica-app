@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'bun:test'
 import { calcIMC } from '../imc'
 import { calcGrasaDW, clasificarGrasa } from '../grasa'
 import { pesoGraso, pesoMagro } from '../composicion'

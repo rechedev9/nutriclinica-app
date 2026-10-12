@@ -7,6 +7,6 @@ import { router } from '@/router'
 // caché, se lleva al login y se avisa una sola vez.
 registrarManejadorSesionCaducada(() => {
   queryClient.clear()
-  void router.navigate('/login', { replace: true })
+  void router.navigate({ to: '/login', replace: true })
   toast.error('La sesión ha caducado. Vuelve a iniciar sesión.', { id: 'sesion-caducada' })
 })

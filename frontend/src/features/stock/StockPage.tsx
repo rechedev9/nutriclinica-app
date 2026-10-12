@@ -1,33 +1,29 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { cn } from '@/lib/cn'
+import { Link, Outlet } from '@tanstack/react-router'
 
 const tabs = [
-  { to: 'almacen', label: 'Stock' },
-  { to: 'categorias', label: 'Categorías' },
-  { to: 'proveedores', label: 'Proveedores' },
-  { to: 'compras', label: 'Compras' },
-  { to: 'ventas', label: 'Ventas' },
-  { to: 'mermas', label: 'Mermas' },
-  { to: 'analisis', label: 'Análisis' },
-]
+  { to: '/stock/almacen', label: 'Stock' },
+  { to: '/stock/categorias', label: 'Categorías' },
+  { to: '/stock/proveedores', label: 'Proveedores' },
+  { to: '/stock/compras', label: 'Compras' },
+  { to: '/stock/ventas', label: 'Ventas' },
+  { to: '/stock/mermas', label: 'Mermas' },
+  { to: '/stock/analisis', label: 'Análisis' },
+] as const
 
 export function StockPage() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden max-md:overflow-visible">
       <div className="flex gap-1 border-b border-border bg-surface px-6 max-md:overflow-x-auto no-scrollbar">
         {tabs.map((t) => (
-          <NavLink
+          <Link
             key={t.to}
             to={t.to}
-            className={({ isActive }) =>
-              cn(
-                'whitespace-nowrap border-b-2 px-4 py-3.5 text-[15px] font-semibold transition-colors',
-                isActive ? 'border-primary text-primary' : 'border-transparent text-ink-muted hover:text-ink',
-              )
-            }
+            className="whitespace-nowrap border-b-2 px-4 py-3.5 text-[15px] font-semibold transition-colors"
+            activeProps={{ className: 'border-primary text-primary' }}
+            inactiveProps={{ className: 'border-transparent text-ink-muted hover:text-ink' }}
           >
             {t.label}
-          </NavLink>
+          </Link>
         ))}
       </div>
       <div className="flex-1 overflow-y-auto bg-app max-md:overflow-visible">

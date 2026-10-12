@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet } from '@tanstack/react-router'
 import { useMe } from './useAuth'
 
 // Protege rutas solo para administradores: con otro rol vuelve a Pacientes.

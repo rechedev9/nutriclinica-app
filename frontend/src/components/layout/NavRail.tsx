@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
+import type { LinkProps } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useMe } from '@/features/auth/useAuth'
 import { cn } from '@/lib/cn'
 
 interface Item {
-  to: string
+  to: LinkProps['to']
   label: string
   icon: ReactNode
   adminOnly?: boolean
@@ -84,22 +85,21 @@ export function NavRail() {
       )}
     >
       {visible.map((item) => (
-        <NavLink
-          key={item.to}
+        <Link
+          key={item.label}
           to={item.to}
           title={collapsed ? item.label : undefined}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-              'max-md:flex-1 max-md:flex-col max-md:gap-1 max-md:px-1 max-md:py-2 max-md:text-[11.5px]',
-              collapsed && 'md:justify-center md:px-0',
-              isActive ? 'bg-primary-light text-primary' : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
-            )
-          }
+          className={cn(
+            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+            'max-md:flex-1 max-md:flex-col max-md:gap-1 max-md:px-1 max-md:py-2 max-md:text-[11.5px]',
+            collapsed && 'md:justify-center md:px-0',
+          )}
+          activeProps={{ className: 'bg-primary-light text-primary' }}
+          inactiveProps={{ className: 'text-ink-muted hover:bg-surface-2 hover:text-ink' }}
         >
           <span className="shrink-0 [&>svg]:h-[22px] [&>svg]:w-[22px]">{item.icon}</span>
           <span className={cn('truncate', collapsed && 'md:hidden')}>{item.label}</span>
-        </NavLink>
+        </Link>
       ))}
 
       {/* Botón colapsar/expandir (solo escritorio) */}

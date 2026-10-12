@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from '@tanstack/react-router'
 import { useLogin, useMe } from './useAuth'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
@@ -22,7 +22,7 @@ export function LoginPage() {
     }
     try {
       await login.mutateAsync({ usuario: usuario.trim(), password })
-      navigate('/pacientes', { replace: true })
+      await navigate({ to: '/pacientes', replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Error al iniciar sesión')
     }

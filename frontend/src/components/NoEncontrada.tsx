@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { Header } from '@/components/layout/Header'
 import { useMe } from '@/features/auth/useAuth'
 

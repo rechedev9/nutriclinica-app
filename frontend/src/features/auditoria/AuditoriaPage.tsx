@@ -1,15 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
+import { pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { fmtDatetime } from '@/lib/format/fecha'
-import type { AuditEntry } from '@/types'
 
 function useAuditoria() {
   return useQuery({
     queryKey: qk.auditoria,
-    queryFn: () => api<AuditEntry[]>('GET', '/api/auditoria?limite=300'),
+    queryFn: () => pedir(servidor.auditoria.get({ query: { limite: '300' } })),
   })
 }
 
