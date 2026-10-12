@@ -31,5 +31,5 @@ export function colorIndex(n: string): number {
 }
 
 export function avatarColor(n: string): string {
-  return AVATAR_COLORS[colorIndex(n)] ?? AVATAR_COLORS[0]!
+  return AVATAR_COLORS[colorIndex(n)] ?? '#0F7B92'
 }

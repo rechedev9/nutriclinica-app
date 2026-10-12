@@ -14,6 +14,8 @@ interface Props {
 
 const unidades = ['ud', 'bote', 'saco', 'bolsa', 'caja', 'kg', 'gr', 'l', 'ml']
 
+const negativo = (s: string) => s.trim() !== '' && !(Number(s) >= 0)
+
 export function ProductoCombobox({ productos, value, onSelect }: Props) {
   const seleccionado = productos.find((p) => p.id === value)
   const [open, setOpen] = useState(false)
@@ -28,8 +30,8 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
   const create = useCreateProducto()
 
   function onBlurInput(e: FocusEvent<HTMLInputElement>) {
-    const next = e.relatedTarget as Node | null
-    if (next && containerRef.current?.contains(next)) return
+    const next = e.relatedTarget
+    if (next instanceof Node && containerRef.current?.contains(next)) return
     setOpen(false)
   }
 
@@ -55,7 +57,6 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
     setQuery('')
   }
 
-  const negativo = (s: string) => s.trim() !== '' && !(Number(s) >= 0)
   const errorCreacion = negativo(precioCoste) || negativo(precioVenta) ? 'El precio no puede ser negativo' : null
 
   function empezarCreacion() {

@@ -6,9 +6,12 @@ export type Revision = Treaty.Data<ReturnType<typeof servidor.pacientes>['revisi
 
 export type RevisionInput = Omit<Revision, 'id' | 'paciente_id'>
 
+// Columnas de medida de una revisión: pliegues (pl_) y perímetros (per_), todas numéricas.
+export type ClaveMedida = Extract<keyof Revision, `pl_${string}` | `per_${string}`>
+
 // Definición de medidas (pliegues y perímetros) para formularios y gráficos.
 export interface MedidaDef {
-  key: keyof Revision
+  key: ClaveMedida
   label: string
   short: string
   unit: 'mm' | 'cm'

@@ -20,6 +20,8 @@ import { PerfilCorporal } from './PerfilCorporal'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 
+const fmtDelta = (d: number | null) => (d != null ? (d > 0 ? `+${d}` : String(d)) : '—')
+
 function SparkLine({ data }: { data: (number | null)[] }) {
   const vals = data.filter((v): v is number => v != null)
   if (vals.length < 2) return null
@@ -31,11 +33,14 @@ function SparkLine({ data }: { data: (number | null)[] }) {
     x: (i / (vals.length - 1)) * W,
     y: H - ((v - min) / range) * (H * 0.72) - 3,
   }))
-  let line = `M ${pts[0]!.x.toFixed(2)} ${pts[0]!.y.toFixed(2)}`
-  for (let i = 1; i < pts.length; i++) {
-    const p = pts[i - 1]!, c = pts[i]!
+  const [inicio, ...resto] = pts
+  if (inicio === undefined) return null
+  let line = `M ${inicio.x.toFixed(2)} ${inicio.y.toFixed(2)}`
+  let p = inicio
+  for (const c of resto) {
     const dx = (c.x - p.x) * 0.4
     line += ` C ${(p.x + dx).toFixed(2)} ${p.y.toFixed(2)}, ${(c.x - dx).toFixed(2)} ${c.y.toFixed(2)}, ${c.x.toFixed(2)} ${c.y.toFixed(2)}`
+    p = c
   }
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: '100%' }}>
@@ -69,7 +74,7 @@ function KpiCard({
   sparklineData?: (number | null)[]
 }) {
   const animated = useCountUp(rawValue, decimals)
-  const hasSpark = sparklineData != null && sparklineData.filter(v => v != null).length >= 2
+  const spark = sparklineData != null && sparklineData.filter((v) => v != null).length >= 2 ? sparklineData : null
   return (
     <div className="rounded-card bg-surface p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
@@ -85,10 +90,10 @@ function KpiCard({
           {animated}
           {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
         </div>
-        {hasSpark && (
+        {spark && (
           <div className="flex flex-1 justify-center">
             <div style={{ height: 40, width: '100%', minWidth: 60, maxWidth: 160 }}>
-              <SparkLine data={sparklineData!} />
+              <SparkLine data={spark} />
             </div>
           </div>
         )}
@@ -114,15 +119,16 @@ export function AnalisisTab() {
   )
 
   const derived = useMemo(() => {
-    if (!revs || revs.length === 0) return null
-    const asc = [...revs].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''))
-    const last = asc[asc.length - 1]!
-    const first = asc[0]!
+    if (!revs) return null
+    const asc = revs.toSorted((a, b) => (a.fecha || '').localeCompare(b.fecha || ''))
+    const last = asc.at(-1)
+    const first = asc[0]
+    if (last === undefined || first === undefined) return null
 
     const pg = buildMonthMultiData(asc, [(r) => r.peso, grasaFn])
 
     const activeMedidas = ALL_MEDIDAS.filter((m) => activas.has(m.key))
-    const perim = buildMonthMultiData(asc, activeMedidas.map((m) => (r: Revision) => r[m.key] as number | null))
+    const perim = buildMonthMultiData(asc, activeMedidas.map((m) => (r: Revision) => r[m.key]))
     const series: Serie[] = activeMedidas.map((m, i) => ({
       label: m.short,
       data: perim.datasets[i] ?? [],
@@ -140,7 +146,7 @@ export function AnalisisTab() {
       perim: { labels: perim.labels, series },
       pliegues: {
         labels: plieguesLast.map((m) => m.short),
-        data: plieguesLast.map((m) => last[m.key] as number),
+        data: plieguesLast.map((m) => last[m.key] ?? 0),
         colors: plieguesLast.map((m) => m.color),
       },
     }
@@ -151,7 +157,7 @@ export function AnalisisTab() {
   if (!derived) return <EmptyState title="Sin datos para analizar" subtitle="Añade revisiones para ver la evolución." />
 
   const { first, last } = derived
-  const prev = derived.asc.length >= 2 ? derived.asc[derived.asc.length - 2]! : null
+  const prev = derived.asc.at(-2) ?? null
   const grasaLast = grasaFn(last)
   const grasaPrev = prev ? grasaFn(prev) : null
   const imcLast = calcIMC(last.peso, p.talla)
@@ -208,10 +214,10 @@ export function AnalisisTab() {
             ? derived.last.fecha.replace(/-/g, '')
             : ''
           const titulo = fechaFichero ? `${nombreFichero}_${fechaFichero}` : nombreFichero
-          const prev = document.title
+          const tituloAnterior = document.title
           document.title = titulo
           window.print()
-          document.title = prev
+          document.title = tituloAnterior
         }}>
           Exportar PDF
         </Button>
@@ -354,8 +360,6 @@ export function AnalisisTab() {
               {filas.map((f) => {
                 const deltaTotal = f.f != null && f.l != null ? Math.round((f.l - f.f) * 10) / 10 : null
                 const deltaAnt = f.a != null && f.l != null ? Math.round((f.l - f.a) * 10) / 10 : null
-                const fmtDelta = (d: number | null) =>
-                  d != null ? (d > 0 ? `+${d}` : String(d)) : '—'
                 return (
                   <tr key={f.label} className="border-t border-border">
                     <td className="py-1.5 font-medium">{f.label}</td>
@@ -394,9 +398,9 @@ export function AnalisisTab() {
                 <button
                   key={m.key}
                   onClick={() =>
-                    setActivas((prev) => {
-                      const next = new Set(prev)
-                      next.has(m.key) ? next.delete(m.key) : next.add(m.key)
+                    setActivas((actuales) => {
+                      const next = new Set(actuales)
+                      if (!next.delete(m.key)) next.add(m.key)
                       return next
                     })
                   }
@@ -437,7 +441,7 @@ export function AnalisisTab() {
       <div className="print-page-break">
       <PerfilCorporal
         last={derived.last}
-        prev={derived.asc.length >= 2 ? derived.asc[derived.asc.length - 2]! : null}
+        prev={prev}
         sexo={p.sexo ?? ''}
       />
       </div>

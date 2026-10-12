@@ -43,7 +43,7 @@ export function ProveedorModal({ open, onClose, proveedor }: Props) {
       notas: nil(v.notas),
     }
     const ok = await intentar(
-      isEdit ? update.mutateAsync({ id: proveedor!.id, body }) : create.mutateAsync(body),
+      proveedor ? update.mutateAsync({ id: proveedor.id, body }) : create.mutateAsync(body),
     )
     if (ok) onClose()
   }

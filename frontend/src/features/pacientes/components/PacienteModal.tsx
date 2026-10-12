@@ -88,7 +88,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
       consentimiento: v.consentimiento ? 1 : 0,
     }
     const ok = await intentar(
-      isEdit ? update.mutateAsync({ id: paciente!.id, body }) : create.mutateAsync(body),
+      paciente ? update.mutateAsync({ id: paciente.id, body }) : create.mutateAsync(body),
     )
     if (ok) onClose()
   }

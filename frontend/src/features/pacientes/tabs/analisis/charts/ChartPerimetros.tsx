@@ -36,16 +36,15 @@ export function ChartPerimetros({ labels, series }: { labels: string[]; series: 
     [labels, series, t.isDark],
   )
 
-  const axis = (text: string, position: 'left' | 'right', area: boolean) => ({
-    type: 'linear' as const,
-    position,
-    title: { display: true, text, color: t.ticks },
-    grid: { color: t.grid, drawOnChartArea: area, drawBorder: false },
-    ticks: { color: t.ticks },
-  })
-
-  const options = useMemo(
-    () => ({
+  const options = useMemo(() => {
+    const axis = (text: string, position: 'left' | 'right', area: boolean) => ({
+      type: 'linear' as const,
+      position,
+      title: { display: true, text, color: t.ticks },
+      grid: { color: t.grid, drawOnChartArea: area, drawBorder: false },
+      ticks: { color: t.ticks },
+    })
+    return {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index' as const, intersect: false },
@@ -58,9 +57,8 @@ export function ChartPerimetros({ labels, series }: { labels: string[]; series: 
         yMm: hasMm ? axis('mm', 'right', false) : { display: false },
         x: { grid: { color: t.grid, drawBorder: false }, ticks: { color: t.ticks } },
       },
-    }),
-    [t, hasCm, hasMm],
-  )
+    }
+  }, [t, hasCm, hasMm])
 
   return <Line data={data} options={options} />
 }

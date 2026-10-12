@@ -62,7 +62,7 @@ export function ProductoModal({ open, onClose, producto }: Props) {
       stock_minimo: num(v.stock_minimo),
     }
     const ok = await intentar(
-      isEdit ? update.mutateAsync({ id: producto!.id, body }) : create.mutateAsync(body),
+      producto ? update.mutateAsync({ id: producto.id, body }) : create.mutateAsync(body),
     )
     if (ok) onClose()
   }

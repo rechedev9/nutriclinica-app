@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import type { Revision } from '@/types'
+import type { ClaveMedida, Revision } from '@/types'
 
 interface Props {
   last: Revision
@@ -8,7 +8,7 @@ interface Props {
 }
 
 interface Punto {
-  key: keyof Revision
+  key: ClaveMedida
   label: string
   textX: number
   y: number
@@ -65,17 +65,15 @@ function PanelSVG({
   return (
     <div className="rounded-card bg-surface p-3 shadow-card flex flex-col gap-2">
       <div className="text-sm font-bold text-ink">{titulo}</div>
-      <svg ref={svgRef as RefObject<SVGSVGElement>} viewBox="0 0 900 350" className="w-full">
+      <svg ref={svgRef} viewBox="0 0 900 350" className="w-full">
         <image href={imagen} x="215" y="0" width="320" height="336" preserveAspectRatio="xMidYMid meet" />
         {puntos.map((p, i) => {
-          const val = last[p.key] as number | null
+          const val = last[p.key]
           if (val == null) return null
-          const delta =
-            prev != null && prev[p.key] != null
-              ? Math.round((val - (prev[p.key] as number)) * 10) / 10
-              : null
-          const hasDelta = delta != null && delta !== 0
-          const subio = delta != null && delta > 0
+          const anterior = prev?.[p.key] ?? null
+          const delta = anterior != null ? Math.round((val - anterior) * 10) / 10 : 0
+          const hasDelta = delta !== 0
+          const subio = delta > 0
           const lineX1 = p.anchor === 'end' ? p.textX + 16 : p.textX - 16
 
           return (
@@ -95,7 +93,7 @@ function PanelSVG({
               </text>
               {hasDelta && (
                 <text x={p.textX} y={p.y + 22} textAnchor={p.anchor} fontSize={12} fill="#a78bfa" fontFamily="inherit">
-                  {subio ? '↑' : '↓'} {Math.abs(delta!).toFixed(1)} cm
+                  {subio ? '↑' : '↓'} {Math.abs(delta).toFixed(1)} cm
                 </text>
               )}
             </g>

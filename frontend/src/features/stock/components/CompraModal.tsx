@@ -14,6 +14,13 @@ interface Props {
   compra?: Compra
 }
 
+const dosCifras = (n: number) => String(n).padStart(2, '0')
+
+function nowLocal() {
+  const d = new Date()
+  return `${d.getFullYear()}-${dosCifras(d.getMonth() + 1)}-${dosCifras(d.getDate())}T${dosCifras(d.getHours())}:${dosCifras(d.getMinutes())}`
+}
+
 export function CompraModal({ open, onClose, compra }: Props) {
   const { data: productos = [] } = useProductos()
   const { data: proveedores = [] } = useProveedores()
@@ -24,12 +31,6 @@ export function CompraModal({ open, onClose, compra }: Props) {
   const [proveedorId, setProveedorId] = useState('')
   const [notas, setNotas] = useState('')
   const [lineas, setLineas] = useState<LineaInput[]>([])
-
-  function nowLocal() {
-    const d = new Date()
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
-  }
 
   useEffect(() => {
     if (open) {
@@ -55,7 +56,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
       lineas: lineas.filter((l) => l.producto_id > 0),
     }
     const ok = await intentar(
-      isEdit ? update.mutateAsync({ id: compra!.id, body }) : create.mutateAsync(body),
+      compra ? update.mutateAsync({ id: compra.id, body }) : create.mutateAsync(body),
     )
     if (ok) onClose()
   }

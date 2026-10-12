@@ -114,7 +114,7 @@ describe('base de datos', () => {
     expect(almacen.every((p) => p.stock_actual >= 0)).toBe(true)
     const totales = listarCompras(db)
       .map((c) => c.total)
-      .sort((a, b) => a - b)
+      .toSorted((a, b) => a - b)
     expect(totales).toEqual([251, 299.4, 303.6, 347, 392.8])
   })
 

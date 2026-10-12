@@ -30,7 +30,7 @@ export function CategoriaModal({ open, onClose, categoria }: Props) {
   async function onSubmit(v: { nombre: string }) {
     const nombre = v.nombre.trim()
     const ok = await intentar(
-      isEdit ? update.mutateAsync({ id: categoria!.id, nombre }) : create.mutateAsync(nombre),
+      categoria ? update.mutateAsync({ id: categoria.id, nombre }) : create.mutateAsync(nombre),
     )
     if (ok) onClose()
   }

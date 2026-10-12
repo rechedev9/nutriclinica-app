@@ -118,7 +118,7 @@ export function AlmacenTab() {
 
   const rows = useMemo(() => almacen ?? [], [almacen])
   const categorias = useMemo(
-    () => [...new Set(rows.map((p) => p.categoria).filter((c): c is string => !!c))].sort(),
+    () => [...new Set(rows.map((p) => p.categoria).filter((c): c is string => !!c))].toSorted(),
     [rows],
   )
   const filtradas = useMemo(() => {
@@ -134,11 +134,11 @@ export function AlmacenTab() {
     if (!sort) return filtradas
     const { key, dir } = sort
     const factor = dir === 'asc' ? 1 : -1
-    return [...filtradas].sort((a, b) => {
+    return filtradas.toSorted((a, b) => {
       const va = valorOrden(a, key)
       const vb = valorOrden(b, key)
-      if (typeof va === 'string' && typeof vb === 'string') return va.localeCompare(vb) * factor
-      return ((va as number) - (vb as number)) * factor
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * factor
+      return String(va).localeCompare(String(vb)) * factor
     })
   }, [filtradas, sort])
 

@@ -81,10 +81,13 @@ export function AnalisisStockTab() {
   const [busquedaProducto, setBusquedaProducto] = useState('')
   const [comboAbierto, setComboAbierto] = useState(false)
   const comboRef = useRef<HTMLDivElement>(null)
+  // La fecha se fija al montar: leer el reloj durante el render no es puro.
+  const [hoy] = useState(() => new Date())
 
   useEffect(() => {
     function cerrar(e: MouseEvent) {
-      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+      const dentro = e.target instanceof Node && comboRef.current?.contains(e.target) === true
+      if (comboRef.current && !dentro) {
         setComboAbierto(false)
       }
     }
@@ -92,14 +95,14 @@ export function AnalisisStockTab() {
     return () => document.removeEventListener('mousedown', cerrar)
   }, [])
 
-  const compras = comprasData ?? []
-  const ventas = ventasData ?? []
-  const mermas = mermasData ?? []
+  const compras = useMemo(() => comprasData ?? [], [comprasData])
+  const ventas = useMemo(() => ventasData ?? [], [ventasData])
+  const mermas = useMemo(() => mermasData ?? [], [mermasData])
   const almacen = almacenData ?? []
 
   const meses = useMemo(() => {
     if (!filtroAnio) {
-      const now = new Date()
+      const now = hoy
       return Array.from({ length: 12 }, (_, i) => {
         const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -109,20 +112,20 @@ export function AnalisisStockTab() {
       { length: filtroMesHasta - filtroMesDesde + 1 },
       (_, i) => `${filtroAnio}-${String(filtroMesDesde + i).padStart(2, '0')}`,
     )
-  }, [filtroAnio, filtroMesDesde, filtroMesHasta])
+  }, [filtroAnio, filtroMesDesde, filtroMesHasta, hoy])
 
   const { ventasPorMes, comprasPorMes } = useMemo(() => {
-    const ventasPorMes: Record<string, number> = {}
-    const comprasPorMes: Record<string, number> = {}
+    const porMesVentas: Record<string, number> = {}
+    const porMesCompras: Record<string, number> = {}
     for (const v of ventas) {
       const m = (v.fecha ?? '').slice(0, 7)
-      if (m) ventasPorMes[m] = (ventasPorMes[m] ?? 0) + v.total
+      if (m) porMesVentas[m] = (porMesVentas[m] ?? 0) + v.total
     }
     for (const c of compras) {
       const m = (c.fecha ?? '').slice(0, 7)
-      if (m) comprasPorMes[m] = (comprasPorMes[m] ?? 0) + c.total
+      if (m) porMesCompras[m] = (porMesCompras[m] ?? 0) + c.total
     }
-    return { ventasPorMes, comprasPorMes }
+    return { ventasPorMes: porMesVentas, comprasPorMes: porMesCompras }
   }, [ventas, compras])
 
   const anosDisponibles = useMemo(() => {
@@ -135,7 +138,7 @@ export function AnalisisStockTab() {
       const y = (c.fecha ?? '').slice(0, 4)
       if (y.length === 4) anos.add(y)
     }
-    return Array.from(anos).sort()
+    return Array.from(anos).toSorted()
   }, [ventas, compras])
 
   const topProductos = useMemo(() => {
@@ -147,9 +150,9 @@ export function AnalisisStockTab() {
       }
     }
     return Object.entries(totales)
-      .sort(([, a], [, b]) => b - a)
+      .toSorted(([, a], [, b]) => b - a)
       .slice(0, 6)
-      .map(([nombre, val]) => [nombre.length > 26 ? nombre.slice(0, 26) + '…' : nombre, val] as [string, number])
+      .map(([nombre, val]): [string, number] => [nombre.length > 26 ? nombre.slice(0, 26) + '…' : nombre, val])
   }, [ventas])
 
   const comprasPorProv = useMemo(() => {
@@ -158,7 +161,7 @@ export function AnalisisStockTab() {
       const nombre = c.proveedor_nombre ?? 'Sin proveedor'
       tot[nombre] = (tot[nombre] ?? 0) + c.total
     }
-    return Object.entries(tot).sort(([, a], [, b]) => b - a)
+    return Object.entries(tot).toSorted(([, a], [, b]) => b - a)
   }, [compras])
 
   const mermasPorMotivo = useMemo(() => {
@@ -176,14 +179,14 @@ export function AnalisisStockTab() {
         if (l.producto_nombre) productosSet.add(l.producto_nombre)
       }
     }
-    const productosLista = Array.from(productosSet).sort()
+    const productosLista = Array.from(productosSet).toSorted()
 
-    const productosFiltrados = busquedaProducto
+    const filtrados = busquedaProducto
       ? productosLista.filter((p) => normaliza(p).includes(normaliza(busquedaProducto)))
       : productosLista
 
     if (!filtroProducto) {
-      return { productosLista, productosFiltrados, proveedoresDeProducto: [], precioDatasets: [], precioLabels: [] }
+      return { productosFiltrados: filtrados, proveedoresDeProducto: [], precioDatasets: [], precioLabels: [] }
     }
 
     // Proveedores que tienen ese producto
@@ -193,7 +196,7 @@ export function AnalisisStockTab() {
         provSet.add(c.proveedor_nombre ?? 'Sin proveedor')
       }
     }
-    const proveedoresDeProducto = Array.from(provSet).sort()
+    const proveedores = Array.from(provSet).toSorted()
 
     // Puntos por proveedor: { fecha → precio }
     const porProv: Record<string, { fecha: string; precio: number }[]> = {}
@@ -211,15 +214,15 @@ export function AnalisisStockTab() {
     // Eje X: todas las fechas únicas ordenadas
     const fechasSet = new Set<string>()
     for (const pts of Object.values(porProv)) pts.forEach((p) => fechasSet.add(p.fecha))
-    const precioLabels = Array.from(fechasSet).sort()
+    const fechas = Array.from(fechasSet).toSorted()
 
     const provKeys = Object.keys(porProv)
-    const precioDatasets = provKeys.map((prov, i) => {
+    const series = provKeys.map((prov, i) => {
       const mapaFecha: Record<string, number> = {}
       for (const { fecha, precio } of porProv[prov] ?? []) mapaFecha[fecha] = precio
       return {
         label: prov,
-        data: precioLabels.map((f) => mapaFecha[f] ?? null),
+        data: fechas.map((f) => mapaFecha[f] ?? null),
         borderColor: PALETTE[i % PALETTE.length] ?? '#0F7B92',
         backgroundColor: (PALETTE[i % PALETTE.length] ?? '#0F7B92') + '22',
         pointRadius: 5,
@@ -230,7 +233,7 @@ export function AnalisisStockTab() {
       }
     })
 
-    return { productosLista, productosFiltrados, proveedoresDeProducto, precioDatasets, precioLabels }
+    return { productosFiltrados: filtrados, proveedoresDeProducto: proveedores, precioDatasets: series, precioLabels: fechas }
   }, [compras, filtroProducto, filtroProv, busquedaProducto])
 
   const evolucionTitulo = useMemo(() => {
@@ -366,7 +369,7 @@ export function AnalisisStockTab() {
   const bajosMinimos = almacen.filter((a) => a.stock_minimo > 0 && a.stock_actual < a.stock_minimo)
 
   const mesesLabels = meses.map((m) => {
-    const [y, mo] = m.split('-') as [string, string]
+    const [y, mo] = m.split('-')
     return new Date(Number(y), Number(mo) - 1).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
   })
 

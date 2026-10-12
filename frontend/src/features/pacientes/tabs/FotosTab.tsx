@@ -125,7 +125,7 @@ export function FotosTab() {
       ) : (
         <div className="flex flex-col gap-6">
           {(() => {
-            const sorted = [...fotos].sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''))
+            const sorted = fotos.toSorted((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''))
             const grupos = new Map<string, typeof fotos>()
             for (const f of sorted) {
               const clave = f.fecha

@@ -14,7 +14,7 @@ describe('usuarios', () => {
   test('listar no expone el hash de la contraseña', async () => {
     const lista = (await api.usuarios.get()).data ?? []
     expect(lista.map((u) => u.usuario)).toEqual(['admin', 'ana'])
-    expect(Object.keys(lista[0] ?? {}).sort()).toEqual(['creado', 'id', 'rol', 'usuario'])
+    expect(Object.keys(lista[0] ?? {}).toSorted()).toEqual(['creado', 'id', 'rol', 'usuario'])
   })
 
   test('crear valida los datos y el nombre es único', async () => {

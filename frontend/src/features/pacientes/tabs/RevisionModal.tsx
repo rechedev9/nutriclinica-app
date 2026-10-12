@@ -5,7 +5,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Textarea } from '@/components/ui/Field'
 import { PLIEGUES, PERIMETROS } from '@/types'
-import type { Revision, RevisionInput } from '@/types'
+import type { ClaveMedida, Revision, RevisionInput } from '@/types'
 import { intentar } from '@/lib/api/intentar'
 import { esquemaRevision } from '@/lib/validacion/esquemas'
 import { useCreateRevision, useUpdateRevision } from '../hooks/useRevisiones'
@@ -48,18 +48,34 @@ export function RevisionModal({ open, onClose, pid, revision }: Props) {
   }, [open, revision, reset])
 
   async function onSubmit(v: Record<string, string>) {
-    const body = {
+    const medida = (k: ClaveMedida) => num(v[k] ?? '')
+    const body: RevisionInput = {
       fecha: v.fecha?.trim() || null,
       peso: num(v.peso ?? ''),
       talla: null,
       envergadura: num(v.envergadura ?? ''),
       notas: v.notas?.trim() || null,
-    } as RevisionInput
-    for (const k of MEDIDA_KEYS) {
-      ;(body as Record<string, unknown>)[k] = num(v[k] ?? '')
+      pl_bicipital: medida('pl_bicipital'),
+      pl_tricipital: medida('pl_tricipital'),
+      pl_subescapular: medida('pl_subescapular'),
+      pl_supraespinal: medida('pl_supraespinal'),
+      pl_supracrestal: medida('pl_supracrestal'),
+      pl_abdominal: medida('pl_abdominal'),
+      pl_muslo_int: medida('pl_muslo_int'),
+      pl_pierna_med: medida('pl_pierna_med'),
+      per_antebrazo: medida('per_antebrazo'),
+      per_brazo_rel: medida('per_brazo_rel'),
+      per_brazo_cont: medida('per_brazo_cont'),
+      per_hombros: medida('per_hombros'),
+      per_pecho: medida('per_pecho'),
+      per_cintura: medida('per_cintura'),
+      per_caderas: medida('per_caderas'),
+      per_muslo: medida('per_muslo'),
+      per_muslo_cont: medida('per_muslo_cont'),
+      per_gemelo: medida('per_gemelo'),
     }
     const ok = await intentar(
-      isEdit ? update.mutateAsync({ id: revision!.id, body }) : create.mutateAsync(body),
+      revision ? update.mutateAsync({ id: revision.id, body }) : create.mutateAsync(body),
     )
     if (ok) onClose()
   }
