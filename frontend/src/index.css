@@ -38,12 +38,31 @@
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-primary-light: var(--primary-light);
+
+  /* Tokens de shadcn sobre la paleta del proyecto: lo que se añada con
+     `bunx shadcn add` sale ya con los colores de la app, en claro y oscuro. */
+  --color-background: var(--app);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--ink-muted);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--ink);
+  --color-input: var(--border);
 }
 
 @theme {
   --color-primary: #0f7b92;
   --color-primary-dark: #0a6577;
+  --color-primary-foreground: #ffffff;
   --color-danger: #ef4444;
+  --color-destructive: #ef4444;
+  --color-ring: #0f7b92;
   --color-success: #0e9f6e;
 
   --font-sans: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
