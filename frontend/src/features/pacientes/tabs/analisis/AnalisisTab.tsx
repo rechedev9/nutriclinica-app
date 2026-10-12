@@ -20,7 +20,7 @@ import { PerfilCorporal } from './PerfilCorporal'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 
-const fmtDelta = (d: number | null) => (d != null ? (d > 0 ? `+${d}` : String(d)) : '—')
+const fmtDelta = (d: number | null) => (d != null ? (d > 0 ? `+${d}` : String(d)) : '-')
 
 function SparkLine({ data }: { data: (number | null)[] }) {
   const vals = data.filter((v): v is number => v != null)
@@ -165,6 +165,7 @@ export function AnalisisTab() {
 
   const { first, last } = derived
   const prev = derived.asc.at(-2) ?? null
+  const hayEvolucion = prev !== null
   const grasaLast = grasaFn(last)
   const grasaPrev = prev ? grasaFn(prev) : null
   const imcLast = calcIMC(last.peso, p.talla)
@@ -450,10 +451,10 @@ export function AnalisisTab() {
                     <div className="flex items-center gap-1.5">
                       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0F7B92' }} />
                       <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
-                      <span className="text-ink-muted">Masa magra — {pMagro.toFixed(1)} kg</span>
+                      <span className="text-ink-muted">Masa magra: {pMagro.toFixed(1)} kg</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-ink-muted">Masa grasa — {pGraso.toFixed(1)} kg</span>
+                      <span className="text-ink-muted">Masa grasa: {pGraso.toFixed(1)} kg</span>
                       <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
                       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#fbbf24' }} />
                     </div>
@@ -499,23 +500,20 @@ export function AnalisisTab() {
 
         <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 text-sm font-bold">Evolución</div>
-          <table className="w-full table-fixed text-sm">
-            <colgroup>
-              <col className="w-[26%]" />
-              <col className="w-[12%]" />
-              <col className="w-[12%]" />
-              <col className="w-[12%]" />
-              <col className="w-[19%]" />
-              <col className="w-[19%]" />
-            </colgroup>
+          {!hayEvolucion && (
+            <div className="mb-2 text-[13px] text-ink-muted">
+              Solo hay una revisión. La comparación aparecerá al registrar la siguiente.
+            </div>
+          )}
+          <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-ink-muted">
-                <th className="py-1.5 font-semibold">Métrica</th>
-                <th className="py-1.5 font-semibold">Primera</th>
-                <th className="py-1.5 font-semibold">Anterior</th>
-                <th className="py-1.5 font-semibold">Última</th>
-                <th className="py-1.5 font-bold text-ink">Δ Prim vs Últ</th>
-                <th className="py-1.5 font-bold text-ink">Δ Ant vs Últ</th>
+              <tr className="text-left whitespace-nowrap text-ink-muted">
+                <th className="py-1.5 pr-3 font-semibold">Métrica</th>
+                {hayEvolucion && <th className="py-1.5 pr-3 font-semibold">Primera</th>}
+                {hayEvolucion && <th className="py-1.5 pr-3 font-semibold">Anterior</th>}
+                <th className="py-1.5 pr-3 font-semibold">{hayEvolucion ? 'Última' : 'Valor'}</th>
+                {hayEvolucion && <th className="py-1.5 pr-3 font-bold text-ink">Δ Primera</th>}
+                {hayEvolucion && <th className="py-1.5 font-bold text-ink">Δ Anterior</th>}
               </tr>
             </thead>
             <tbody>
@@ -524,28 +522,32 @@ export function AnalisisTab() {
                 const deltaAnt = f.a != null && f.l != null ? Math.round((f.l - f.a) * 10) / 10 : null
                 return (
                   <tr key={f.label} className="border-t border-border">
-                    <td className="py-1.5 font-medium">{f.label}</td>
-                    <td className="py-1.5 text-ink-muted">{f.f ?? '—'}</td>
-                    <td className="py-1.5 text-ink-muted">{f.a ?? '—'}</td>
-                    <td className="py-1.5 font-semibold">{f.l ?? '—'}</td>
-                    <td
-                      className={cn(
-                        'py-1.5 font-semibold',
-                        deltaTotal != null && deltaTotal < 0 && 'text-success',
-                        deltaTotal != null && deltaTotal > 0 && 'text-danger',
-                      )}
-                    >
-                      {fmtDelta(deltaTotal)}
-                    </td>
-                    <td
-                      className={cn(
-                        'py-1.5 font-semibold',
-                        deltaAnt != null && deltaAnt < 0 && 'text-success',
-                        deltaAnt != null && deltaAnt > 0 && 'text-danger',
-                      )}
-                    >
-                      {fmtDelta(deltaAnt)}
-                    </td>
+                    <td className="py-1.5 pr-3 font-medium">{f.label}</td>
+                    {hayEvolucion && <td className="py-1.5 pr-3 text-ink-muted">{f.f ?? '-'}</td>}
+                    {hayEvolucion && <td className="py-1.5 pr-3 text-ink-muted">{f.a ?? '-'}</td>}
+                    <td className="py-1.5 pr-3 font-semibold">{f.l ?? '-'}</td>
+                    {hayEvolucion && (
+                      <td
+                        className={cn(
+                          'py-1.5 pr-3 font-semibold',
+                          deltaTotal != null && deltaTotal < 0 && 'text-success',
+                          deltaTotal != null && deltaTotal > 0 && 'text-danger',
+                        )}
+                      >
+                        {fmtDelta(deltaTotal)}
+                      </td>
+                    )}
+                    {hayEvolucion && (
+                      <td
+                        className={cn(
+                          'py-1.5 font-semibold',
+                          deltaAnt != null && deltaAnt < 0 && 'text-success',
+                          deltaAnt != null && deltaAnt > 0 && 'text-danger',
+                        )}
+                      >
+                        {fmtDelta(deltaAnt)}
+                      </td>
+                    )}
                   </tr>
                 )
               })}

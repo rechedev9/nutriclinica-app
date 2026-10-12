@@ -39,10 +39,14 @@ describe('catálogo', () => {
     expect(mensajeDe(duplicada)).toEqual({ error: 'Ya existe una categoría con ese nombre' })
     expect((await api.stock.categorias.post({ nombre: '  ' })).status).toBe(400)
 
-    await api.stock.productos.post({ nombre: 'Whey', categoria_id })
+    const whey = await api.stock.productos.post({ nombre: 'Whey', categoria_id })
     const enUso = await api.stock.categorias({ id: categoria_id }).delete()
     expect(enUso.status).toBe(409)
     expect(mensajeDe(enUso)).toEqual({ error: 'No se puede eliminar: hay productos que usan esta categoría' })
+
+    // Un producto dado de baja ya no se ve en la interfaz: no puede retener la categoría.
+    await api.stock.productos({ id: whey.data?.id ?? 0 }).delete()
+    expect((await api.stock.categorias({ id: categoria_id }).delete()).data).toEqual({ ok: true })
 
     const libre = await api.stock.categorias.post({ nombre: 'Vitaminas' })
     expect((await api.stock.categorias({ id: libre.data?.id ?? 0 }).delete()).data).toEqual({ ok: true })
@@ -77,6 +81,13 @@ describe('catálogo', () => {
     expect(enUso.status).toBe(409)
     expect(mensajeDe(enUso)).toEqual({ error: 'No se puede eliminar: hay productos o compras de este proveedor' })
     expect((await api.stock.proveedores({ id: 9999 }).put({ nombre: 'Nadie' })).status).toBe(404)
+
+    const otro = await api.stock.proveedores.post({ nombre: 'Amix' })
+    const otro_id = otro.data?.id ?? 0
+    const baja = await api.stock.productos.post({ nombre: 'Barrita', proveedor_id: otro_id })
+    expect((await api.stock.proveedores({ id: otro_id }).delete()).status).toBe(409)
+    await api.stock.productos({ id: baja.data?.id ?? 0 }).delete()
+    expect((await api.stock.proveedores({ id: otro_id }).delete()).data).toEqual({ ok: true })
   })
 })
 

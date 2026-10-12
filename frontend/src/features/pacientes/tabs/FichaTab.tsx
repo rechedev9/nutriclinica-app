@@ -8,7 +8,7 @@ function Campo({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <div className="text-[13px] text-ink-muted">{label}</div>
-      <div className="mt-0.5 text-[15px] font-semibold">{value || '—'}</div>
+      <div className="mt-0.5 text-[15px] font-semibold">{value || '-'}</div>
     </div>
   )
 }

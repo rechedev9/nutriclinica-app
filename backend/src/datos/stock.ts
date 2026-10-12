@@ -1,4 +1,4 @@
-import { desc, eq, getTableColumns, inArray, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, ne, sql } from 'drizzle-orm'
 import type { BD, Ejecutor } from '../db/cliente'
 import {
   pacientes,
@@ -116,16 +116,19 @@ export function actualizarCategoria(db: BD, id: number, nombre: string) {
   }, INMEDIATA)
 }
 
+// Solo bloquean los productos activos: los dados de baja no se ven, así que se desvinculan.
 export function eliminarCategoria(db: BD, id: number): void {
   db.transaction((tx) => {
+    const deLaCategoria = eq(stock_productos.categoria_id, id)
     const enUso = tx
       .select({ id: stock_productos.id })
       .from(stock_productos)
-      .where(eq(stock_productos.categoria_id, id))
+      .where(and(deLaCategoria, eq(stock_productos.activo, 1)))
       .get()
     if (enUso !== undefined) {
       throw new ErrorHttp(409, 'No se puede eliminar: hay productos que usan esta categoría')
     }
+    tx.update(stock_productos).set({ categoria_id: null }).where(deLaCategoria).run()
     tx.delete(stock_categorias).where(eq(stock_categorias.id, id)).run()
   }, INMEDIATA)
 }
@@ -150,7 +153,7 @@ function proveedorEnUso(tx: Ejecutor, id: number): boolean {
   const producto = tx
     .select({ id: stock_productos.id })
     .from(stock_productos)
-    .where(eq(stock_productos.proveedor_id, id))
+    .where(and(eq(stock_productos.proveedor_id, id), eq(stock_productos.activo, 1)))
     .get()
   const compra = tx.select({ id: stock_compras.id }).from(stock_compras).where(eq(stock_compras.proveedor_id, id)).get()
   const merma = tx.select({ id: stock_mermas.id }).from(stock_mermas).where(eq(stock_mermas.proveedor_id, id)).get()
@@ -162,6 +165,8 @@ export function eliminarProveedor(db: BD, id: number): void {
     if (proveedorEnUso(tx, id)) {
       throw new ErrorHttp(409, 'No se puede eliminar: hay productos o compras de este proveedor')
     }
+    // Los productos que quedan apuntando al proveedor están dados de baja.
+    tx.update(stock_productos).set({ proveedor_id: null }).where(eq(stock_productos.proveedor_id, id)).run()
     tx.delete(stock_proveedores).where(eq(stock_proveedores.id, id)).run()
   }, INMEDIATA)
 }

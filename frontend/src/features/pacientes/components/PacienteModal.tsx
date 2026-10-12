@@ -103,7 +103,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           </Field>
           <Field label="Sexo">
             <Select {...register('sexo')}>
-              <option value="">—</option>
+              <option value="">Sin especificar</option>
               <option value="Hombre">Hombre</option>
               <option value="Mujer">Mujer</option>
               <option value="Otro">Otro</option>
@@ -114,7 +114,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           </Field>
           <Field label="Grupo sanguíneo">
             <Select {...register('grupo_sanguineo')}>
-              <option value="">—</option>
+              <option value="">Sin especificar</option>
               {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((g) => (
                 <option key={g} value={g}>
                   {g}

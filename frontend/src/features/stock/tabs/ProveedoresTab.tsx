@@ -86,7 +86,7 @@ export function ProveedoresTab() {
                         {p.telefono}
                       </a>
                     ) : (
-                      <span className="text-ink-muted">—</span>
+                      <span className="text-ink-muted">-</span>
                     )}
                   </td>
                   <td className="p-3">
@@ -95,11 +95,11 @@ export function ProveedoresTab() {
                         {p.email}
                       </a>
                     ) : (
-                      <span className="text-ink-muted">—</span>
+                      <span className="text-ink-muted">-</span>
                     )}
                   </td>
                   <td className="p-3 max-w-[220px] text-ink-muted truncate" title={p.notas ?? ''}>
-                    {p.notas ?? <span className="text-ink-muted">—</span>}
+                    {p.notas ?? <span className="text-ink-muted">-</span>}
                   </td>
                   <td className="p-3 text-right">
                     <Button

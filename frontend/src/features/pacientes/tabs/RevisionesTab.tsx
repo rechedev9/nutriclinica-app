@@ -36,7 +36,7 @@ function RevisionCard({ rev, onEdit, onDelete }: { rev: Revision; onEdit: () => 
             </svg>
           </div>
           <div className="flex-1">
-            <div className="font-semibold">{rev.fecha ? fmtFecha(rev.fecha) : '—'}</div>
+            <div className="font-semibold">{rev.fecha ? fmtFecha(rev.fecha) : '-'}</div>
             <div className="text-[13px] text-ink-muted">
               {rev.peso != null && `${rev.peso} kg`}
               {medidas.length > 0 && ` · ${medidas.length} medidas`}

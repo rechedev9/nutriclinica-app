@@ -63,8 +63,8 @@ export function AuditoriaPage() {
             <tbody>
               {rows.map((e) => (
                 <tr key={e.id} className="border-b border-border last:border-0">
-                  <td className="p-3 text-ink-muted">{e.fecha ? fmtDatetime(e.fecha) : '—'}</td>
-                  <td className="p-3 font-semibold">{e.usuario || '—'}</td>
+                  <td className="p-3 text-ink-muted">{e.fecha ? fmtDatetime(e.fecha) : '-'}</td>
+                  <td className="p-3 font-semibold">{e.usuario || '-'}</td>
                   <td className="p-3">{accion[e.metodo] ?? e.metodo}</td>
                   <td className="p-3 font-mono text-[13px] text-ink-muted">{e.ruta}</td>
                   <td className="p-3">

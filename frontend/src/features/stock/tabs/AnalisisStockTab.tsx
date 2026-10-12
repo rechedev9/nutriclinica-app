@@ -242,11 +242,11 @@ export function AnalisisStockTab() {
   }, [compras, filtroProducto, filtroProv, busquedaProducto])
 
   const evolucionTitulo = useMemo(() => {
-    if (!filtroAnio) return 'Evolución mensual — ingresos vs. gastos (últimos 12 meses)'
-    if (filtroMesDesde === 1 && filtroMesHasta === 12) return `Evolución mensual — ingresos vs. gastos (${filtroAnio})`
+    if (!filtroAnio) return 'Evolución mensual: ingresos vs. gastos (últimos 12 meses)'
+    if (filtroMesDesde === 1 && filtroMesHasta === 12) return `Evolución mensual: ingresos vs. gastos (${filtroAnio})`
     const mesD = MESES_CORTOS[filtroMesDesde - 1] ?? ''
     const mesH = MESES_CORTOS[filtroMesHasta - 1] ?? ''
-    return `Evolución mensual — ingresos vs. gastos (${mesD}–${mesH} ${filtroAnio})`
+    return `Evolución mensual: ingresos vs. gastos (${mesD} a ${mesH} ${filtroAnio})`
   }, [filtroAnio, filtroMesDesde, filtroMesHasta])
 
   // Opciones de gráficos (memoizadas con el tema para no re-renderizar en cada frame)
@@ -442,7 +442,7 @@ export function AnalisisStockTab() {
                 </option>
               ))}
             </select>
-            <span className="text-sm text-ink-muted">–</span>
+            <span className="text-sm text-ink-muted">a</span>
             <select
               value={filtroMesHasta}
               onChange={(e) => setFiltroMesHasta(Number(e.target.value))}
@@ -604,7 +604,7 @@ export function AnalisisStockTab() {
               disabled={!filtroProducto}
               className="flex-1 rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30 disabled:opacity-40"
             >
-              <option value="">— Todos los proveedores —</option>
+              <option value="">Todos los proveedores</option>
               {proveedoresDeProducto.map((p) => (
                 <option key={p} value={p}>
                   {p}

@@ -68,7 +68,7 @@ export function UsuariosPage() {
                     <Badge>Usuario</Badge>
                   )}
                 </td>
-                <td className="p-3 text-ink-muted">{u.creado ? fmtFecha(u.creado) : '—'}</td>
+                <td className="p-3 text-ink-muted">{u.creado ? fmtFecha(u.creado) : '-'}</td>
                 <td className="p-3 text-right">
                   <Button
                     variant="ghost"

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { ProductoCombobox } from './ProductoCombobox'
 import { errorLinea } from '@/lib/validacion/lineas'
+import { fmtMoneda } from '@/lib/format/moneda'
 import type { StockPorProducto } from '@/lib/validacion/lineas'
 
 interface Props {
@@ -106,7 +107,7 @@ export function LineasEditor({ productos, lineas, onChange, precioDe, stock }: P
           + Añadir línea
         </Button>
         <div className="rounded-lg bg-surface-2 px-3 py-1.5 text-sm font-semibold text-ink-muted">
-          Total: {total.toFixed(2)} €
+          Total: {fmtMoneda(total)}
         </div>
       </div>
     </div>
