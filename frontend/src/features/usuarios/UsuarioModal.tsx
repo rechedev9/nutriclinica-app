@@ -35,9 +35,9 @@ export function UsuarioModal({ open, onClose, usuario }: Props) {
   }
 
   async function guardar() {
-    if (isEdit) {
-      await update.mutateAsync({ id: usuario!.id, usuario: nombre.trim(), rol })
-      if (password.trim()) await setPwd.mutateAsync({ id: usuario!.id, password: password.trim() })
+    if (usuario) {
+      await update.mutateAsync({ id: usuario.id, usuario: nombre.trim(), rol })
+      if (password.trim()) await setPwd.mutateAsync({ id: usuario.id, password: password.trim() })
     } else {
       await create.mutateAsync({ usuario: nombre.trim(), password: password.trim(), rol })
     }

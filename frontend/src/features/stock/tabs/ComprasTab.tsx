@@ -33,7 +33,8 @@ export function ComprasTab() {
   const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las compras" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las compras" />
   const todos = compras ?? []
 
   const rows = todos.filter((c) => {
@@ -78,7 +79,7 @@ export function ComprasTab() {
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -87,12 +88,15 @@ export function ComprasTab() {
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {hayFiltro && (
           <button
-            onClick={() => { setDesde(''); setHasta('') }}
+            onClick={() => {
+              setDesde('')
+              setHasta('')
+            }}
             className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"
           >
             Limpiar
@@ -109,7 +113,8 @@ export function ComprasTab() {
         <EmptyState
           icon={
             <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
           }
@@ -131,7 +136,10 @@ export function ComprasTab() {
           subtitle="Prueba a ampliar el rango de fechas o limpia el filtro."
           action={
             <button
-              onClick={() => { setDesde(''); setHasta('') }}
+              onClick={() => {
+                setDesde('')
+                setHasta('')
+              }}
               className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
             >
               Limpiar filtro
@@ -142,12 +150,19 @@ export function ComprasTab() {
         rows.map((c) => (
           <div key={c.id} className="rounded-card bg-surface shadow-card">
             <div className="flex items-center gap-3 p-4">
-              <button onClick={() => setExpanded(expanded === c.id ? null : c.id)} className="flex flex-1 items-center gap-3 text-left">
+              <button
+                onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                className="flex flex-1 items-center gap-3 text-left"
+              >
                 <div className="flex-1">
                   <div className="font-semibold">
                     {c.fecha
                       ? c.fecha.includes('T')
-                        ? new Date(c.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+                        ? new Date(c.fecha).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })
                         : fmtFecha(c.fecha)
                       : 'Sin fecha'}
                   </div>

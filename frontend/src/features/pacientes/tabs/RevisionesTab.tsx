@@ -13,15 +13,7 @@ import { ALL_MEDIDAS } from '@/types'
 import type { Revision } from '@/types'
 import { intentar } from '@/lib/api/intentar'
 
-function RevisionCard({
-  rev,
-  onEdit,
-  onDelete,
-}: {
-  rev: Revision
-  onEdit: () => void
-  onDelete: () => void
-}) {
+function RevisionCard({ rev, onEdit, onDelete }: { rev: Revision; onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false)
   const medidas = ALL_MEDIDAS.filter((m) => rev[m.key] != null)
 
@@ -30,7 +22,15 @@ function RevisionCard({
       <div className="flex items-center gap-3 p-4">
         <button onClick={() => setOpen((o) => !o)} className="flex flex-1 items-center gap-3 text-left">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-light text-primary">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
@@ -44,19 +44,40 @@ function RevisionCard({
           </div>
           <svg
             className={`text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`}
-            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
         </button>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={() => descargarExcelRevision(rev.id)} title="Exportar Excel">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
           </Button>
-          <Button variant="ghost" size="sm" onClick={onEdit}>Editar</Button>
-          <Button variant="danger" size="sm" onClick={onDelete}>Borrar</Button>
+          <Button variant="ghost" size="sm" onClick={onEdit}>
+            Editar
+          </Button>
+          <Button variant="danger" size="sm" onClick={onDelete}>
+            Borrar
+          </Button>
         </div>
       </div>
       {open && (
@@ -75,7 +96,17 @@ function RevisionCard({
                 <div key={m.key} className="text-sm">
                   <div className="flex items-center gap-1 text-ink-muted">
                     {m.grupo === 'pliegue' && (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Medido con plicómetro">
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-label="Medido con plicómetro"
+                      >
                         <path d="M3 8h13" />
                         <path d="M3 16h13" />
                         <path d="M16 8c3 0 3 8 0 8" />
@@ -108,7 +139,8 @@ export function RevisionesTab() {
   const [editing, setEditing] = useState<Revision | undefined>()
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las revisiones" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las revisiones" />
 
   async function onDelete(rev: Revision) {
     const ok = await confirm({ title: '¿Eliminar revisión?', confirmText: 'Eliminar', danger: true })

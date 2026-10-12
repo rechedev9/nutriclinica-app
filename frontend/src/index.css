@@ -4,29 +4,113 @@
 @import '@fontsource/hanken-grotesk/700.css';
 @import '@fontsource/hanken-grotesk/800.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/* Modo oscuro por clase (.dark en <html>), no por preferencia del sistema. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens semánticos (claro/oscuro). La marca (primary) y los colores vivos
+   (avatares, semáforos) se mantienen fijos en ambos temas. */
+:root {
+  --app: #eef1f6;
+  --surface: #ffffff;
+  --surface-2: #f5f8fa;
+  --border: #e8edf2;
+  --ink: #0f1b2d;
+  --ink-muted: #647084;
+  --primary-light: #e6f3f6;
+}
+.dark {
+  --app: #0b1220;
+  --surface: #111c2e;
+  --surface-2: #1c2840;
+  --border: #243042;
+  --ink: #e5edf5;
+  --ink-muted: #93a4ba;
+  --primary-light: #0f313c; /* teal oscuro para el item activo */
+}
+
+@theme inline {
+  --color-app: var(--app);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-primary-light: var(--primary-light);
+
+  /* Tokens de shadcn sobre la paleta del proyecto: lo que se añada con
+     `bunx shadcn add` sale ya con los colores de la app, en claro y oscuro. */
+  --color-background: var(--app);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--ink-muted);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--ink);
+  --color-input: var(--border);
+}
+
+@theme {
+  --color-primary: #0f7b92;
+  --color-primary-dark: #0a6577;
+  --color-primary-foreground: #ffffff;
+  --color-danger: #ef4444;
+  --color-destructive: #ef4444;
+  --color-ring: #0f7b92;
+  --color-success: #0e9f6e;
+
+  --font-sans: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-card: 18px;
+
+  --shadow-card: 0 1px 2px rgba(15, 27, 45, 0.04), 0 8px 22px -14px rgba(15, 27, 45, 0.16);
+  --shadow-md: 0 4px 12px rgba(15, 27, 45, 0.1);
+
+  --animate-fadeIn: fadeIn 0.2s ease;
+  --animate-slideUp: slideUp 0.35s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes slideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
 
 @layer base {
-  /* Tokens semánticos (canal RGB para soportar opacidad de Tailwind). */
-  :root {
-    --app: 238 241 246; /* #EEF1F6 */
-    --surface: 255 255 255; /* #ffffff */
-    --surface-2: 245 248 250; /* #F5F8FA */
-    --border: 232 237 242; /* #E8EDF2 */
-    --ink: 15 27 45; /* #0F1B2D */
-    --ink-muted: 100 112 132; /* #647084 */
-    --primary-light: 230 243 246; /* #E6F3F6 */
+  /* Valores por defecto de Tailwind 3 que el diseño da por hechos. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
   }
-  .dark {
-    --app: 11 18 32; /* #0B1220 */
-    --surface: 17 28 46; /* #111C2E */
-    --surface-2: 28 40 64; /* #1C2840 */
-    --border: 36 48 66; /* #243042 */
-    --ink: 229 237 245; /* #E5EDF5 */
-    --ink-muted: 147 164 186; /* #93A4BA */
-    --primary-light: 15 49 60; /* #0F313C (teal oscuro para item activo) */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
   }
 
   html,
@@ -39,14 +123,12 @@
   }
 }
 
-@layer utilities {
-  /* Ocultar scrollbar manteniendo el scroll (pestañas en móvil). */
-  .no-scrollbar::-webkit-scrollbar {
+/* Ocultar scrollbar manteniendo el scroll (pestañas en móvil). */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
     display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
 }
 
@@ -70,13 +152,13 @@
   /* El informe PDF siempre sale en claro, aunque el modo oscuro esté activo. */
   :root,
   .dark {
-    --app: 238 241 246;
-    --surface: 255 255 255;
-    --surface-2: 245 248 250;
-    --border: 232 237 242;
-    --ink: 15 27 45;
-    --ink-muted: 100 112 132;
-    --primary-light: 230 243 246;
+    --app: #eef1f6;
+    --surface: #ffffff;
+    --surface-2: #f5f8fa;
+    --border: #e8edf2;
+    --ink: #0f1b2d;
+    --ink-muted: #647084;
+    --primary-light: #e6f3f6;
   }
   .print-hide {
     display: none !important;

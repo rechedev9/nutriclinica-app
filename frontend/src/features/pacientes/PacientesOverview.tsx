@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { usePacientes } from './hooks/usePacientes'
-import type { PacientesOutletCtx } from './PacientesPage'
+import { PacienteModal } from './components/PacienteModal'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
@@ -33,8 +33,17 @@ function imcStyle(cls: IMCClase): { background: string; color: string } {
 }
 
 export function PacientesOverview() {
+  const [modalOpen, setModalOpen] = useState(false)
+  return (
+    <>
+      <Listado onNew={() => setModalOpen(true)} />
+      <PacienteModal open={modalOpen} onClose={() => setModalOpen(false)} />
+    </>
+  )
+}
+
+function Listado({ onNew }: { onNew: () => void }) {
   const { data: pacientes = [], isLoading, isError, error, refetch, isFetching } = usePacientes()
-  const { onNew } = useOutletContext<PacientesOutletCtx>()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const deferredQ = useDeferredValue(q)
@@ -87,7 +96,7 @@ export function PacientesOverview() {
             return (
               <button
                 key={p.id}
-                onClick={() => navigate(`/pacientes/${p.id}`)}
+                onClick={() => void navigate({ to: '/pacientes/$id', params: { id: String(p.id) } })}
                 className="flex flex-col gap-2.5 rounded-card border border-border bg-surface p-4 text-left shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
@@ -141,12 +150,20 @@ function Cabecera({
       <div className="flex items-center gap-2">
         {!sinBusqueda && (
           <div className="relative">
-            <svg className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
-              className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-surface"
+              className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
               placeholder="Buscar paciente…"
               value={q}
               onChange={(e) => setQ(e.target.value)}

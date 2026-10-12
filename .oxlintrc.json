@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
+    "react/react-in-jsx-scope": "off",
+    "import/no-unassigned-import": "off",
+    "react/refs": "off",
+    "react/set-state-in-effect": "off",
+    "react/exhaustive-effect-dependencies": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "backend/tests/**"],
+      "rules": { "typescript/consistent-type-assertions": "off" }
+    }
+  ],
+  "ignorePatterns": ["dist", "frontend/dist", "backend/drizzle", "node_modules", "diseño", ".claude"]
+}

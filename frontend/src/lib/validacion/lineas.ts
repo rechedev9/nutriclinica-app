@@ -13,11 +13,7 @@ function cantidadPorProducto(lineas: LineaInput[]): Map<number, number> {
 }
 
 // Devuelve el problema de una línea o null. Las líneas sin producto se ignoran.
-export function errorLinea(
-  l: LineaInput,
-  lineas: LineaInput[],
-  stock?: StockPorProducto,
-): string | null {
+export function errorLinea(l: LineaInput, lineas: LineaInput[], stock?: StockPorProducto): string | null {
   if (l.producto_id <= 0) return null
   if (!Number.isFinite(l.cantidad) || l.cantidad <= 0) return 'La cantidad debe ser mayor que 0'
   if ((l.precio_unitario ?? 0) < 0) return 'El precio no puede ser negativo'

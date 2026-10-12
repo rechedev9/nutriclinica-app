@@ -1,0 +1,31 @@
+{
+  "name": "@nutriclinica/backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "dev": "bun run --watch src/index.ts --no-browser --data-dir ..",
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "seed": "bun run src/db/sembrar-demo.ts",
+    "importar": "bun run src/db/importar.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "drizzle-typebox": "^0.3.3",
+    "elysia": "^1.4.30",
+    "exceljs": "^4.4.0"
+  },
+  "devDependencies": {
+    "@elysiajs/eden": "^1.4.9",
+    "@types/bun": "^1.4.3",
+    "@types/node": "^26.6.5",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "^7.0.2"
+  }
+}

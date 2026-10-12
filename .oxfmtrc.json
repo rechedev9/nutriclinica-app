@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 120,
+  "ignorePatterns": [
+    "dist",
+    "frontend/dist",
+    "backend/drizzle",
+    "diseño",
+    "documentacion",
+    "deploy",
+    ".claude",
+    "**/*.md"
+  ]
+}

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useTheme } from '@/lib/theme/ThemeProvider'
+import { useTheme } from '@/lib/theme/useTheme'
 
 export interface ChartTheme {
   grid: string

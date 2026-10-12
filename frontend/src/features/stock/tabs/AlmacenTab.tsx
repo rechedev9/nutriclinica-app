@@ -102,7 +102,12 @@ const cajaIcono = (
 
 export function AlmacenTab() {
   const { data: almacen, isLoading, isError, error, refetch, isFetching } = useAlmacen()
-  const { data: productos = [], isError: errorProductos, error: errProductos, refetch: refetchProductos } = useProductos()
+  const {
+    data: productos = [],
+    isError: errorProductos,
+    error: errProductos,
+    refetch: refetchProductos,
+  } = useProductos()
   const del = useDeleteProducto()
   const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
@@ -118,14 +123,13 @@ export function AlmacenTab() {
 
   const rows = useMemo(() => almacen ?? [], [almacen])
   const categorias = useMemo(
-    () => [...new Set(rows.map((p) => p.categoria).filter((c): c is string => !!c))].sort(),
+    () => [...new Set(rows.map((p) => p.categoria).filter((c): c is string => !!c))].toSorted(),
     [rows],
   )
   const filtradas = useMemo(() => {
     const term = normaliza(deferredQ)
     return rows.filter((p) => {
-      const coincideTexto =
-        !term || normaliza(p.nombre).includes(term) || normaliza(p.categoria ?? '').includes(term)
+      const coincideTexto = !term || normaliza(p.nombre).includes(term) || normaliza(p.categoria ?? '').includes(term)
       const coincideCat = !cat || p.categoria === cat
       return coincideTexto && coincideCat
     })
@@ -134,11 +138,11 @@ export function AlmacenTab() {
     if (!sort) return filtradas
     const { key, dir } = sort
     const factor = dir === 'asc' ? 1 : -1
-    return [...filtradas].sort((a, b) => {
+    return filtradas.toSorted((a, b) => {
       const va = valorOrden(a, key)
       const vb = valorOrden(b, key)
-      if (typeof va === 'string' && typeof vb === 'string') return va.localeCompare(vb) * factor
-      return ((va as number) - (vb as number)) * factor
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * factor
+      return String(va).localeCompare(String(vb)) * factor
     })
   }, [filtradas, sort])
 
@@ -182,7 +186,7 @@ export function AlmacenTab() {
         <div className="flex items-center gap-2">
           {categorias.length > 0 && (
             <select
-              className="rounded-lg border border-border bg-app py-2 pl-3 pr-8 text-[15px] outline-none focus:border-primary focus:bg-surface"
+              className="rounded-lg border border-border bg-app py-2 pl-3 pr-8 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
               value={cat}
               onChange={(e) => setCat(e.target.value)}
             >
@@ -196,12 +200,20 @@ export function AlmacenTab() {
           )}
           {rows.length > 0 && (
             <div className="relative">
-              <svg className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
               <input
-                className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-none focus:border-primary focus:bg-surface"
+                className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
                 placeholder="Buscar producto…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -251,7 +263,12 @@ export function AlmacenTab() {
                     <td className="p-3 text-ink-muted">{p.categoria ?? '—'}</td>
                     <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '—'}</td>
                     <td className="p-3">
-                      <span className={cn('inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold', est.cls)}>
+                      <span
+                        className={cn(
+                          'inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold',
+                          est.cls,
+                        )}
+                      >
                         {est.label}
                       </span>
                     </td>
@@ -271,19 +288,19 @@ export function AlmacenTab() {
                     <td className="p-3 text-ink-muted">{fmtFecha(p.creado)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditing(productos.find((x) => x.id === p.id))
-                          setModalOpen(true)
-                        }}
-                      >
-                        Editar
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
-                        Borrar
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditing(productos.find((x) => x.id === p.id))
+                            setModalOpen(true)
+                          }}
+                        >
+                          Editar
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
+                          Borrar
+                        </Button>
                       </div>
                     </td>
                   </tr>

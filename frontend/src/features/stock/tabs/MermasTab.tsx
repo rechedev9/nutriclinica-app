@@ -39,7 +39,8 @@ export function MermasTab() {
   const [hasta, setHasta] = useState('')
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las mermas" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las mermas" />
   const todos = mermas ?? []
 
   const rows = todos.filter((m) => {
@@ -94,7 +95,7 @@ export function MermasTab() {
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -103,12 +104,15 @@ export function MermasTab() {
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="rounded-lg border border-border bg-app px-2.5 py-1.5 text-sm text-ink focus:bg-surface focus:outline-hidden focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {hayFiltro && (
           <button
-            onClick={() => { setDesde(''); setHasta('') }}
+            onClick={() => {
+              setDesde('')
+              setHasta('')
+            }}
             className="rounded-lg px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"
           >
             Limpiar
@@ -142,7 +146,10 @@ export function MermasTab() {
           subtitle="Prueba a ampliar el rango de fechas o limpia el filtro."
           action={
             <button
-              onClick={() => { setDesde(''); setHasta('') }}
+              onClick={() => {
+                setDesde('')
+                setHasta('')
+              }}
               className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-2"
             >
               Limpiar filtro
@@ -170,7 +177,9 @@ export function MermasTab() {
                   <td className="p-3 font-semibold">{m.producto_nombre ?? '—'}</td>
                   <td className="p-3 text-ink-muted">{m.proveedor_nombre ?? '—'}</td>
                   <td className="p-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold ${MOTIVO_CLS[m.motivo]}`}>
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold ${MOTIVO_CLS[m.motivo]}`}
+                    >
                       {MOTIVO_LABEL[m.motivo]}
                     </span>
                   </td>

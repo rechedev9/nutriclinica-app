@@ -2,28 +2,21 @@ NutriClínica - Cómo instalar y crear el acceso directo
 ========================================================
 
 Esta carpeta es portable: contiene la aplicación en un solo ejecutable que abre
-el navegador automáticamente. Las fotos se guardan en la subcarpeta "fotos" que
-se crea junto al ejecutable. Los datos de pacientes/stock ya NO se guardan en
-un fichero local: viven en una base de datos PostgreSQL en AWS, así que hace
-falta darle las credenciales de conexión (ver más abajo) y tener internet.
+el navegador automáticamente. No necesita internet ni instalar nada más.
 
-------------------------------------------------------------
-Antes de nada: configurar la conexión a la base de datos (pg.env)
-------------------------------------------------------------
-1. Copia el fichero "pg.env.example" de esta misma carpeta y renómbralo a
-   "pg.env" (quitando el ".example").
-2. Ábrelo con el Bloc de notas (Windows) o TextEdit (Mac) y rellena tus datos
-   reales de conexión a PostgreSQL/RDS (host, usuario, contraseña, nombre de
-   la base de datos). Sin este fichero la aplicación no arranca.
-3. Guarda el fichero. Nunca lo compartas ni lo subas a ningún sitio: contiene
-   la contraseña de la base de datos.
+Los datos se guardan junto al ejecutable:
+   bbdd/nutriclinica.db   pacientes, revisiones, stock y usuarios (SQLite)
+   fotos/                 fotos de progreso de cada paciente
+
+Copia de seguridad: con la aplicación cerrada, copia las carpetas "bbdd" y
+"fotos" a otro disco. Para restaurar, vuelve a ponerlas junto al ejecutable.
 
 ------------------------------------------------------------
 WINDOWS
 ------------------------------------------------------------
 1. Copia toda esta carpeta donde quieras (por ejemplo C:\NutriClinica).
-2. (Opcional) Si ya tenías fotos de una instalación anterior, copia la carpeta
-   "fotos" aquí dentro.
+2. (Opcional) Si ya tenías datos de una instalación anterior, copia aquí dentro
+   sus carpetas "bbdd" y "fotos".
 3. Haz doble clic en "Crear acceso directo.bat".
    Aparecerá un icono "NutriClínica" en el escritorio.
 4. Haz doble clic en ese icono para abrir la aplicación.

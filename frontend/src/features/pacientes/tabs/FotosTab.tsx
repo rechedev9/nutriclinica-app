@@ -20,7 +20,16 @@ function FotoImg({ src, alt, className }: { src: string; alt: string; className:
         aria-label="Foto no disponible"
         className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-2 p-2 text-center text-[11px] text-ink-muted"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="m3 3 18 18" />
         </svg>
@@ -44,7 +53,8 @@ export function FotosTab() {
   const [lightbox, setLightbox] = useState<Foto | null>(null)
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las fotos" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="las fotos" />
 
   function addFiles(files: FileList | null) {
     if (!files) return
@@ -85,8 +95,18 @@ export function FotosTab() {
           dragOver ? 'border-primary bg-primary-light' : 'border-border bg-surface',
         )}
       >
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-primary">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+        <svg
+          width="34"
+          height="34"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          className="text-primary"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
         <div className="font-semibold">Arrastra fotos aquí o haz clic para seleccionar</div>
         <div className="text-sm text-ink-muted">JPG, PNG…</div>
@@ -104,7 +124,7 @@ export function FotosTab() {
         <div className="rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 text-sm font-semibold">{pending.length} archivo(s) listo(s) para subir</div>
           <input
-            className="mb-3 w-full rounded-lg border border-border bg-app px-3 py-2 outline-none focus:border-primary focus:bg-surface"
+            className="mb-3 w-full rounded-lg border border-border bg-app px-3 py-2 outline-hidden focus:border-primary focus:bg-surface"
             placeholder="Nota (opcional, se aplica a todas)"
             value={nota}
             onChange={(e) => setNota(e.target.value)}
@@ -125,7 +145,7 @@ export function FotosTab() {
       ) : (
         <div className="flex flex-col gap-6">
           {(() => {
-            const sorted = [...fotos].sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''))
+            const sorted = fotos.toSorted((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''))
             const grupos = new Map<string, typeof fotos>()
             for (const f of sorted) {
               const clave = f.fecha
@@ -140,7 +160,9 @@ export function FotosTab() {
                 <div className="mb-3 flex items-center gap-3">
                   <span className="text-sm font-bold capitalize text-ink">{mes}</span>
                   <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs text-ink-muted">{fots.length} foto{fots.length !== 1 ? 's' : ''}</span>
+                  <span className="text-xs text-ink-muted">
+                    {fots.length} foto{fots.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
                   {fots.map((f) => (

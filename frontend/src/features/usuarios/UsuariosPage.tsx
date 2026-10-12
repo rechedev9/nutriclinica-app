@@ -20,7 +20,8 @@ export function UsuariosPage() {
   const [editing, setEditing] = useState<Usuario | undefined>()
 
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los usuarios" />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los usuarios" />
   const rows = usuarios ?? []
 
   async function onDelete(u: Usuario) {

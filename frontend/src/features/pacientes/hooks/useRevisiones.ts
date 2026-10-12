@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, mensajeError } from '@/lib/api/client'
+import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
 import { limpiaRevision } from '@/lib/format/revision'
-import type { Revision, RevisionInput } from '@/types'
+import type { RevisionInput } from '@/types'
 
 export function useRevisiones(pid: number) {
   return useQuery({
     queryKey: qk.revisiones(pid),
-    queryFn: async () => (await api<Revision[]>('GET', `/api/pacientes/${pid}/revisiones`)).map(limpiaRevision),
+    queryFn: async () => (await pedir(servidor.pacientes({ id: pid }).revisiones.get())).map(limpiaRevision),
     enabled: pid > 0,
   })
 }
@@ -16,7 +16,7 @@ export function useRevisiones(pid: number) {
 export function useCreateRevision(pid: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: RevisionInput) => api<Revision>('POST', `/api/pacientes/${pid}/revisiones`, body),
+    mutationFn: (body: RevisionInput) => pedir(servidor.pacientes({ id: pid }).revisiones.post(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.revisiones(pid) })
       qc.invalidateQueries({ queryKey: qk.pacientes })
@@ -29,8 +29,7 @@ export function useCreateRevision(pid: number) {
 export function useUpdateRevision(pid: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: RevisionInput }) =>
-      api<Revision>('PUT', `/api/revisiones/${id}`, body),
+    mutationFn: ({ id, body }: { id: number; body: RevisionInput }) => pedir(servidor.revisiones({ id }).put(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.revisiones(pid) })
       toast.success('Revisión actualizada')
@@ -42,7 +41,7 @@ export function useUpdateRevision(pid: number) {
 export function useDeleteRevision(pid: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/revisiones/${id}`),
+    mutationFn: (id: number) => pedir(servidor.revisiones({ id }).delete()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.revisiones(pid) })
       qc.invalidateQueries({ queryKey: qk.pacientes })

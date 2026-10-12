@@ -9,10 +9,7 @@ interface Props {
 export function Avatar({ nombre, className }: Props) {
   return (
     <div
-      className={cn(
-        'flex shrink-0 items-center justify-center rounded-xl font-bold text-white',
-        className,
-      )}
+      className={cn('flex shrink-0 items-center justify-center rounded-xl font-bold text-white', className)}
       style={{ backgroundColor: avatarColor(nombre) }}
     >
       {iniciales(nombre)}

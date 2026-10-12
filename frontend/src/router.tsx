@@ -1,10 +1,10 @@
-import { lazy } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, redirect } from '@tanstack/react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 import { RequireAdmin } from '@/features/auth/RequireAdmin'
 import { ErrorRuta } from '@/components/ErrorRuta'
 import { NoEncontrada } from '@/components/NoEncontrada'
+import { CenteredSpinner } from '@/components/ui/Spinner'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { PacientesPage } from '@/features/pacientes/PacientesPage'
 import { PacientesOverview } from '@/features/pacientes/PacientesOverview'
@@ -13,81 +13,128 @@ import { FichaTab } from '@/features/pacientes/tabs/FichaTab'
 import { RevisionesTab } from '@/features/pacientes/tabs/RevisionesTab'
 import { FotosTab } from '@/features/pacientes/tabs/FotosTab'
 
-// lazyNamed adapta un export con nombre al default que espera React.lazy.
-function lazyNamed<K extends string>(
-  loader: () => Promise<Record<K, React.ComponentType>>,
-  name: K,
-) {
-  return lazy(() => loader().then((m) => ({ default: m[name] })))
-}
+const raiz = createRootRoute({ notFoundComponent: NoEncontrada })
+
+const login = createRoute({ getParentRoute: () => raiz, path: 'login', component: LoginPage })
+
+// Rutas sin segmento de URL: exigen sesión y pintan el marco de la app.
+const conSesion = createRoute({ getParentRoute: () => raiz, id: '_sesion', component: RequireAuth })
+const marco = createRoute({ getParentRoute: () => conSesion, id: '_app', component: AppShell })
+
+const inicio = createRoute({
+  getParentRoute: () => marco,
+  path: '/',
+  beforeLoad: () => {
+    throw redirect({ to: '/pacientes', replace: true })
+  },
+})
+
+const pacientes = createRoute({ getParentRoute: () => marco, path: 'pacientes', component: PacientesPage })
+const pacientesInicio = createRoute({ getParentRoute: () => pacientes, path: '/', component: PacientesOverview })
+const paciente = createRoute({ getParentRoute: () => pacientes, path: '$id', component: PacienteDetail })
+const pacienteInicio = createRoute({
+  getParentRoute: () => paciente,
+  path: '/',
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/pacientes/$id/ficha', params, replace: true })
+  },
+})
+const ficha = createRoute({ getParentRoute: () => paciente, path: 'ficha', component: FichaTab })
+const revisiones = createRoute({ getParentRoute: () => paciente, path: 'revisiones', component: RevisionesTab })
+const fotos = createRoute({ getParentRoute: () => paciente, path: 'fotos', component: FotosTab })
 
 // Rutas con carga diferida: el módulo de Análisis arrastra Chart.js (~200 KB) y
 // el módulo de Stock y la gestión de Usuarios no se necesitan en el arranque.
-const AnalisisTab = lazyNamed(() => import('@/features/pacientes/tabs/analisis/AnalisisTab'), 'AnalisisTab')
-const StockPage = lazyNamed(() => import('@/features/stock/StockPage'), 'StockPage')
-const AlmacenTab = lazyNamed(() => import('@/features/stock/tabs/AlmacenTab'), 'AlmacenTab')
-const ComprasTab = lazyNamed(() => import('@/features/stock/tabs/ComprasTab'), 'ComprasTab')
-const VentasTab = lazyNamed(() => import('@/features/stock/tabs/VentasTab'), 'VentasTab')
-const ProveedoresTab = lazyNamed(() => import('@/features/stock/tabs/ProveedoresTab'), 'ProveedoresTab')
-const CategoriasTab = lazyNamed(() => import('@/features/stock/tabs/CategoriasTab'), 'CategoriasTab')
-const MermasTab = lazyNamed(() => import('@/features/stock/tabs/MermasTab'), 'MermasTab')
-const AnalisisStockTab = lazyNamed(() => import('@/features/stock/tabs/AnalisisStockTab'), 'AnalisisStockTab')
-const UsuariosPage = lazyNamed(() => import('@/features/usuarios/UsuariosPage'), 'UsuariosPage')
-const AuditoriaPage = lazyNamed(() => import('@/features/auditoria/AuditoriaPage'), 'AuditoriaPage')
+const analisis = createRoute({
+  getParentRoute: () => paciente,
+  path: 'analisis',
+  component: lazyRouteComponent(() => import('@/features/pacientes/tabs/analisis/AnalisisTab'), 'AnalisisTab'),
+})
 
-export const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage />, errorElement: <ErrorRuta /> },
-  {
-    path: '/',
-    element: <RequireAuth />,
-    errorElement: <ErrorRuta />,
-    children: [
-      {
-        element: <AppShell />,
-        children: [
-          { index: true, element: <Navigate to="/pacientes" replace /> },
-          {
-            path: 'pacientes',
-            element: <PacientesPage />,
-            children: [
-              { index: true, element: <PacientesOverview /> },
-              {
-                path: ':id',
-                element: <PacienteDetail />,
-                children: [
-                  { index: true, element: <Navigate to="ficha" replace /> },
-                  { path: 'ficha', element: <FichaTab /> },
-                  { path: 'revisiones', element: <RevisionesTab /> },
-                  { path: 'fotos', element: <FotosTab /> },
-                  { path: 'analisis', element: <AnalisisTab /> },
-                ],
-              },
-            ],
-          },
-          {
-            path: 'stock',
-            element: <StockPage />,
-            children: [
-              { index: true, element: <Navigate to="almacen" replace /> },
-              { path: 'almacen', element: <AlmacenTab /> },
-              { path: 'compras', element: <ComprasTab /> },
-              { path: 'ventas', element: <VentasTab /> },
-              { path: 'proveedores', element: <ProveedoresTab /> },
-              { path: 'categorias', element: <CategoriasTab /> },
-              { path: 'mermas', element: <MermasTab /> },
-              { path: 'analisis', element: <AnalisisStockTab /> },
-            ],
-          },
-          {
-            element: <RequireAdmin />,
-            children: [
-              { path: 'usuarios', element: <UsuariosPage /> },
-              { path: 'auditoria', element: <AuditoriaPage /> },
-            ],
-          },
-        ],
-      },
-    ],
+const stock = createRoute({
+  getParentRoute: () => marco,
+  path: 'stock',
+  component: lazyRouteComponent(() => import('@/features/stock/StockPage'), 'StockPage'),
+})
+const stockInicio = createRoute({
+  getParentRoute: () => stock,
+  path: '/',
+  beforeLoad: () => {
+    throw redirect({ to: '/stock/almacen', replace: true })
   },
-  { path: '*', element: <NoEncontrada />, errorElement: <ErrorRuta /> },
+})
+const almacen = createRoute({
+  getParentRoute: () => stock,
+  path: 'almacen',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/AlmacenTab'), 'AlmacenTab'),
+})
+const compras = createRoute({
+  getParentRoute: () => stock,
+  path: 'compras',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/ComprasTab'), 'ComprasTab'),
+})
+const ventas = createRoute({
+  getParentRoute: () => stock,
+  path: 'ventas',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/VentasTab'), 'VentasTab'),
+})
+const proveedores = createRoute({
+  getParentRoute: () => stock,
+  path: 'proveedores',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/ProveedoresTab'), 'ProveedoresTab'),
+})
+const categorias = createRoute({
+  getParentRoute: () => stock,
+  path: 'categorias',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/CategoriasTab'), 'CategoriasTab'),
+})
+const mermas = createRoute({
+  getParentRoute: () => stock,
+  path: 'mermas',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/MermasTab'), 'MermasTab'),
+})
+const analisisStock = createRoute({
+  getParentRoute: () => stock,
+  path: 'analisis',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/AnalisisStockTab'), 'AnalisisStockTab'),
+})
+
+const soloAdmin = createRoute({ getParentRoute: () => marco, id: '_admin', component: RequireAdmin })
+const usuarios = createRoute({
+  getParentRoute: () => soloAdmin,
+  path: 'usuarios',
+  component: lazyRouteComponent(() => import('@/features/usuarios/UsuariosPage'), 'UsuariosPage'),
+})
+const auditoria = createRoute({
+  getParentRoute: () => soloAdmin,
+  path: 'auditoria',
+  component: lazyRouteComponent(() => import('@/features/auditoria/AuditoriaPage'), 'AuditoriaPage'),
+})
+
+const arbol = raiz.addChildren([
+  login,
+  conSesion.addChildren([
+    marco.addChildren([
+      inicio,
+      pacientes.addChildren([
+        pacientesInicio,
+        paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis]),
+      ]),
+      stock.addChildren([stockInicio, almacen, compras, ventas, proveedores, categorias, mermas, analisisStock]),
+      soloAdmin.addChildren([usuarios, auditoria]),
+    ]),
+  ]),
 ])
+
+export const router = createRouter({
+  routeTree: arbol,
+  defaultErrorComponent: ErrorRuta,
+  defaultPendingComponent: CenteredSpinner,
+})
+
+// Registra el router para que Link, navigate y los parámetros queden tipados.
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}

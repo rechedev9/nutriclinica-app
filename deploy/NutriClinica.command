@@ -3,28 +3,6 @@
 # Para tenerlo "en el escritorio": arrastra este archivo al Escritorio (o crea un alias).
 cd "$(dirname "$0")" || exit 1
 
-# "pg.env" es obligatorio: son las credenciales de conexión a PostgreSQL/RDS,
-# sin ellas la app no arranca.
-if [ ! -f "pg.env" ]; then
-  echo "No encuentro \"pg.env\" en esta carpeta."
-  echo "Copia \"pg.env.example\" como \"pg.env\" y rellena tus datos de conexión a Postgres/RDS."
-  read -r -p "Pulsa Enter para salir."
-  exit 1
-fi
-set -a
-# shellcheck disable=SC1091
-source "pg.env"
-set +a
-
-# Si existe "aws-backup.env" junto a este script, carga esas variables
-# (credenciales de AWS) para activar el backup automático a S3 (opcional).
-if [ -f "aws-backup.env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "aws-backup.env"
-  set +a
-fi
-
 ARCH="$(uname -m)"
 if [ "$ARCH" = "arm64" ]; then
   BIN="NutriClinica-mac-arm64"

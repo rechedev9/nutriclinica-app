@@ -1,4 +1,8 @@
-// Cliente HTTP tipado sobre fetch. Mismo origen → cookies de sesión incluidas.
+import { treaty } from '@elysiajs/eden'
+import type { App } from '@nutriclinica/backend'
+
+// Cliente HTTP tipado de extremo a extremo: Eden deriva rutas, cuerpos y respuestas
+// del tipo de la app Elysia del backend. Mismo origen → cookies de sesión incluidas.
 
 export class ApiError extends Error {
   status: number
@@ -42,70 +46,45 @@ export function sesionIniciada() {
   sesionCaducadaGestionada = false
 }
 
-function tratar401(url: string, status: number) {
-  if (status !== 401) return
-  if (RUTAS_SIN_MANEJO_401.some((r) => url.startsWith(r))) return
+function tratar401(respuesta: Response) {
+  if (respuesta.status !== 401) return
+  const ruta = new URL(respuesta.url).pathname
+  if (RUTAS_SIN_MANEJO_401.some((r) => ruta.startsWith(r))) return
   if (sesionCaducadaGestionada) return
   sesionCaducadaGestionada = true
   manejadorSesionCaducada?.()
 }
 
-async function fetchConRed(url: string, opts: RequestInit): Promise<Response> {
-  try {
-    return await fetch(url, opts)
-  } catch {
-    throw new ApiError(0, MENSAJE_SIN_CONEXION)
-  }
+export const servidor = treaty<App>(window.location.origin, {
+  // Las fechas viajan como texto AAAA-MM-DD: Eden no debe convertirlas a Date.
+  parseDate: false,
+  fetch: { credentials: 'include' },
+  onResponse: tratar401,
+}).api
+
+interface RespuestaEden<T> {
+  data: T | null
+  error: { status: unknown; value: unknown } | null
+  response: unknown
 }
 
-async function parseError(res: Response): Promise<string> {
-  try {
-    const data = await res.json()
-    if (data && typeof data.error === 'string') return data.error
-  } catch {
-    /* sin cuerpo JSON */
+// El servidor responde los errores como { error: "mensaje para el usuario" }.
+function mensajeDelServidor(estado: number, cuerpo: unknown): string {
+  if (typeof cuerpo === 'object' && cuerpo !== null && 'error' in cuerpo && typeof cuerpo.error === 'string') {
+    return cuerpo.error
   }
-  return `Error ${res.status}`
+  return `Error ${estado}`
 }
 
-export async function api<T = unknown>(
-  method: string,
-  url: string,
-  body?: unknown,
-): Promise<T> {
-  const opts: RequestInit = {
-    method,
-    credentials: 'include',
-    headers: {},
+// pedir desenvuelve una respuesta de Eden: devuelve los datos o lanza un ApiError.
+export async function pedir<T>(promesa: Promise<RespuestaEden<T>>): Promise<T> {
+  const { data, error, response } = await promesa
+  // Eden no rechaza si falla la red: devuelve un error 503 sin objeto Response.
+  if (response === undefined) throw new ApiError(0, MENSAJE_SIN_CONEXION)
+  if (error !== null) {
+    const estado = Number(error.status)
+    throw new ApiError(estado, mensajeDelServidor(estado, error.value))
   }
-  if (body !== undefined) {
-    opts.headers = { 'Content-Type': 'application/json' }
-    opts.body = JSON.stringify(body)
-  }
-  const res = await fetchConRed(url, opts)
-  if (!res.ok) {
-    tratar401(url, res.status)
-    throw new ApiError(res.status, await parseError(res))
-  }
-  if (res.status === 204) return undefined as T
-  const text = await res.text()
-  return (text ? JSON.parse(text) : undefined) as T
-}
-
-// uploadFoto sube un archivo con FormData (sin Content-Type manual).
-export async function uploadFoto(pacienteId: number, file: File, nota: string) {
-  const fd = new FormData()
-  fd.append('foto', file)
-  if (nota) fd.append('nota', nota)
-  const url = `/api/pacientes/${pacienteId}/fotos`
-  const res = await fetchConRed(url, {
-    method: 'POST',
-    credentials: 'include',
-    body: fd,
-  })
-  if (!res.ok) {
-    tratar401(url, res.status)
-    throw new ApiError(res.status, await parseError(res))
-  }
-  return res.json()
+  if (data === null) throw new ApiError(500, 'Respuesta vacía del servidor')
+  return data
 }

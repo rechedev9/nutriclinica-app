@@ -1,41 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, mensajeError } from '@/lib/api/client'
+import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type {
-  AlmacenRow,
-  Categoria,
-  Compra,
-  CompraInput,
-  Merma,
-  MermaInput,
-  Producto,
-  ProductoInput,
-  Proveedor,
-  ProveedorInput,
-  Venta,
-  VentaInput,
-} from '@/types'
+import type { CompraInput, MermaInput, ProductoInput, ProveedorInput, VentaInput } from '@/types'
 
-const invalidate = (
-  qc: ReturnType<typeof useQueryClient>,
-  keys: ReadonlyArray<readonly unknown[]>,
-) => keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
+const invalidate = (qc: ReturnType<typeof useQueryClient>, keys: ReadonlyArray<readonly unknown[]>) =>
+  keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
 
 // --- Almacén / Productos ---
 export const useAlmacen = () =>
-  useQuery({ queryKey: qk.stock.almacen, queryFn: () => api<AlmacenRow[]>('GET', '/api/stock/almacen') })
+  useQuery({ queryKey: qk.stock.almacen, queryFn: () => pedir(servidor.stock.almacen.get()) })
 
 export const useProductos = () =>
-  useQuery({ queryKey: qk.stock.productos, queryFn: () => api<Producto[]>('GET', '/api/stock/productos') })
+  useQuery({ queryKey: qk.stock.productos, queryFn: () => pedir(servidor.stock.productos.get()) })
 
 export const useCategorias = () =>
-  useQuery({ queryKey: qk.stock.categorias, queryFn: () => api<Categoria[]>('GET', '/api/stock/categorias') })
+  useQuery({ queryKey: qk.stock.categorias, queryFn: () => pedir(servidor.stock.categorias.get()) })
 
 export function useCreateProducto() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (b: ProductoInput) => api<Producto>('POST', '/api/stock/productos', b),
+    mutationFn: (b: ProductoInput) => pedir(servidor.stock.productos.post(b)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.productos, qk.stock.almacen])
       toast.success('Producto creado')
@@ -48,7 +33,7 @@ export function useUpdateProducto() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: ProductoInput }) =>
-      api<Producto>('PUT', `/api/stock/productos/${id}`, body),
+      pedir(servidor.stock.productos({ id }).put(body)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.productos, qk.stock.almacen])
       toast.success('Producto actualizado')
@@ -60,7 +45,7 @@ export function useUpdateProducto() {
 export function useDeleteProducto() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/stock/productos/${id}`),
+    mutationFn: (id: number) => pedir(servidor.stock.productos({ id }).delete()),
     onSuccess: () => {
       invalidate(qc, [qk.stock.productos, qk.stock.almacen])
       toast.success('Producto eliminado')
@@ -72,7 +57,7 @@ export function useDeleteProducto() {
 export function useCreateCategoria() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (nombre: string) => api<Categoria>('POST', '/api/stock/categorias', { nombre }),
+    mutationFn: (nombre: string) => pedir(servidor.stock.categorias.post({ nombre })),
     onSuccess: () => {
       invalidate(qc, [qk.stock.categorias])
       toast.success('Categoría creada')
@@ -85,7 +70,7 @@ export function useUpdateCategoria() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, nombre }: { id: number; nombre: string }) =>
-      api<Categoria>('PUT', `/api/stock/categorias/${id}`, { nombre }),
+      pedir(servidor.stock.categorias({ id }).put({ nombre })),
     onSuccess: () => {
       invalidate(qc, [qk.stock.categorias])
       toast.success('Categoría actualizada')
@@ -97,7 +82,7 @@ export function useUpdateCategoria() {
 export function useDeleteCategoria() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/stock/categorias/${id}`),
+    mutationFn: (id: number) => pedir(servidor.stock.categorias({ id }).delete()),
     onSuccess: () => {
       invalidate(qc, [qk.stock.categorias])
       toast.success('Categoría eliminada')
@@ -108,12 +93,12 @@ export function useDeleteCategoria() {
 
 // --- Proveedores ---
 export const useProveedores = () =>
-  useQuery({ queryKey: qk.stock.proveedores, queryFn: () => api<Proveedor[]>('GET', '/api/stock/proveedores') })
+  useQuery({ queryKey: qk.stock.proveedores, queryFn: () => pedir(servidor.stock.proveedores.get()) })
 
 export function useCreateProveedor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (b: ProveedorInput) => api<Proveedor>('POST', '/api/stock/proveedores', b),
+    mutationFn: (b: ProveedorInput) => pedir(servidor.stock.proveedores.post(b)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.proveedores])
       toast.success('Proveedor creado')
@@ -126,7 +111,7 @@ export function useUpdateProveedor() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: ProveedorInput }) =>
-      api<Proveedor>('PUT', `/api/stock/proveedores/${id}`, body),
+      pedir(servidor.stock.proveedores({ id }).put(body)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.proveedores])
       toast.success('Proveedor actualizado')
@@ -138,7 +123,7 @@ export function useUpdateProveedor() {
 export function useDeleteProveedor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/stock/proveedores/${id}`),
+    mutationFn: (id: number) => pedir(servidor.stock.proveedores({ id }).delete()),
     onSuccess: () => {
       invalidate(qc, [qk.stock.proveedores])
       toast.success('Proveedor eliminado')
@@ -149,12 +134,12 @@ export function useDeleteProveedor() {
 
 // --- Compras ---
 export const useCompras = () =>
-  useQuery({ queryKey: qk.stock.compras, queryFn: () => api<Compra[]>('GET', '/api/stock/compras') })
+  useQuery({ queryKey: qk.stock.compras, queryFn: () => pedir(servidor.stock.compras.get()) })
 
 export function useCreateCompra() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (b: CompraInput) => api('POST', '/api/stock/compras', b),
+    mutationFn: (b: CompraInput) => pedir(servidor.stock.compras.post(b)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra registrada')
@@ -166,8 +151,7 @@ export function useCreateCompra() {
 export function useUpdateCompra() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: CompraInput }) =>
-      api('PUT', `/api/stock/compras/${id}`, body),
+    mutationFn: ({ id, body }: { id: number; body: CompraInput }) => pedir(servidor.stock.compras({ id }).put(body)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra actualizada')
@@ -179,7 +163,7 @@ export function useUpdateCompra() {
 export function useDeleteCompra() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/stock/compras/${id}`),
+    mutationFn: (id: number) => pedir(servidor.stock.compras({ id }).delete()),
     onSuccess: () => {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra eliminada')
@@ -190,12 +174,12 @@ export function useDeleteCompra() {
 
 // --- Ventas ---
 export const useVentas = () =>
-  useQuery({ queryKey: qk.stock.ventas, queryFn: () => api<Venta[]>('GET', '/api/stock/ventas') })
+  useQuery({ queryKey: qk.stock.ventas, queryFn: () => pedir(servidor.stock.ventas.get()) })
 
 export function useCreateVenta() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (b: VentaInput) => api('POST', '/api/stock/ventas', b),
+    mutationFn: (b: VentaInput) => pedir(servidor.stock.ventas.post(b)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
       toast.success('Venta registrada')
@@ -207,7 +191,7 @@ export function useCreateVenta() {
 export function useDeleteVenta() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/stock/ventas/${id}`),
+    mutationFn: (id: number) => pedir(servidor.stock.ventas({ id }).delete()),
     onSuccess: () => {
       invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
       toast.success('Venta eliminada')
@@ -218,12 +202,12 @@ export function useDeleteVenta() {
 
 // --- Mermas ---
 export const useMermas = () =>
-  useQuery({ queryKey: qk.stock.mermas, queryFn: () => api<Merma[]>('GET', '/api/stock/mermas') })
+  useQuery({ queryKey: qk.stock.mermas, queryFn: () => pedir(servidor.stock.mermas.get()) })
 
 export function useCreateMerma() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (b: MermaInput) => api('POST', '/api/stock/mermas', b),
+    mutationFn: (b: MermaInput) => pedir(servidor.stock.mermas.post(b)),
     onSuccess: () => {
       invalidate(qc, [qk.stock.mermas, qk.stock.almacen])
       toast.success('Merma registrada')
@@ -235,7 +219,7 @@ export function useCreateMerma() {
 export function useDeleteMerma() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/stock/mermas/${id}`),
+    mutationFn: (id: number) => pedir(servidor.stock.mermas({ id }).delete()),
     onSuccess: () => {
       invalidate(qc, [qk.stock.mermas, qk.stock.almacen])
       toast.success('Merma eliminada')

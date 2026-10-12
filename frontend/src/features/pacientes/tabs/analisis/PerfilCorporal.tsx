@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import type { Revision } from '@/types'
+import type { ClaveMedida, Revision } from '@/types'
 
 interface Props {
   last: Revision
@@ -8,7 +8,7 @@ interface Props {
 }
 
 interface Punto {
-  key: keyof Revision
+  key: ClaveMedida
   label: string
   textX: number
   y: number
@@ -17,19 +17,19 @@ interface Punto {
 }
 
 const FRONTAL: Punto[] = [
-  { key: 'per_hombros', label: 'Hombros',  textX: 155, y: 78,  anchor: 'end',   bodyX: 315 },
-  { key: 'per_cintura', label: 'Cintura',  textX: 155, y: 135, anchor: 'end',   bodyX: 345 },
-  { key: 'per_muslo',   label: 'Muslo',    textX: 155, y: 199, anchor: 'end',   bodyX: 331 },
-  { key: 'per_pecho',   label: 'Pecho',    textX: 620, y: 86,  anchor: 'start', bodyX: 394 },
-  { key: 'per_gemelo',  label: 'Gemelo',   textX: 620, y: 270, anchor: 'start', bodyX: 433 },
+  { key: 'per_hombros', label: 'Hombros', textX: 155, y: 78, anchor: 'end', bodyX: 315 },
+  { key: 'per_cintura', label: 'Cintura', textX: 155, y: 135, anchor: 'end', bodyX: 345 },
+  { key: 'per_muslo', label: 'Muslo', textX: 155, y: 199, anchor: 'end', bodyX: 331 },
+  { key: 'per_pecho', label: 'Pecho', textX: 620, y: 86, anchor: 'start', bodyX: 394 },
+  { key: 'per_gemelo', label: 'Gemelo', textX: 620, y: 270, anchor: 'start', bodyX: 433 },
 ]
 
 const POSTERIOR: Punto[] = [
-  { key: 'per_hombros', label: 'Espalda', textX: 155, y: 78,  anchor: 'end',   bodyX: 366 },
-  { key: 'per_caderas', label: 'Caderas', textX: 155, y: 147, anchor: 'end',   bodyX: 340 },
-  { key: 'per_caderas', label: 'Glúteo',  textX: 620, y: 166, anchor: 'start', bodyX: 393 },
-  { key: 'per_muslo',   label: 'Femoral', textX: 620, y: 209, anchor: 'start', bodyX: 394 },
-  { key: 'per_gemelo',  label: 'Gemelo',  textX: 155, y: 264, anchor: 'end',   bodyX: 332 },
+  { key: 'per_hombros', label: 'Espalda', textX: 155, y: 78, anchor: 'end', bodyX: 366 },
+  { key: 'per_caderas', label: 'Caderas', textX: 155, y: 147, anchor: 'end', bodyX: 340 },
+  { key: 'per_caderas', label: 'Glúteo', textX: 620, y: 166, anchor: 'start', bodyX: 393 },
+  { key: 'per_muslo', label: 'Femoral', textX: 620, y: 209, anchor: 'start', bodyX: 394 },
+  { key: 'per_gemelo', label: 'Gemelo', textX: 155, y: 264, anchor: 'end', bodyX: 332 },
 ]
 
 function animarTextos(svg: SVGSVGElement, duration = 1800) {
@@ -65,37 +65,47 @@ function PanelSVG({
   return (
     <div className="rounded-card bg-surface p-3 shadow-card flex flex-col gap-2">
       <div className="text-sm font-bold text-ink">{titulo}</div>
-      <svg ref={svgRef as RefObject<SVGSVGElement>} viewBox="0 0 900 350" className="w-full">
+      <svg ref={svgRef} viewBox="0 0 900 350" className="w-full">
         <image href={imagen} x="215" y="0" width="320" height="336" preserveAspectRatio="xMidYMid meet" />
         {puntos.map((p, i) => {
-          const val = last[p.key] as number | null
+          const val = last[p.key]
           if (val == null) return null
-          const delta =
-            prev != null && prev[p.key] != null
-              ? Math.round((val - (prev[p.key] as number)) * 10) / 10
-              : null
-          const hasDelta = delta != null && delta !== 0
-          const subio = delta != null && delta > 0
+          const anterior = prev?.[p.key] ?? null
+          const delta = anterior != null ? Math.round((val - anterior) * 10) / 10 : 0
+          const hasDelta = delta !== 0
+          const subio = delta > 0
           const lineX1 = p.anchor === 'end' ? p.textX + 16 : p.textX - 16
 
           return (
             <g key={`${p.key}-${i}`}>
-              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="rgb(var(--ink-muted))" strokeDasharray="4,3" />
+              <line x1={lineX1} y1={p.y} x2={p.bodyX} y2={p.y} stroke="var(--ink-muted)" strokeDasharray="4,3" />
               <circle cx={p.bodyX} cy={p.y} r={4} fill="#ef4444" />
-              <text x={p.textX} y={p.y - 16} textAnchor={p.anchor} fontSize={13} fill="rgb(var(--ink-muted))" fontFamily="inherit">
+              <text
+                x={p.textX}
+                y={p.y - 16}
+                textAnchor={p.anchor}
+                fontSize={13}
+                fill="var(--ink-muted)"
+                fontFamily="inherit"
+              >
                 {p.label}
               </text>
               <text
-                x={p.textX} y={p.y + 6}
+                x={p.textX}
+                y={p.y + 6}
                 textAnchor={p.anchor}
-                fontSize={26} fill="rgb(var(--ink))" fontFamily="inherit" fontWeight="700"
-                data-countup={val} data-dec="1"
+                fontSize={26}
+                fill="var(--ink)"
+                fontFamily="inherit"
+                fontWeight="700"
+                data-countup={val}
+                data-dec="1"
               >
                 {val.toFixed(1)} cm
               </text>
               {hasDelta && (
                 <text x={p.textX} y={p.y + 22} textAnchor={p.anchor} fontSize={12} fill="#a78bfa" fontFamily="inherit">
-                  {subio ? '↑' : '↓'} {Math.abs(delta!).toFixed(1)} cm
+                  {subio ? '↑' : '↓'} {Math.abs(delta).toFixed(1)} cm
                 </text>
               )}
             </g>
@@ -121,8 +131,22 @@ export function PerfilCorporal({ last, prev, sexo }: Props) {
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <PanelSVG imagen={imgFrontal} titulo="Perfil corporal frontal" puntos={FRONTAL} last={last} prev={prev} svgRef={frontalRef} />
-      <PanelSVG imagen={imgPosterior} titulo="Perfil corporal posterior" puntos={POSTERIOR} last={last} prev={prev} svgRef={posteriorRef} />
+      <PanelSVG
+        imagen={imgFrontal}
+        titulo="Perfil corporal frontal"
+        puntos={FRONTAL}
+        last={last}
+        prev={prev}
+        svgRef={frontalRef}
+      />
+      <PanelSVG
+        imagen={imgPosterior}
+        titulo="Perfil corporal posterior"
+        puntos={POSTERIOR}
+        last={last}
+        prev={prev}
+        svgRef={posteriorRef}
+      />
     </div>
   )
 }

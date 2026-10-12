@@ -25,5 +25,3 @@ ChartJS.register(
   Legend,
   Filler,
 )
-
-export { ChartJS }

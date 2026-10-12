@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
+import type { LinkProps } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useMe } from '@/features/auth/useAuth'
 import { cn } from '@/lib/cn'
 
 interface Item {
-  to: string
+  to: LinkProps['to']
   label: string
   icon: ReactNode
   adminOnly?: boolean
@@ -16,7 +17,14 @@ const items: Item[] = [
     to: '/pacientes',
     label: 'Pacientes',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -28,7 +36,14 @@ const items: Item[] = [
     to: '/stock',
     label: 'Stock',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <rect x="2" y="7" width="20" height="14" rx="2" />
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
       </svg>
@@ -39,7 +54,14 @@ const items: Item[] = [
     label: 'Usuarios',
     adminOnly: true,
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <line x1="19" y1="8" x2="19" y2="14" />
@@ -52,7 +74,14 @@ const items: Item[] = [
     label: 'Auditoría',
     adminOnly: true,
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <path d="M14 2v6h6" />
         <path d="M9 13h6M9 17h4" />
@@ -84,22 +113,21 @@ export function NavRail() {
       )}
     >
       {visible.map((item) => (
-        <NavLink
-          key={item.to}
+        <Link
+          key={item.label}
           to={item.to}
           title={collapsed ? item.label : undefined}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-              'max-md:flex-1 max-md:flex-col max-md:gap-1 max-md:px-1 max-md:py-2 max-md:text-[11.5px]',
-              collapsed && 'md:justify-center md:px-0',
-              isActive ? 'bg-primary-light text-primary' : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
-            )
-          }
+          className={cn(
+            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+            'max-md:flex-1 max-md:flex-col max-md:gap-1 max-md:px-1 max-md:py-2 max-md:text-[11.5px]',
+            collapsed && 'md:justify-center md:px-0',
+          )}
+          activeProps={{ className: 'bg-primary-light text-primary' }}
+          inactiveProps={{ className: 'text-ink-muted hover:bg-surface-2 hover:text-ink' }}
         >
           <span className="shrink-0 [&>svg]:h-[22px] [&>svg]:w-[22px]">{item.icon}</span>
           <span className={cn('truncate', collapsed && 'md:hidden')}>{item.label}</span>
-        </NavLink>
+        </Link>
       ))}
 
       {/* Botón colapsar/expandir (solo escritorio) */}
@@ -114,7 +142,12 @@ export function NavRail() {
         <span className="shrink-0">
           <svg
             className={cn('h-[20px] w-[20px] transition-transform', collapsed && 'rotate-180')}
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
             <path d="m15 18-6-6 6-6" />
           </svg>

@@ -1,5 +1,5 @@
 import { Toaster } from 'sonner'
-import { useTheme } from '@/lib/theme/ThemeProvider'
+import { useTheme } from '@/lib/theme/useTheme'
 
 // Toaster de sonner alineado con el tema activo (claro/oscuro).
 export function ToasterTema() {

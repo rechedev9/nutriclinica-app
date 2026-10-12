@@ -1,15 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
+import { pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { fmtDatetime } from '@/lib/format/fecha'
-import type { AuditEntry } from '@/types'
 
 function useAuditoria() {
   return useQuery({
     queryKey: qk.auditoria,
-    queryFn: () => api<AuditEntry[]>('GET', '/api/auditoria?limite=300'),
+    queryFn: () => pedir(servidor.auditoria.get({ query: { limite: '300' } })),
   })
 }
 
@@ -27,7 +26,15 @@ const accion: Record<string, string> = {
 export function AuditoriaPage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useAuditoria()
   if (isLoading) return <CenteredSpinner />
-  if (isError) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el registro de auditoría" />
+  if (isError)
+    return (
+      <ErrorState
+        error={error}
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
+        recurso="el registro de auditoría"
+      />
+    )
   const rows = data ?? []
 
   return (

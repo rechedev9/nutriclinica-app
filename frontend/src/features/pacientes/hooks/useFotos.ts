@@ -1,13 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, uploadFoto, mensajeError } from '@/lib/api/client'
+import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type { Foto } from '@/types'
 
 export function useFotos(pid: number) {
   return useQuery({
     queryKey: qk.fotos(pid),
-    queryFn: () => api<Foto[]>('GET', `/api/pacientes/${pid}/fotos`),
+    queryFn: () => pedir(servidor.pacientes({ id: pid }).fotos.get()),
     enabled: pid > 0,
   })
 }
@@ -15,7 +14,8 @@ export function useFotos(pid: number) {
 export function useUploadFoto(pid: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ file, nota }: { file: File; nota: string }) => uploadFoto(pid, file, nota),
+    mutationFn: ({ file, nota }: { file: File; nota: string }) =>
+      pedir(servidor.pacientes({ id: pid }).fotos.post(nota ? { foto: file, nota } : { foto: file })),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.fotos(pid) })
       qc.invalidateQueries({ queryKey: qk.pacientes })
@@ -27,7 +27,7 @@ export function useUploadFoto(pid: number) {
 export function useDeleteFoto(pid: number) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api('DELETE', `/api/fotos/${id}`),
+    mutationFn: (id: number) => pedir(servidor.fotos({ id }).delete()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.fotos(pid) })
       qc.invalidateQueries({ queryKey: qk.pacientes })

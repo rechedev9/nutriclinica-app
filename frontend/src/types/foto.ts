@@ -1,7 +1,5 @@
-export interface Foto {
-  id: number
-  paciente_id: number
-  filename: string
-  nota: string | null
-  fecha: string | null
-}
+import type { Treaty } from '@elysiajs/eden'
+import type { servidor } from '@/lib/api/client'
+
+// Tipos derivados de las respuestas del backend (Eden): la fuente de verdad es la API.
+export type Foto = Treaty.Data<ReturnType<typeof servidor.pacientes>['fotos']['get']>[number]

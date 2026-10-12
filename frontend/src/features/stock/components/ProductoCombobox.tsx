@@ -4,15 +4,17 @@ import { Input } from '@/components/ui/Field'
 import { Button } from '@/components/ui/Button'
 import { useCreateProducto } from '../hooks/useStock'
 import { normaliza } from '@/lib/format/texto'
-import type { Producto } from '@/types'
+import type { Producto, ProductoBase } from '@/types'
 
 interface Props {
   productos: Producto[]
   value: number
-  onSelect: (producto: Producto) => void
+  onSelect: (producto: ProductoBase) => void
 }
 
 const unidades = ['ud', 'bote', 'saco', 'bolsa', 'caja', 'kg', 'gr', 'l', 'ml']
+
+const negativo = (s: string) => s.trim() !== '' && !(Number(s) >= 0)
 
 export function ProductoCombobox({ productos, value, onSelect }: Props) {
   const seleccionado = productos.find((p) => p.id === value)
@@ -28,14 +30,12 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
   const create = useCreateProducto()
 
   function onBlurInput(e: FocusEvent<HTMLInputElement>) {
-    const next = e.relatedTarget as Node | null
-    if (next && containerRef.current?.contains(next)) return
+    const next = e.relatedTarget
+    if (next instanceof Node && containerRef.current?.contains(next)) return
     setOpen(false)
   }
 
-  const filtrados = query.trim()
-    ? productos.filter((p) => normaliza(p.nombre).includes(normaliza(query)))
-    : productos
+  const filtrados = query.trim() ? productos.filter((p) => normaliza(p.nombre).includes(normaliza(query))) : productos
   const hayCoincidenciaExacta = productos.some((p) => normaliza(p.nombre) === normaliza(query))
   const puedeCrear = query.trim().length > 0 && !hayCoincidenciaExacta
 
@@ -49,13 +49,12 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
     setOpen(true)
   }
 
-  function seleccionar(p: Producto) {
+  function seleccionar(p: ProductoBase) {
     onSelect(p)
     setOpen(false)
     setQuery('')
   }
 
-  const negativo = (s: string) => s.trim() !== '' && !(Number(s) >= 0)
   const errorCreacion = negativo(precioCoste) || negativo(precioVenta) ? 'El precio no puede ser negativo' : null
 
   function empezarCreacion() {
@@ -136,7 +135,15 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
           inputRef.current?.focus()
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
           <path d="M12 5v14M5 12h14" />
         </svg>
       </button>
@@ -167,9 +174,13 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                   onChange={(e) => setPrecioVenta(e.target.value)}
                 />
               </div>
-              {errorCreacion && <p role="alert" className="text-xs text-danger">{errorCreacion}</p>}
+              {errorCreacion && (
+                <p role="alert" className="text-xs text-danger">
+                  {errorCreacion}
+                </p>
+              )}
               <select
-                className="w-full rounded-lg border border-border bg-app px-3 py-2 text-[15px] outline-none focus:border-primary focus:bg-surface"
+                className="w-full rounded-lg border border-border bg-app px-3 py-2 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
                 value={unidad}
                 onChange={(e) => setUnidad(e.target.value)}
               >
@@ -180,7 +191,15 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                 ))}
               </select>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" size="sm" onMouseDown={(e) => { e.preventDefault(); setCreando(false) }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setCreando(false)
+                  }}
+                >
                   Cancelar
                 </Button>
                 <Button
@@ -188,7 +207,10 @@ export function ProductoCombobox({ productos, value, onSelect }: Props) {
                   size="sm"
                   isLoading={create.isPending}
                   disabled={errorCreacion !== null}
-                  onMouseDown={(e) => { e.preventDefault(); confirmarCreacion() }}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    confirmarCreacion()
+                  }}
                 >
                   Crear y usar
                 </Button>

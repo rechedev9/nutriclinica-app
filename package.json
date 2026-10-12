@@ -1,0 +1,28 @@
+{
+  "name": "nutriclinica",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c blue.bold,green.bold \"bun run --cwd backend dev\" \"bun run --cwd frontend dev\"",
+    "build": "bun run --cwd frontend build",
+    "start": "bun run --cwd backend start",
+    "seed": "bun run --cwd backend seed",
+    "importar": "bun run --cwd backend importar",
+    "compilar": "bun run build/compilar.ts",
+    "test": "bun run --cwd backend test && bun run --cwd frontend test",
+    "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "knip": "knip"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "knip": "^6.41.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0"
+  }
+}

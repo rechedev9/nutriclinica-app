@@ -62,7 +62,13 @@ export function VentaModal({ open, onClose }: { open: boolean; onClose: () => vo
             </Select>
           </Field>
         </div>
-        <LineasEditor productos={productos} lineas={lineas} onChange={setLineas} precioDe={(p) => p.precio_venta} stock={stock} />
+        <LineasEditor
+          productos={productos}
+          lineas={lineas}
+          onChange={setLineas}
+          precioDe={(p) => p.precio_venta}
+          stock={stock}
+        />
         {sinProducto && <p className="text-xs text-ink-muted">Añade al menos una línea con producto.</p>}
         <Field label="Notas">
           <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} />

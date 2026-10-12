@@ -2,15 +2,7 @@ import { Bar } from 'react-chartjs-2'
 import { useMemo } from 'react'
 import { useChartTheme, tooltipPlugin } from '@/lib/chart/useChartTheme'
 
-export function ChartPliegues({
-  labels,
-  data,
-  colors,
-}: {
-  labels: string[]
-  data: number[]
-  colors: string[]
-}) {
+export function ChartPliegues({ labels, data, colors }: { labels: string[]; data: number[]; colors: string[] }) {
   const t = useChartTheme()
 
   const chartData = useMemo(
