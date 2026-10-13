@@ -32,6 +32,9 @@ export function useUpdateRevision(pid: number) {
     mutationFn: ({ id, body }: { id: number; body: RevisionInput }) => pedir(servidor.revisiones({ id }).put(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.revisiones(pid) })
+      qc.invalidateQueries({ queryKey: qk.historial(pid) })
+      // Cambiar la fecha mueve la "última revisión" que muestran la lista e Inicio.
+      qc.invalidateQueries({ queryKey: qk.pacientes })
       toast.success('Revisión actualizada')
     },
     onError: (e) => toast.error(mensajeError(e)),

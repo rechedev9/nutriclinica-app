@@ -35,7 +35,7 @@ const COLUMNAS_PACIENTES: [string, number][] = [
 
 const COLUMNAS_REVISIONES: [string, number][] = [
   ['ID Rev.', 8],
-  ['Paciente', 28],
+  ['Cliente', 28],
   ['Fecha revisión', 16],
   ['Peso (kg)', 10],
   ['Talla (cm)', 10],
@@ -119,7 +119,7 @@ export function moduloExportar(ctx: Contexto) {
       '/api/exportar-excel',
       ({ query }) => {
         const unico = query.id === undefined ? null : obtenerPaciente(db, query.id)
-        if (query.id !== undefined && unico === null) throw new ErrorHttp(404, 'Paciente no encontrado')
+        if (query.id !== undefined && unico === null) throw new ErrorHttp(404, 'Cliente no encontrado')
         const pacientes = unico === null ? listarPacientes(db) : [unico]
         const revisiones =
           unico === null
@@ -127,7 +127,7 @@ export function moduloExportar(ctx: Contexto) {
             : listarRevisiones(db, unico.id).map((r) => ({ ...r, paciente_nombre: unico.nombre }))
 
         const libro = new ExcelJS.Workbook()
-        const hojaPacientes = hojaConCabecera(libro, 'Pacientes', COLUMNAS_PACIENTES)
+        const hojaPacientes = hojaConCabecera(libro, 'Clientes', COLUMNAS_PACIENTES)
         for (const p of pacientes) {
           const fila: Celda[] = [
             p.id,
@@ -174,7 +174,7 @@ export function moduloExportar(ctx: Contexto) {
         const revision = obtenerRevision(db, params.id)
         if (revision === null) throw new ErrorHttp(404, 'No encontrado')
         const paciente = obtenerPaciente(db, revision.paciente_id)
-        if (paciente === null) throw new ErrorHttp(404, 'Paciente no encontrado')
+        if (paciente === null) throw new ErrorHttp(404, 'Cliente no encontrado')
 
         const libro = new ExcelJS.Workbook()
         const hoja = libro.addWorksheet('Revisión')
@@ -197,7 +197,7 @@ export function moduloExportar(ctx: Contexto) {
           hoja.addRow([etiqueta, valor]).getCell(1).font = { bold: true, size: 11 }
         }
 
-        seccion('DATOS DEL PACIENTE')
+        seccion('DATOS DEL CLIENTE')
         dato('Nombre', paciente.nombre)
         dato('Fecha nacimiento', paciente.fecha_nac)
         dato('Sexo', paciente.sexo)

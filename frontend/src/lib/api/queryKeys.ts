@@ -3,6 +3,7 @@ export const qk = {
   me: ['me'] as const,
   pacientes: ['pacientes'] as const,
   revisiones: (pid: number) => ['pacientes', pid, 'revisiones'] as const,
+  historial: (pid: number) => ['pacientes', pid, 'historial'] as const,
   fotos: (pid: number) => ['pacientes', pid, 'fotos'] as const,
   usuarios: ['usuarios'] as const,
   auditoria: ['auditoria'] as const,

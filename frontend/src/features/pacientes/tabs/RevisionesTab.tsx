@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { usePacienteContext } from './context'
+import { useHistorial } from '../hooks/useHistorial'
 import { useRevisiones, useDeleteRevision } from '../hooks/useRevisiones'
+import { textoUltimoCambio, ultimoCambioRevision } from '../historial'
+import type { UltimoCambio } from '../historial'
 import { RevisionModal } from './RevisionModal'
 import { Button } from '@/components/ui/Button'
+import { Chevron } from '@/components/ui/Chevron'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -13,15 +17,35 @@ import { ALL_MEDIDAS } from '@/types'
 import type { Revision } from '@/types'
 import { intentar } from '@/lib/api/intentar'
 
-function RevisionCard({ rev, onEdit, onDelete }: { rev: Revision; onEdit: () => void; onDelete: () => void }) {
+// Cambio de peso frente a la revisión anterior, con un decimal y signo explícito.
+function cambioPeso(rev: Revision, anterior: Revision | undefined): string | null {
+  if (rev.peso == null || anterior?.peso == null) return null
+  const delta = Math.round((rev.peso - anterior.peso) * 10) / 10
+  if (delta === 0) return 'Sin cambio'
+  return `${delta > 0 ? '+' : '-'}${Math.abs(delta)} kg`
+}
+
+interface RevisionCardProps {
+  rev: Revision
+  anterior: Revision | undefined
+  ultimoCambio: UltimoCambio | null
+  onEdit: () => void
+  onDelete: () => void
+}
+
+function RevisionCard({ rev, anterior, ultimoCambio, onEdit, onDelete }: RevisionCardProps) {
   const [open, setOpen] = useState(false)
   const medidas = ALL_MEDIDAS.filter((m) => rev[m.key] != null)
+  const cambio = cambioPeso(rev, anterior)
 
   return (
     <div className="rounded-card bg-surface shadow-card">
-      <div className="flex items-center gap-3 p-4">
-        <button onClick={() => setOpen((o) => !o)} className="flex flex-1 items-center gap-3 text-left">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-light text-primary">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 p-4">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex min-w-0 flex-1 basis-64 items-center gap-3 text-left"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary">
             <svg
               width="18"
               height="18"
@@ -42,20 +66,17 @@ function RevisionCard({ rev, onEdit, onDelete }: { rev: Revision; onEdit: () => 
               {medidas.length > 0 && ` · ${medidas.length} medidas`}
             </div>
           </div>
-          <svg
-            className={`text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`}
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          {cambio && (
+            <span
+              title="Peso respecto a la revisión anterior"
+              className="whitespace-nowrap rounded-full bg-surface-2 px-2.5 py-1 text-[13px] font-semibold tabular-nums"
+            >
+              {cambio}
+            </span>
+          )}
+          <Chevron abierto={open} />
         </button>
-        <div className="flex gap-1">
+        <div className="ml-auto flex gap-1">
           <Button variant="ghost" size="sm" onClick={() => descargarExcelRevision(rev.id)} title="Exportar Excel">
             <svg
               width="15"
@@ -75,11 +96,16 @@ function RevisionCard({ rev, onEdit, onDelete }: { rev: Revision; onEdit: () => 
           <Button variant="ghost" size="sm" onClick={onEdit}>
             Editar
           </Button>
-          <Button variant="danger" size="sm" onClick={onDelete}>
+          <Button variant="dangerGhost" size="sm" onClick={onDelete}>
             Borrar
           </Button>
         </div>
       </div>
+      {ultimoCambio && (
+        <p className="px-4 pb-3 text-[13px] text-ink-muted">
+          {textoUltimoCambio({ cambio: ultimoCambio, formatearFecha: fmtFecha })}
+        </p>
+      )}
       {open && (
         <div className="border-t border-border p-4">
           {medidas.length === 0 && rev.envergadura == null ? (
@@ -133,6 +159,7 @@ function RevisionCard({ rev, onEdit, onDelete }: { rev: Revision; onEdit: () => 
 export function RevisionesTab() {
   const p = usePacienteContext()
   const { data: revs, isLoading, isError, error, refetch, isFetching } = useRevisiones(p.id)
+  const { data: historial } = useHistorial(p.id)
   const del = useDeleteRevision(p.id)
   const confirm = useConfirm()
   const [modalOpen, setModalOpen] = useState(false)
@@ -164,10 +191,12 @@ export function RevisionesTab() {
       {!revs || revs.length === 0 ? (
         <EmptyState title="Sin revisiones" subtitle="Crea la primera revisión antropométrica." />
       ) : (
-        revs.map((rev) => (
+        revs.map((rev, i) => (
           <RevisionCard
             key={rev.id}
             rev={rev}
+            anterior={revs[i + 1]}
+            ultimoCambio={historial ? ultimoCambioRevision(historial, rev.id) : null}
             onEdit={() => {
               setEditing(rev)
               setModalOpen(true)

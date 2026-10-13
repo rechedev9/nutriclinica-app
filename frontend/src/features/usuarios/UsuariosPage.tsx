@@ -81,7 +81,7 @@ export function UsuariosPage() {
                     Editar
                   </Button>
                   {u.id !== me?.id && (
-                    <Button variant="danger" size="sm" onClick={() => onDelete(u)}>
+                    <Button variant="dangerGhost" size="sm" onClick={() => onDelete(u)}>
                       Borrar
                     </Button>
                   )}

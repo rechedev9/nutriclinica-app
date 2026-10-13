@@ -214,6 +214,9 @@ export const audit_log = sqliteTable(
     metodo: text().notNull(),
     ruta: text().notNull(),
     estado: integer().notNull(),
+    // Sin clave foránea: la traza debe sobrevivir al borrado del cliente.
+    paciente_id: integer(),
+    detalle: text(),
   },
-  (t) => [index('idx_audit_fecha').on(t.fecha)],
+  (t) => [index('idx_audit_fecha').on(t.fecha), index('idx_audit_paciente').on(t.paciente_id)],
 )

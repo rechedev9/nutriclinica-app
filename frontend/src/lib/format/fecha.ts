@@ -28,6 +28,25 @@ export function fmtDatetime(iso: string): string {
   )
 }
 
+// Días naturales entre una fecha (YYYY-MM-DD) y hoy; null si la fecha no es válida.
+export function diasDesde(fecha: string | null | undefined, hoy: Date = new Date()): number | null {
+  const [, anio, mes, dia] = /^(\d{4})-(\d{2})-(\d{2})/.exec(fecha ?? '') ?? []
+  if (anio === undefined) return null
+  const inicio = Date.UTC(Number(anio), Number(mes) - 1, Number(dia))
+  const fin = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+  return Math.round((fin - inicio) / 86_400_000)
+}
+
+export function haceCuanto(dias: number): string {
+  if (dias <= 0) return 'hoy'
+  if (dias === 1) return 'ayer'
+  if (dias < 14) return `hace ${dias} días`
+  if (dias < 60) return `hace ${Math.round(dias / 7)} semanas`
+  const meses = Math.round(dias / 30)
+  if (meses < 24) return `hace ${meses} meses`
+  return `hace ${Math.round(dias / 365)} años`
+}
+
 // Port exacto de calcEdad (index.html:1397).
 export function calcEdad(fechaNac: string | null | undefined): number | null {
   if (!fechaNac) return null

@@ -17,7 +17,7 @@ export function useCreatePaciente() {
     mutationFn: (body: PacienteInput) => pedir(servidor.pacientes.post(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
-      toast.success('Paciente creado')
+      toast.success('Cliente creado')
     },
     onError: (e) => toast.error(mensajeError(e)),
   })
@@ -29,7 +29,7 @@ export function useUpdatePaciente() {
     mutationFn: ({ id, body }: { id: number; body: PacienteInput }) => pedir(servidor.pacientes({ id }).put(body)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
-      toast.success('Paciente actualizado')
+      toast.success('Cliente actualizado')
     },
     onError: (e) => toast.error(mensajeError(e)),
   })
@@ -41,7 +41,7 @@ export function useDeletePaciente() {
     mutationFn: (id: number) => pedir(servidor.pacientes({ id }).delete()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.pacientes })
-      toast.success('Paciente eliminado')
+      toast.success('Cliente eliminado')
     },
     onError: (e) => toast.error(mensajeError(e)),
   })

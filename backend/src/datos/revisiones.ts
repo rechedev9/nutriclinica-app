@@ -21,7 +21,7 @@ export function obtenerRevision(db: BD, id: number) {
 
 export function crearRevision(db: BD, pacienteId: number, datos: RevisionDatos) {
   const paciente = db.select({ id: pacientes.id }).from(pacientes).where(eq(pacientes.id, pacienteId)).get()
-  if (paciente === undefined) throw new ErrorHttp(404, 'Paciente no encontrado')
+  if (paciente === undefined) throw new ErrorHttp(404, 'Cliente no encontrado')
   return db
     .insert(revisiones)
     .values({ ...datos, paciente_id: pacienteId })

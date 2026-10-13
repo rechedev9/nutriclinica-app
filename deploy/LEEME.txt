@@ -5,8 +5,8 @@ Esta carpeta es portable: contiene la aplicación en un solo ejecutable que abre
 el navegador automáticamente. No necesita internet ni instalar nada más.
 
 Los datos se guardan junto al ejecutable:
-   bbdd/nutriclinica.db   pacientes, revisiones, stock y usuarios (SQLite)
-   fotos/                 fotos de progreso de cada paciente
+   bbdd/nutriclinica.db   clientes, revisiones, existencias y usuarios (SQLite)
+   fotos/                 fotos de progreso de cada cliente
 
 Copia de seguridad: con la aplicación cerrada, copia las carpetas "bbdd" y
 "fotos" a otro disco. Para restaurar, vuelve a ponerlas junto al ejecutable.

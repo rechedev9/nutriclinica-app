@@ -4,14 +4,16 @@ import type { VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
 const estilos = cva(
-  'relative inline-flex items-center justify-center rounded-lg border font-semibold transition-colors disabled:cursor-not-allowed',
+  'relative inline-flex items-center justify-center rounded-lg border font-semibold transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100',
   {
     variants: {
       variant: {
         primary: 'border-transparent bg-primary text-primary-foreground hover:bg-primary-dark',
         outline: 'border-border bg-surface text-ink hover:bg-surface-2',
         danger: 'border-danger/30 bg-surface text-danger hover:bg-danger/5',
-        ghost: 'border-transparent bg-transparent text-ink-muted hover:bg-surface-2',
+        ghost: 'border-transparent bg-transparent text-ink-muted hover:bg-surface-2 hover:text-ink',
+        // Borrado dentro de una fila: discreto hasta que se apunta, para no llenar la lista de rojo.
+        dangerGhost: 'border-transparent bg-transparent text-ink-muted hover:bg-danger/10 hover:text-danger',
       },
       size: {
         md: 'px-4 py-2 text-[15px]',

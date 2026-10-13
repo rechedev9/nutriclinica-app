@@ -21,7 +21,7 @@ $ws  = New-Object -ComObject WScript.Shell
 $lnk = $ws.CreateShortcut($lnkPath)
 $lnk.TargetPath       = $exe
 $lnk.WorkingDirectory = $here
-$lnk.Description       = 'NutriClínica - gestión de pacientes'
+$lnk.Description       = 'NutriClínica - gestión de clientes'
 $icon = Join-Path $here 'icono_nutri.ico'
 if (Test-Path $icon) { $lnk.IconLocation = $icon }
 $lnk.Save()

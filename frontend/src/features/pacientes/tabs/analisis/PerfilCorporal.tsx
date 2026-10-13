@@ -1,9 +1,11 @@
 import { useEffect, useRef, type RefObject } from 'react'
+import { fmtFecha } from '@/lib/format/fecha'
 import type { ClaveMedida, Revision } from '@/types'
+import { esDeLaUltimaRevision, resumirSerie, variacion } from './ultimo-dato'
 
 interface Props {
-  last: Revision
-  prev: Revision | null
+  // Revisiones en orden ascendente; de cada medida se usa su último dato disponible.
+  revisiones: Revision[]
   sexo: string
 }
 
@@ -51,15 +53,13 @@ function PanelSVG({
   imagen,
   titulo,
   puntos,
-  last,
-  prev,
+  revisiones,
   svgRef,
 }: {
   imagen: string
   titulo: string
   puntos: Punto[]
-  last: Revision
-  prev: Revision | null
+  revisiones: Revision[]
   svgRef: RefObject<SVGSVGElement | null>
 }) {
   return (
@@ -68,11 +68,12 @@ function PanelSVG({
       <svg ref={svgRef} viewBox="0 0 900 350" className="w-full">
         <image href={imagen} x="215" y="0" width="320" height="336" preserveAspectRatio="xMidYMid meet" />
         {puntos.map((p, i) => {
-          const val = last[p.key]
-          if (val == null) return null
-          const anterior = prev?.[p.key] ?? null
-          const delta = anterior != null ? Math.round((val - anterior) * 10) / 10 : 0
+          const { anterior, ultimo } = resumirSerie(revisiones, (r) => r[p.key])
+          if (ultimo === null) return null
+          const val = ultimo.valor
+          const delta = variacion(anterior, ultimo) ?? 0
           const hasDelta = delta !== 0
+          const deOtraRevision = !esDeLaUltimaRevision(ultimo, revisiones.length)
           const subio = delta > 0
           const lineX1 = p.anchor === 'end' ? p.textX + 16 : p.textX - 16
 
@@ -104,8 +105,27 @@ function PanelSVG({
                 {val.toFixed(1)} cm
               </text>
               {hasDelta && (
-                <text x={p.textX} y={p.y + 22} textAnchor={p.anchor} fontSize={12} fill="#a78bfa" fontFamily="inherit">
+                <text
+                  x={p.textX}
+                  y={p.y + 22}
+                  textAnchor={p.anchor}
+                  fontSize={12}
+                  fill="var(--ink-muted)"
+                  fontFamily="inherit"
+                >
                   {subio ? '↑' : '↓'} {Math.abs(delta).toFixed(1)} cm
+                </text>
+              )}
+              {deOtraRevision && (
+                <text
+                  x={p.textX}
+                  y={p.y + (hasDelta ? 38 : 22)}
+                  textAnchor={p.anchor}
+                  fontSize={11}
+                  fill="var(--ink-muted)"
+                  fontFamily="inherit"
+                >
+                  dato del {fmtFecha(ultimo.fecha)}
                 </text>
               )}
             </g>
@@ -116,7 +136,7 @@ function PanelSVG({
   )
 }
 
-export function PerfilCorporal({ last, prev, sexo }: Props) {
+export function PerfilCorporal({ revisiones, sexo }: Props) {
   const frontalRef = useRef<SVGSVGElement | null>(null)
   const posteriorRef = useRef<SVGSVGElement | null>(null)
 
@@ -127,7 +147,7 @@ export function PerfilCorporal({ last, prev, sexo }: Props) {
   useEffect(() => {
     if (frontalRef.current) animarTextos(frontalRef.current)
     if (posteriorRef.current) animarTextos(posteriorRef.current)
-  }, [last, prev])
+  }, [revisiones])
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -135,16 +155,14 @@ export function PerfilCorporal({ last, prev, sexo }: Props) {
         imagen={imgFrontal}
         titulo="Perfil corporal frontal"
         puntos={FRONTAL}
-        last={last}
-        prev={prev}
+        revisiones={revisiones}
         svgRef={frontalRef}
       />
       <PanelSVG
         imagen={imgPosterior}
         titulo="Perfil corporal posterior"
         puntos={POSTERIOR}
-        last={last}
-        prev={prev}
+        revisiones={revisiones}
         svgRef={posteriorRef}
       />
     </div>

@@ -22,7 +22,7 @@ export function LoginPage() {
     }
     try {
       await login.mutateAsync({ usuario: usuario.trim(), password })
-      await navigate({ to: '/pacientes', replace: true })
+      await navigate({ to: '/inicio', replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Error al iniciar sesión')
     }
@@ -30,7 +30,7 @@ export function LoginPage() {
 
   // Con la sesión ya iniciada no tiene sentido mostrar el formulario.
   if (cargandoSesion) return <CenteredSpinner />
-  if (me) return <Navigate to="/pacientes" replace />
+  if (me) return <Navigate to="/inicio" replace />
 
   return (
     <div
@@ -55,7 +55,7 @@ export function LoginPage() {
           </svg>
           <h1 className="text-2xl font-extrabold text-ink">NutriClínica</h1>
         </div>
-        <p className="mb-6 text-sm text-ink-muted">Accede para gestionar tus pacientes.</p>
+        <p className="mb-6 text-sm text-ink-muted">Accede para gestionar tus clientes.</p>
 
         <div className="flex flex-col gap-3">
           <input

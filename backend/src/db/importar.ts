@@ -69,7 +69,7 @@ const { rutaBD } = prepararDatos(dataDir)
 const sqlite = abrirBD(rutaBD).$client
 
 if (contar(sqlite, 'pacientes') > 0 && !values.reemplazar) {
-  throw new Error(`${rutaBD} ya tiene pacientes. Repite con --reemplazar para sustituir todos sus datos.`)
+  throw new Error(`${rutaBD} ya tiene clientes. Repite con --reemplazar para sustituir todos sus datos.`)
 }
 
 sqlite.run('ATTACH DATABASE ? AS origen', [resolve(origen)])

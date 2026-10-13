@@ -105,6 +105,7 @@ describe('revisiones', () => {
     expect(lista.map((r) => r.fecha)).toEqual(['2026-02-10', '2026-01-10'])
     const paciente = ((await api.pacientes.get()).data ?? []).find((p) => p.id === id)
     expect(paciente?.num_revisiones).toBe(2)
+    expect(paciente?.ultima_revision).toBe('2026-02-10')
 
     const editada = await api.revisiones({ id: revisionId }).put({ fecha: '2026-01-11', peso: 70.4 })
     expect(editada.data).toMatchObject({ id: revisionId, fecha: '2026-01-11', peso: 70.4 })
@@ -166,7 +167,7 @@ describe('fotos', () => {
     expect(disfrazada.data?.filename).toEndWith('.png')
   })
 
-  test('borrar el paciente borra sus fotos del disco', async () => {
+  test('borrar el cliente borra sus fotos del disco', async () => {
     const id = await nuevoPaciente('Irene Costa')
     const subida = await api.pacientes({ id }).fotos.post({ foto: new File([PNG], 'a.png') })
     const filename = subida.data?.filename ?? ''
@@ -189,7 +190,7 @@ describe('fotos', () => {
 })
 
 describe('exportación a Excel', () => {
-  test('exporta pacientes y revisiones', async () => {
+  test('exporta clientes y revisiones', async () => {
     const id = await nuevoPaciente('Exportada Uno')
     await api.pacientes({ id }).revisiones.post({ fecha: '2026-03-01', peso: 66 })
     const todo = await pedir('/api/exportar-excel')
@@ -198,8 +199,8 @@ describe('exportación a Excel', () => {
     expect(todo.headers.get('content-disposition')).toContain('attachment')
     const libro = new ExcelJS.Workbook()
     await libro.xlsx.load(await todo.arrayBuffer())
-    expect(libro.worksheets.map((h) => h.name)).toEqual(['Pacientes', 'Revisiones'])
-    const nombres = libro.getWorksheet('Pacientes')?.getColumn(2).values ?? []
+    expect(libro.worksheets.map((h) => h.name)).toEqual(['Clientes', 'Revisiones'])
+    const nombres = libro.getWorksheet('Clientes')?.getColumn(2).values ?? []
     expect(nombres).toContain('Exportada Uno')
 
     expect((await pedir(`/api/exportar-excel?id=${id}`)).status).toBe(200)

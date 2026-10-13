@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState, type ReactNode } from 'react'
 import { useAlmacen, useProductos, useDeleteProducto } from '../hooks/useStock'
 import { ProductoModal } from '../components/ProductoModal'
 import { Button } from '@/components/ui/Button'
@@ -8,33 +8,28 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { cn } from '@/lib/cn'
 import { fmtMoneda } from '@/lib/format/moneda'
-import { fmtFecha } from '@/lib/format/fecha'
 import type { AlmacenRow, Producto } from '@/types'
 import { intentar } from '@/lib/api/intentar'
+import { fmtFecha } from '@/lib/format/fecha'
 import { normaliza } from '@/lib/format/texto'
+import {
+  coincideEstado,
+  contarPorEstado,
+  estadoDe,
+  ordenPorDefecto,
+  prioridadEstado,
+  type EstadoStock,
+  type FiltroEstado,
+} from '../estado-almacen'
 
-type SortKey =
-  | 'nombre'
-  | 'categoria'
-  | 'proveedor_nombre'
-  | 'estado'
-  | 'stock_actual'
-  | 'precio_coste'
-  | 'precio_venta'
-  | 'margen'
-  | 'valor_stock'
-  | 'creado'
+type SortKey = 'nombre' | 'estado' | 'stock_actual' | 'precio_coste' | 'precio_venta' | 'margen' | 'valor_stock'
 
 function valorOrden(p: AlmacenRow, key: SortKey): string | number {
   switch (key) {
     case 'nombre':
       return p.nombre.toLowerCase()
-    case 'categoria':
-      return (p.categoria ?? '').toLowerCase()
-    case 'proveedor_nombre':
-      return (p.proveedor_nombre ?? '').toLowerCase()
     case 'estado':
-      return p.stock_actual <= 0 ? 0 : p.stock_actual <= p.stock_minimo ? 1 : 2
+      return prioridadEstado(estadoDe(p.stock_actual, p.stock_minimo))
     case 'stock_actual':
       return p.stock_actual
     case 'precio_coste':
@@ -45,8 +40,6 @@ function valorOrden(p: AlmacenRow, key: SortKey): string | number {
       return p.precio_venta - p.precio_coste
     case 'valor_stock':
       return Math.max(0, p.stock_actual) * p.precio_coste
-    case 'creado':
-      return p.creado ?? ''
   }
 }
 
@@ -66,7 +59,10 @@ function ThOrdenable({
   const activo = sort?.key === sortKey
   return (
     <th
-      className={cn('p-3 font-semibold cursor-pointer select-none hover:text-ink', align === 'right' && 'text-right')}
+      className={cn(
+        'px-3 py-2.5 font-semibold cursor-pointer select-none transition-colors duration-150 ease-out [@media(hover:hover)]:hover:text-ink',
+        align === 'right' && 'text-right',
+      )}
       onClick={() => onSort(sortKey)}
     >
       <span className={cn('inline-flex items-center gap-1', align === 'right' && 'flex-row-reverse')}>
@@ -81,16 +77,81 @@ function Kpi({ label, value, danger }: { label: string; value: string; danger?: 
   return (
     <div className="rounded-card bg-surface p-4 shadow-card">
       <div className="text-[13px] text-ink-muted">{label}</div>
-      <div className={cn('mt-1 text-2xl font-extrabold', danger && 'text-danger')}>{value}</div>
+      <div className={cn('mt-1 text-2xl font-extrabold tabular-nums', danger && 'text-danger')}>{value}</div>
     </div>
   )
 }
 
-// estadoStock clasifica un producto por su stock frente al mínimo.
-function estadoStock(actual: number, minimo: number): { label: string; cls: string } {
-  if (actual <= 0) return { label: 'Agotado', cls: 'bg-danger/10 text-danger' }
-  if (actual <= minimo) return { label: 'Stock bajo', cls: 'bg-amber-500/10 text-amber-500' }
-  return { label: 'En stock', cls: 'bg-success/10 text-success' }
+function KpiAlertas({ value, activo, onClick }: { value: number; activo: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={activo}
+      onClick={onClick}
+      className={cn(
+        'rounded-card border p-4 text-left shadow-card transition-colors duration-150 ease-out',
+        activo
+          ? 'border-primary/30 bg-primary-light'
+          : 'border-transparent bg-surface [@media(hover:hover)]:hover:bg-surface-2',
+      )}
+    >
+      <div className="text-[13px] text-ink-muted">Alertas de mínimo</div>
+      <div className={cn('mt-1 text-2xl font-extrabold tabular-nums', value > 0 && 'text-danger')}>{value}</div>
+      <div className="mt-0.5 text-[12px] text-ink-muted">
+        {activo ? 'Mostrando solo alertas' : 'Pulsa para filtrar'}
+      </div>
+    </button>
+  )
+}
+
+function Filtro({ activo, onClick, children }: { activo: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={activo}
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors duration-150 ease-out',
+        activo
+          ? 'border-primary/30 bg-primary-light text-primary'
+          : 'border-border bg-surface text-ink-muted [@media(hover:hover)]:hover:text-ink',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+const ETIQUETA_ESTADO: Record<EstadoStock, { label: string; cls: string }> = {
+  agotado: { label: 'Agotado', cls: 'bg-danger/10 text-danger' },
+  bajo: { label: 'Bajo mínimo', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+  ok: { label: 'En stock', cls: 'text-ink-muted' },
+}
+
+function EstadoBadge({ estado }: { estado: EstadoStock }) {
+  const { label, cls } = ETIQUETA_ESTADO[estado]
+  return (
+    <span className={cn('inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold', cls)}>
+      {label}
+    </span>
+  )
+}
+
+function Acciones({ onEditar, onBorrar }: { onEditar: () => void; onBorrar: () => void }) {
+  return (
+    <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+      <Button variant="ghost" size="sm" onClick={onEditar}>
+        Editar
+      </Button>
+      <Button variant="dangerGhost" size="sm" onClick={onBorrar}>
+        Borrar
+      </Button>
+    </div>
+  )
+}
+
+function secundaria(p: AlmacenRow): string {
+  return [p.categoria, p.proveedor_nombre].filter((x): x is string => !!x).join(' · ')
 }
 
 const cajaIcono = (
@@ -115,10 +176,15 @@ export function AlmacenTab() {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null)
+  const [estado, setEstado] = useState<FiltroEstado>('todos')
   const deferredQ = useDeferredValue(q)
 
+  // Ascendente, descendente y, al tercer clic, de vuelta al orden por defecto (alertas primero).
   function onSort(key: SortKey) {
-    setSort((prev) => (prev?.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
+    setSort((prev) => {
+      if (prev?.key !== key) return { key, dir: 'asc' }
+      return prev.dir === 'asc' ? { key, dir: 'desc' } : null
+    })
   }
 
   const rows = useMemo(() => almacen ?? [], [almacen])
@@ -131,11 +197,11 @@ export function AlmacenTab() {
     return rows.filter((p) => {
       const coincideTexto = !term || normaliza(p.nombre).includes(term) || normaliza(p.categoria ?? '').includes(term)
       const coincideCat = !cat || p.categoria === cat
-      return coincideTexto && coincideCat
+      return coincideTexto && coincideCat && coincideEstado(p, estado)
     })
-  }, [rows, deferredQ, cat])
+  }, [rows, deferredQ, cat, estado])
   const ordenadas = useMemo(() => {
-    if (!sort) return filtradas
+    if (!sort) return ordenPorDefecto(filtradas)
     const { key, dir } = sort
     const factor = dir === 'asc' ? 1 : -1
     return filtradas.toSorted((a, b) => {
@@ -158,12 +224,18 @@ export function AlmacenTab() {
     )
   }
 
-  const sinStock = rows.filter((p) => p.stock_actual <= p.stock_minimo).length
+  const cuentas = contarPorEstado(rows)
+  const sinStock = cuentas.agotado + cuentas.bajo
   const valCoste = rows.reduce((s, p) => s + Math.max(0, p.stock_actual) * p.precio_coste, 0)
   const valVenta = rows.reduce((s, p) => s + Math.max(0, p.stock_actual) * p.precio_venta, 0)
 
   function nuevo() {
     setEditing(undefined)
+    setModalOpen(true)
+  }
+
+  function editar(id: number) {
+    setEditing(productos.find((x) => x.id === id))
     setModalOpen(true)
   }
 
@@ -173,17 +245,21 @@ export function AlmacenTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-4 p-4 sm:p-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kpi label="Productos" value={String(rows.length)} />
-        <Kpi label="Alertas de mínimo" value={String(sinStock)} danger={sinStock > 0} />
+        <KpiAlertas
+          value={sinStock}
+          activo={estado === 'alertas'}
+          onClick={() => setEstado((e) => (e === 'alertas' ? 'todos' : 'alertas'))}
+        />
         <Kpi label="Valor a coste" value={fmtMoneda(valCoste)} />
         <Kpi label="Valor a venta" value={fmtMoneda(valVenta)} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-bold">Productos</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {categorias.length > 0 && (
             <select
               className="rounded-lg border border-border bg-app py-2 pl-3 pr-8 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
@@ -199,7 +275,7 @@ export function AlmacenTab() {
             </select>
           )}
           {rows.length > 0 && (
-            <div className="relative">
+            <div className="relative min-w-44 flex-1 sm:min-w-0 sm:flex-none">
               <svg
                 className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
                 width="15"
@@ -213,7 +289,7 @@ export function AlmacenTab() {
                 <path d="m21 21-4.35-4.35" />
               </svg>
               <input
-                className="w-56 rounded-lg border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
+                className="w-full rounded-lg sm:w-56 border border-border bg-app py-2 pl-9 pr-3 text-[15px] outline-hidden focus:border-primary focus:bg-surface"
                 placeholder="Buscar producto…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -223,6 +299,23 @@ export function AlmacenTab() {
           <Button onClick={nuevo}>+ Nuevo producto</Button>
         </div>
       </div>
+
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Filtro activo={estado === 'todos'} onClick={() => setEstado('todos')}>
+            Todos
+          </Filtro>
+          <Filtro activo={estado === 'alertas'} onClick={() => setEstado('alertas')}>
+            Alertas <span className="tabular-nums">{sinStock}</span>
+          </Filtro>
+          <Filtro activo={estado === 'agotado'} onClick={() => setEstado('agotado')}>
+            Agotados <span className="tabular-nums">{cuentas.agotado}</span>
+          </Filtro>
+          <Filtro activo={estado === 'bajo'} onClick={() => setEstado('bajo')}>
+            Bajo mínimo <span className="tabular-nums">{cuentas.bajo}</span>
+          </Filtro>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <EmptyState
@@ -234,81 +327,119 @@ export function AlmacenTab() {
       ) : filtradas.length === 0 ? (
         <p className="py-10 text-center text-sm text-ink-muted">Ningún producto coincide con el filtro.</p>
       ) : (
-        <div className="overflow-x-auto rounded-card bg-surface shadow-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-ink-muted">
-                <ThOrdenable label="Producto" sortKey="nombre" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Categoría" sortKey="categoria" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Proveedor" sortKey="proveedor_nombre" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Estado" sortKey="estado" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Stock" sortKey="stock_actual" align="right" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Coste" sortKey="precio_coste" align="right" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Venta" sortKey="precio_venta" align="right" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Margen" sortKey="margen" align="right" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Valor stock" sortKey="valor_stock" align="right" sort={sort} onSort={onSort} />
-                <ThOrdenable label="Alta" sortKey="creado" sort={sort} onSort={onSort} />
-                <th className="p-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordenadas.map((p) => {
-                const est = estadoStock(p.stock_actual, p.stock_minimo)
-                const margenU = p.precio_venta - p.precio_coste
-                const margenPct = p.precio_venta > 0 ? Math.round((margenU / p.precio_venta) * 100) : null
-                const valorStock = Math.max(0, p.stock_actual) * p.precio_coste
-                return (
-                  <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface-2">
-                    <td className="p-3 font-semibold">{p.nombre}</td>
-                    <td className="p-3 text-ink-muted">{p.categoria ?? '-'}</td>
-                    <td className="p-3 text-ink-muted">{p.proveedor_nombre ?? '-'}</td>
-                    <td className="p-3">
-                      <span
+        <>
+          <div className="hidden overflow-x-auto rounded-card bg-surface shadow-card lg:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-ink-muted">
+                  <ThOrdenable label="Producto" sortKey="nombre" sort={sort} onSort={onSort} />
+                  <ThOrdenable label="Estado" sortKey="estado" sort={sort} onSort={onSort} />
+                  <ThOrdenable label="Stock" sortKey="stock_actual" align="right" sort={sort} onSort={onSort} />
+                  <ThOrdenable label="Coste" sortKey="precio_coste" align="right" sort={sort} onSort={onSort} />
+                  <ThOrdenable label="Venta" sortKey="precio_venta" align="right" sort={sort} onSort={onSort} />
+                  <ThOrdenable label="Margen" sortKey="margen" align="right" sort={sort} onSort={onSort} />
+                  <ThOrdenable label="Valor stock" sortKey="valor_stock" align="right" sort={sort} onSort={onSort} />
+                  <th className="px-3 py-2.5"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {ordenadas.map((p) => {
+                  const est = estadoDe(p.stock_actual, p.stock_minimo)
+                  const margenU = p.precio_venta - p.precio_coste
+                  const margenPct = p.precio_venta > 0 ? Math.round((margenU / p.precio_venta) * 100) : null
+                  const valorStock = Math.max(0, p.stock_actual) * p.precio_coste
+                  const sec = secundaria(p)
+                  return (
+                    <tr
+                      key={p.id}
+                      title={p.creado ? `Alta: ${fmtFecha(p.creado)}` : undefined}
+                      className="border-b border-border transition-colors duration-150 ease-out last:border-0 [@media(hover:hover)]:hover:bg-surface-2"
+                    >
+                      <td className="max-w-[20rem] px-3 py-2.5">
+                        <div className="truncate font-semibold" title={p.nombre}>
+                          {p.nombre}
+                        </div>
+                        {sec && (
+                          <div className="truncate text-[12px] text-ink-muted" title={sec}>
+                            {sec}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <EstadoBadge estado={est} />
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right font-bold tabular-nums">
+                        {p.stock_actual} <span className="font-normal text-ink-muted">{p.unidad ?? 'ud'}</span>
+                        {p.stock_minimo > 0 && (
+                          <div className="text-[11px] font-normal text-ink-muted">mín. {p.stock_minimo}</div>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
+                        {fmtMoneda(p.precio_coste)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
+                        {fmtMoneda(p.precio_venta)}
+                      </td>
+                      <td
                         className={cn(
-                          'inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold',
-                          est.cls,
+                          'whitespace-nowrap px-3 py-2.5 text-right tabular-nums',
+                          margenU < 0 && 'text-danger',
                         )}
                       >
-                        {est.label}
-                      </span>
-                    </td>
-                    <td className="p-3 text-right font-bold tabular-nums">
-                      {p.stock_actual} <span className="font-normal text-ink-muted">{p.unidad ?? 'ud'}</span>
-                      {p.stock_minimo > 0 && (
-                        <div className="text-[11px] font-normal text-ink-muted">mín. {p.stock_minimo}</div>
-                      )}
-                    </td>
-                    <td className="p-3 text-right tabular-nums">{fmtMoneda(p.precio_coste)}</td>
-                    <td className="p-3 text-right tabular-nums">{fmtMoneda(p.precio_venta)}</td>
-                    <td className={cn('p-3 text-right tabular-nums', margenU < 0 && 'text-danger')}>
-                      {fmtMoneda(margenU)}
-                      {margenPct != null && <span className="ml-1 text-[12px] text-ink-muted">({margenPct}%)</span>}
-                    </td>
-                    <td className="p-3 text-right font-semibold tabular-nums">{fmtMoneda(valorStock)}</td>
-                    <td className="p-3 text-ink-muted">{fmtFecha(p.creado)}</td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditing(productos.find((x) => x.id === p.id))
-                            setModalOpen(true)
-                          }}
-                        >
-                          Editar
-                        </Button>
-                        <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
-                          Borrar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                        {fmtMoneda(margenU)}
+                        {margenPct != null && <div className="text-[12px] text-ink-muted">{margenPct}%</div>}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums">
+                        {fmtMoneda(valorStock)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        <Acciones onEditar={() => editar(p.id)} onBorrar={() => void onDelete(p.id)} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className="flex flex-col gap-2 lg:hidden">
+            {ordenadas.map((p) => {
+              const est = estadoDe(p.stock_actual, p.stock_minimo)
+              const margenU = p.precio_venta - p.precio_coste
+              const sec = secundaria(p)
+              return (
+                <li key={p.id} className="rounded-card bg-surface p-4 shadow-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="break-words font-semibold">{p.nombre}</div>
+                      {sec && <div className="break-words text-[12px] text-ink-muted">{sec}</div>}
+                    </div>
+                    <EstadoBadge estado={est} />
+                  </div>
+                  <dl className="mt-3 grid grid-cols-3 gap-2 text-sm tabular-nums">
+                    <div>
+                      <dt className="text-[12px] text-ink-muted">Existencias</dt>
+                      <dd className="font-bold">
+                        {p.stock_actual} <span className="font-normal text-ink-muted">{p.unidad ?? 'ud'}</span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[12px] text-ink-muted">Venta</dt>
+                      <dd>{fmtMoneda(p.precio_venta)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[12px] text-ink-muted">Margen</dt>
+                      <dd className={cn(margenU < 0 && 'text-danger')}>{fmtMoneda(margenU)}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-2 flex justify-end">
+                    <Acciones onEditar={() => editar(p.id)} onBorrar={() => void onDelete(p.id)} />
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </>
       )}
 
       <ProductoModal open={modalOpen} onClose={() => setModalOpen(false)} producto={editing} />

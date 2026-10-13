@@ -10,6 +10,8 @@ import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { intentar } from '@/lib/api/intentar'
+import { resumenLineas } from '@/lib/format/texto'
+import { Chevron } from '@/components/ui/Chevron'
 
 export function VentasTab() {
   const { data: ventas, isLoading, isError, error, refetch, isFetching } = useVentas()
@@ -107,7 +109,7 @@ export function VentasTab() {
             </svg>
           }
           title="Sin ventas registradas"
-          subtitle="Registra las ventas de productos a tus pacientes o ventas libres."
+          subtitle="Registra las ventas de productos a tus clientes o ventas libres."
           action={<Button onClick={() => setOpen(true)}>+ Nueva venta</Button>}
         />
       ) : rows.length === 0 ? (
@@ -137,14 +139,14 @@ export function VentasTab() {
       ) : (
         rows.map((v) => (
           <div key={v.id} className="rounded-card bg-surface shadow-card">
-            <div className="flex items-center gap-3 p-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 p-4">
               <button
                 onClick={() => setExpanded(expanded === v.id ? null : v.id)}
-                className="flex flex-1 items-center gap-3 text-left"
+                className="flex min-w-0 flex-1 basis-64 items-center gap-3 text-left"
               >
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="font-semibold">{v.fecha ? fmtFecha(v.fecha) : 'Sin fecha'}</div>
-                  <div className="text-[13px] text-ink-muted">
+                  <div className="truncate text-[13px] text-ink-muted">
                     {v.paciente_id && v.paciente_nombre ? (
                       <span
                         role="link"
@@ -166,12 +168,13 @@ export function VentasTab() {
                     ) : (
                       'Venta libre'
                     )}{' '}
-                    · {v.lineas.length} línea(s)
+                    · {resumenLineas(v.lineas)}
                   </div>
                 </div>
-                <div className="font-bold">{fmtMoneda(v.total)}</div>
+                <div className="whitespace-nowrap font-bold tabular-nums">{fmtMoneda(v.total)}</div>
+                <Chevron abierto={expanded === v.id} />
               </button>
-              <Button variant="danger" size="sm" onClick={() => onDelete(v.id)}>
+              <Button variant="dangerGhost" size="sm" className="ml-auto" onClick={() => onDelete(v.id)}>
                 Borrar
               </Button>
             </div>

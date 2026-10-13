@@ -188,7 +188,7 @@ export function MermasTab() {
                   </td>
                   <td className="p-3 text-ink-muted">{m.notas ?? '-'}</td>
                   <td className="p-3 text-right">
-                    <Button variant="danger" size="sm" onClick={() => onDelete(m.id)}>
+                    <Button variant="dangerGhost" size="sm" onClick={() => onDelete(m.id)}>
                       Borrar
                     </Button>
                   </td>

@@ -13,10 +13,10 @@ export function NoEncontrada() {
         <h1 className="text-xl font-bold">Página no encontrada</h1>
         <p className="max-w-md text-sm text-ink-muted">La dirección que has abierto no existe o ha cambiado.</p>
         <Link
-          to="/pacientes"
+          to="/inicio"
           className="mt-2 rounded-lg bg-primary px-4 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-primary-dark"
         >
-          Ir a Pacientes
+          Ir a Inicio
         </Link>
       </main>
     </div>

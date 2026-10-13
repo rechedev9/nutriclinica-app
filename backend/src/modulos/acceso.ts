@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia'
 import type { Contexto } from '../contexto'
+import type { DetalleAuditoria } from '../lib/cambios'
 import { ErrorHttp } from '../lib/errores'
 import { COOKIE_SESION, usuarioDeSesion } from '../sesiones'
 
@@ -12,6 +13,22 @@ export function anotarActor(request: Request, usuario: string): void {
 
 export function actorDe(request: Request): string {
   return actores.get(request) ?? ''
+}
+
+// Cliente afectado y detalle del cambio, que el handler anota para el registro de auditoría.
+export interface AnotacionAuditoria {
+  pacienteId: number | null
+  detalle: DetalleAuditoria | null
+}
+
+const anotaciones = new WeakMap<Request, AnotacionAuditoria>()
+
+export function anotarAuditoria(request: Request, anotacion: AnotacionAuditoria): void {
+  anotaciones.set(request, anotacion)
+}
+
+export function anotacionDe(request: Request): AnotacionAuditoria {
+  return anotaciones.get(request) ?? { pacienteId: null, detalle: null }
 }
 
 // crearAcceso aporta las macros `sesion` y `admin`: exigen sesión (o rol administrador)

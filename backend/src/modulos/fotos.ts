@@ -12,7 +12,7 @@ import { carpeta, prefijo } from '../lib/naming'
 import { rutaSegura } from '../lib/rutas'
 import { vacioANulo } from '../lib/texto'
 import { idParams } from '../modelos'
-import { crearAcceso } from './acceso'
+import { anotarAuditoria, crearAcceso } from './acceso'
 
 const MAX_BYTES = 32 * 1024 * 1024
 
@@ -29,7 +29,7 @@ export function moduloFotos(ctx: Contexto) {
     .get('/api/pacientes/:id/fotos', ({ params }) => listarFotos(db, params.id), { params: idParams })
     .post(
       '/api/pacientes/:id/fotos',
-      async ({ params, body, status }) => {
+      async ({ request, params, body, status }) => {
         const archivo = body.foto
         if (archivo === undefined) throw new ErrorHttp(400, 'Sin archivo')
         if (archivo.size > MAX_BYTES) throw new ErrorHttp(400, 'La imagen no puede superar los 32 MB')
@@ -37,7 +37,7 @@ export function moduloFotos(ctx: Contexto) {
         const detectada = extensionImagen(bytes)
         if (detectada === null) throw new ErrorHttp(400, 'El archivo no es una imagen')
         const paciente = obtenerPaciente(db, params.id)
-        if (paciente === null) throw new ErrorHttp(404, 'Paciente no encontrado')
+        if (paciente === null) throw new ErrorHttp(404, 'Cliente no encontrado')
 
         // Se conserva la extensión original solo si es de imagen: nunca .html, .svg, etc.
         const original = extname(archivo.name).toLowerCase()
@@ -53,7 +53,16 @@ export function moduloFotos(ctx: Contexto) {
         await mkdir(dirname(destino), { recursive: true })
         await Bun.write(destino, bytes)
         try {
-          return status(201, crearFoto(db, { paciente_id: paciente.id, filename, nota: vacioANulo(body.nota?.trim()) }))
+          const foto = crearFoto(db, { paciente_id: paciente.id, filename, nota: vacioANulo(body.nota?.trim()) })
+          anotarAuditoria(request, {
+            pacienteId: paciente.id,
+            detalle: {
+              cambios: [],
+              resumen: foto.nota === null ? 'Foto de progreso' : `Foto de progreso: ${foto.nota}`,
+              registro_id: foto.id,
+            },
+          })
+          return status(201, foto)
         } catch (error) {
           await rm(destino, { force: true })
           throw error
@@ -63,10 +72,19 @@ export function moduloFotos(ctx: Contexto) {
     )
     .delete(
       '/api/fotos/:id',
-      async ({ params }) => {
+      async ({ request, params }) => {
         const foto = obtenerFoto(db, params.id)
         if (foto !== null) {
           eliminarFoto(db, params.id)
+          const fecha = foto.fecha?.slice(0, 10) ?? ''
+          anotarAuditoria(request, {
+            pacienteId: foto.paciente_id,
+            detalle: {
+              cambios: [],
+              resumen: `Foto del ${fecha}${foto.nota === null ? '' : `: ${foto.nota}`}`,
+              registro_id: foto.id,
+            },
+          })
           const ruta = rutaSegura(fotosDir, foto.filename)
           if (ruta !== null) await rm(ruta, { force: true })
         }
