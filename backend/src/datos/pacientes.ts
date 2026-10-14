@@ -14,6 +14,9 @@ const columnas = {
   num_revisiones: sql`(select count(*) from ${revisiones} where ${revisiones}.paciente_id = ${pacientes}.id)`.mapWith(
     Number,
   ),
+  ultima_revision: sql<
+    string | null
+  >`(select max(${revisiones}.fecha) from ${revisiones} where ${revisiones}.paciente_id = ${pacientes}.id)`,
 }
 
 export function listarPacientes(db: BD) {
@@ -31,7 +34,7 @@ export function crearPaciente(db: BD, datos: PacienteDatos) {
     .values({ ...datos, consentimiento_fecha })
     .returning()
     .get()
-  return { ...paciente, num_fotos: 0, num_revisiones: 0 }
+  return { ...paciente, num_fotos: 0, num_revisiones: 0, ultima_revision: null }
 }
 
 // actualizarPaciente devuelve null si el paciente no existe.

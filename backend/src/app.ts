@@ -2,7 +2,7 @@ import { Elysia } from 'elysia'
 import type { Contexto } from './contexto'
 import { registrarAuditoria } from './datos/auditoria'
 import { ErrorHttp } from './lib/errores'
-import { actorDe } from './modulos/acceso'
+import { actorDe, anotacionDe } from './modulos/acceso'
 import { moduloAuth } from './modulos/auth'
 import { moduloExportar } from './modulos/exportar'
 import { moduloFotos } from './modulos/fotos'
@@ -85,12 +85,15 @@ export function crearApp(ctx: Contexto) {
       const ruta = new URL(request.url).pathname
       if (!esAuditable(request.method, ruta)) return
       const estado = typeof set.status === 'number' ? set.status : 200
+      const { pacienteId, detalle } = anotacionDe(request)
       try {
         registrarAuditoria(ctx.db, {
           usuario: actorDe(request),
           metodo: accionAuditoria(request.method, ruta),
           ruta,
           estado,
+          paciente_id: pacienteId,
+          detalle,
         })
       } catch (error) {
         console.error(`auditoría: no se pudo registrar ${request.method} ${ruta}:`, error)

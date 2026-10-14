@@ -35,7 +35,7 @@ export function Header() {
         </svg>
         <span className="text-xl font-bold">NutriClínica</span>
         <span className="mx-1 hidden h-4 w-px bg-white/25 sm:inline-block" aria-hidden="true" />
-        <span className="hidden text-sm font-medium text-white/90 sm:inline">Gestión de pacientes</span>
+        <span className="hidden text-sm font-medium text-white/90 sm:inline">Seguimiento y tienda</span>
       </div>
       <div className="flex items-center gap-3">
         <ThemeToggle />
@@ -43,7 +43,7 @@ export function Header() {
         <button
           onClick={onLogout}
           disabled={logout.isPending}
-          className="flex items-center gap-1.5 rounded-lg border border-white/40 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/15 disabled:opacity-60"
+          className="flex items-center gap-1.5 rounded-lg border border-white/40 px-3 py-1.5 text-[13px] font-semibold text-white transition-[background-color,transform] duration-150 ease-out hover:bg-white/15 active:scale-[0.97] disabled:opacity-60"
         >
           <svg
             width="15"

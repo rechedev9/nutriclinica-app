@@ -112,7 +112,7 @@ export function ProveedoresTab() {
                     >
                       Editar
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => onDelete(p.id)}>
+                    <Button variant="dangerGhost" size="sm" onClick={() => onDelete(p.id)}>
                       Borrar
                     </Button>
                   </td>

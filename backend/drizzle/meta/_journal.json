@@ -8,6 +8,13 @@
       "when": 1791814264834,
       "tag": "0000_inicial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791878069773,
+      "tag": "0001_first_ikaris",
+      "breakpoints": true
     }
   ]
 }

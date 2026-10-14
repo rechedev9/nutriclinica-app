@@ -6,12 +6,14 @@ import { ErrorRuta } from '@/components/ErrorRuta'
 import { NoEncontrada } from '@/components/NoEncontrada'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { InicioPage } from '@/features/inicio/InicioPage'
 import { PacientesPage } from '@/features/pacientes/PacientesPage'
 import { PacientesOverview } from '@/features/pacientes/PacientesOverview'
 import { PacienteDetail } from '@/features/pacientes/PacienteDetail'
 import { FichaTab } from '@/features/pacientes/tabs/FichaTab'
 import { RevisionesTab } from '@/features/pacientes/tabs/RevisionesTab'
 import { FotosTab } from '@/features/pacientes/tabs/FotosTab'
+import { HistorialTab } from '@/features/pacientes/tabs/HistorialTab'
 
 const raiz = createRootRoute({ notFoundComponent: NoEncontrada })
 
@@ -21,16 +23,24 @@ const login = createRoute({ getParentRoute: () => raiz, path: 'login', component
 const conSesion = createRoute({ getParentRoute: () => raiz, id: '_sesion', component: RequireAuth })
 const marco = createRoute({ getParentRoute: () => conSesion, id: '_app', component: AppShell })
 
-const inicio = createRoute({
+const raizInicio = createRoute({
   getParentRoute: () => marco,
   path: '/',
   beforeLoad: () => {
-    throw redirect({ to: '/pacientes', replace: true })
+    throw redirect({ to: '/inicio', replace: true })
   },
 })
+const inicio = createRoute({ getParentRoute: () => marco, path: 'inicio', component: InicioPage })
 
 const pacientes = createRoute({ getParentRoute: () => marco, path: 'pacientes', component: PacientesPage })
-const pacientesInicio = createRoute({ getParentRoute: () => pacientes, path: '/', component: PacientesOverview })
+// ?pendientes=1 activa el filtro de revisión pendiente en la lista.
+const pacientesInicio = createRoute({
+  getParentRoute: () => pacientes,
+  path: '/',
+  component: PacientesOverview,
+  validateSearch: (busqueda: Record<string, unknown>): { pendientes?: 1 } =>
+    busqueda.pendientes === 1 || busqueda.pendientes === '1' ? { pendientes: 1 } : {},
+})
 const paciente = createRoute({ getParentRoute: () => pacientes, path: '$id', component: PacienteDetail })
 const pacienteInicio = createRoute({
   getParentRoute: () => paciente,
@@ -42,6 +52,7 @@ const pacienteInicio = createRoute({
 const ficha = createRoute({ getParentRoute: () => paciente, path: 'ficha', component: FichaTab })
 const revisiones = createRoute({ getParentRoute: () => paciente, path: 'revisiones', component: RevisionesTab })
 const fotos = createRoute({ getParentRoute: () => paciente, path: 'fotos', component: FotosTab })
+const historial = createRoute({ getParentRoute: () => paciente, path: 'historial', component: HistorialTab })
 
 // Rutas con carga diferida: el módulo de Análisis arrastra Chart.js (~200 KB) y
 // el módulo de Stock y la gestión de Usuarios no se necesitan en el arranque.
@@ -115,10 +126,11 @@ const arbol = raiz.addChildren([
   login,
   conSesion.addChildren([
     marco.addChildren([
+      raizInicio,
       inicio,
       pacientes.addChildren([
         pacientesInicio,
-        paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis]),
+        paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis, historial]),
       ]),
       stock.addChildren([stockInicio, almacen, compras, ventas, proveedores, categorias, mermas, analisisStock]),
       soloAdmin.addChildren([usuarios, auditoria]),

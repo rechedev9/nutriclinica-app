@@ -1,11 +1,15 @@
+import { Database } from 'bun:sqlite'
 import { describe, expect, test } from 'bun:test'
-import { resolve } from 'node:path'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import diario from '../drizzle/meta/_journal.json'
 import { abrirBD } from '../src/db/cliente'
 import { stock_productos, usuarios } from '../src/db/esquema'
 import { MIGRACIONES } from '../src/db/migraciones'
 import { sembrarStock, sembrarUsuarios, usuariosConPasswordInicial } from '../src/db/semilla'
 import { listarAlmacen, listarCompras } from '../src/datos/stock'
+import { diferencias, leerDetalle } from '../src/lib/cambios'
 import { ErrorHttp } from '../src/lib/errores'
 import { parseFecha, selloArchivo, sumarDias } from '../src/lib/fechas'
 import { extensionImagen } from '../src/lib/imagen'
@@ -82,6 +86,62 @@ describe('fechas e imágenes', () => {
   })
 })
 
+describe('detalle de la auditoría', () => {
+  test('diferencias lista solo los campos pedidos que cambian', () => {
+    const antes = { nombre: 'Ana', peso: 70, telefono: null, id: 1 }
+    const despues = { nombre: 'Ana', peso: 69.5, telefono: '600', id: 2 }
+    expect(diferencias({ antes, despues, campos: ['nombre', 'peso', 'telefono'] })).toEqual([
+      { campo: 'peso', antes: 70, despues: 69.5 },
+      { campo: 'telefono', antes: null, despues: '600' },
+    ])
+    expect(diferencias({ antes, despues: antes, campos: ['nombre', 'peso', 'telefono', 'id'] })).toEqual([])
+  })
+
+  test('diferencias trata un campo ausente como nulo y no confunde 0 con vacío', () => {
+    expect(diferencias({ antes: {}, despues: { notas: null }, campos: ['notas'] })).toEqual([])
+    expect(diferencias({ antes: {}, despues: { activo: 0 }, campos: ['activo'] })).toEqual([
+      { campo: 'activo', antes: null, despues: 0 },
+    ])
+    expect(diferencias({ antes: { notas: '' }, despues: { notas: null }, campos: ['notas'] })).toEqual([
+      { campo: 'notas', antes: '', despues: null },
+    ])
+  })
+
+  test('leerDetalle devuelve null si el texto no es un objeto JSON', () => {
+    expect(leerDetalle(null)).toBeNull()
+    expect(leerDetalle('')).toBeNull()
+    expect(leerDetalle('{mal')).toBeNull()
+    expect(leerDetalle('[1, 2]')).toBeNull()
+    expect(leerDetalle('"texto"')).toBeNull()
+  })
+
+  test('leerDetalle descarta lo que no tiene la forma esperada', () => {
+    const texto = JSON.stringify({
+      cambios: [
+        { campo: 'peso', antes: 80, despues: 79 },
+        { campo: 'sin-despues', antes: 1 },
+        { campo: 7, antes: 1, despues: 2 },
+        { campo: 'objeto', antes: {}, despues: 2 },
+        'suelto',
+      ],
+      resumen: 12,
+      registro_id: '5',
+      extra: true,
+    })
+    expect(leerDetalle(texto)).toEqual({
+      cambios: [{ campo: 'peso', antes: 80, despues: 79 }],
+      resumen: null,
+      registro_id: null,
+    })
+    expect(leerDetalle('{}')).toEqual({ cambios: [], resumen: null, registro_id: null })
+    expect(leerDetalle('{"cambios":"no","resumen":"Foto","registro_id":3}')).toEqual({
+      cambios: [],
+      resumen: 'Foto',
+      registro_id: 3,
+    })
+  })
+})
+
 describe('base de datos', () => {
   test('las migraciones embebidas coinciden con el diario de Drizzle', () => {
     const embebidas: string[] = MIGRACIONES.map((m) => m.tag)
@@ -94,6 +154,56 @@ describe('base de datos', () => {
     expect(sqlite.query('PRAGMA foreign_keys').get()).toEqual({ foreign_keys: 1 })
     const sinCategoria = () => db.insert(stock_productos).values({ nombre: 'X', categoria_id: 99 }).run()
     expect(sinCategoria).toThrow()
+  })
+
+  test('la traza por cliente se aplica sobre una base anterior con datos', async () => {
+    const carpetaBD = await mkdtemp(join(tmpdir(), 'nutriclinica-migracion-'))
+    const ruta = join(carpetaBD, 'previa.db')
+    const previa = new Database(ruta, { create: true, strict: true })
+    for (const sentencia of (MIGRACIONES[0]?.sql ?? '').split('--> statement-breakpoint')) {
+      if (sentencia.trim() !== '') previa.run(sentencia)
+    }
+    previa.run('CREATE TABLE __migraciones (tag TEXT PRIMARY KEY, aplicada TEXT NOT NULL)')
+    previa.run("INSERT INTO __migraciones (tag, aplicada) VALUES ('0000_inicial', '2026-01-01 00:00:00')")
+    previa.run("INSERT INTO pacientes (id, nombre, creado) VALUES (1, 'Ana', '2026-01-10 09:00:00')")
+    // El id 7 lo ocupó antes otra persona, ya borrada: sus entradas no son de quien lo tiene hoy.
+    previa.run("INSERT INTO pacientes (id, nombre, creado) VALUES (7, 'Reusado', '2026-03-01 09:00:00')")
+    const entradas = [
+      { fecha: '2026-01-10 09:00:01', metodo: 'POST', ruta: '/api/pacientes', estado: 201, esperado: null },
+      { fecha: '2026-01-11 10:00:00', metodo: 'PUT', ruta: '/api/pacientes/1', estado: 200, esperado: 1 },
+      { fecha: '2026-01-12 10:00:00', metodo: 'POST', ruta: '/api/pacientes/1/revisiones', estado: 201, esperado: 1 },
+      { fecha: '2026-01-13 10:00:00', metodo: 'PUT', ruta: '/api/pacientes/1', estado: 400, esperado: null },
+      { fecha: '2026-02-01 10:00:00', metodo: 'PUT', ruta: '/api/pacientes/7', estado: 200, esperado: null },
+      { fecha: '2026-02-02 10:00:00', metodo: 'DELETE', ruta: '/api/pacientes/7', estado: 200, esperado: null },
+      { fecha: '2026-03-02 10:00:00', metodo: 'POST', ruta: '/api/pacientes/7/fotos', estado: 201, esperado: 7 },
+      { fecha: '2026-03-03 10:00:00', metodo: 'DELETE', ruta: '/api/pacientes/99', estado: 200, esperado: null },
+      { fecha: '2026-03-04 10:00:00', metodo: 'PUT', ruta: '/api/revisiones/1', estado: 200, esperado: null },
+      { fecha: '2026-03-05 10:00:00', metodo: 'GET', ruta: '/api/exportar/pacientes', estado: 200, esperado: null },
+    ]
+    for (const e of entradas) {
+      previa.run("INSERT INTO audit_log (fecha, usuario, metodo, ruta, estado) VALUES (?, 'admin', ?, ?, ?)", [
+        e.fecha,
+        e.metodo,
+        e.ruta,
+        e.estado,
+      ])
+    }
+    previa.close()
+
+    const sqlite = abrirBD(ruta).$client
+    const filas = sqlite
+      .query<{ paciente_id: number | null; detalle: string | null }, []>(
+        'SELECT paciente_id, detalle FROM audit_log ORDER BY id',
+      )
+      .all()
+    expect(filas.map((f) => f.paciente_id)).toEqual(entradas.map((e) => e.esperado))
+    expect(filas.every((f) => f.detalle === null)).toBe(true)
+    const aplicadas = sqlite.query<{ tag: string }, []>('SELECT tag FROM __migraciones ORDER BY tag').all()
+    expect(aplicadas.map((m) => m.tag)).toEqual(MIGRACIONES.map((m) => m.tag))
+    sqlite.close()
+    // Abrirla otra vez no repite la migración.
+    abrirBD(ruta).$client.close()
+    await rm(carpetaBD, { recursive: true, force: true })
   })
 
   test('la semilla crea usuarios y stock una sola vez', async () => {

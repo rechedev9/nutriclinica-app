@@ -8,7 +8,7 @@ import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
-import { calcEdad, fmtFechaCorta } from '@/lib/format/fecha'
+import { calcEdad, fmtFecha, fmtFechaCorta } from '@/lib/format/fecha'
 import { calcIMC, calcGrasaDW, clasificarGrasa, pesoGraso, pesoMagro, calcTMB } from '@/lib/calc'
 import { buildMonthMultiData } from '@/lib/chart/buildMonthData'
 import { ALL_MEDIDAS, PLIEGUES } from '@/types'
@@ -17,10 +17,11 @@ import { ChartPesoGrasa } from './charts/ChartPesoGrasa'
 import { ChartPerimetros, type Serie } from './charts/ChartPerimetros'
 import { ChartPliegues } from './charts/ChartPliegues'
 import { PerfilCorporal } from './PerfilCorporal'
+import { ComposicionPanel } from './ComposicionPanel'
+import { TablaEvolucion, type FilaEvolucion } from './TablaEvolucion'
+import { esDeLaUltimaRevision, resumirSerie, ultimoDato, type Punto } from './ultimo-dato'
 import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
-
-const fmtDelta = (d: number | null) => (d != null ? (d > 0 ? `+${d}` : String(d)) : '-')
 
 function SparkLine({ data }: { data: (number | null)[] }) {
   const vals = data.filter((v): v is number => v != null)
@@ -47,16 +48,25 @@ function SparkLine({ data }: { data: (number | null)[] }) {
     <svg
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="none"
-      style={{ display: 'block', width: '100%', height: '100%' }}
+      className="block h-full w-full text-primary"
+      aria-hidden="true"
     >
       <defs>
         <linearGradient id="spark-peso-g" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0F7B92" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#0F7B92" stopOpacity="0" />
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={`${line} L ${W} ${H + 1} L 0 ${H + 1} Z`} fill="url(#spark-peso-g)" />
-      <path d={line} fill="none" stroke="#0F7B92" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={line}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   )
 }
@@ -69,6 +79,8 @@ function KpiCard({
   decimals = 1,
   icon,
   sparklineData,
+  vacio,
+  notaFecha,
 }: {
   label: string
   rawValue: number | null
@@ -77,11 +89,15 @@ function KpiCard({
   decimals?: number
   icon?: React.ReactNode
   sparklineData?: (number | null)[]
+  // Texto cuando no hay ningún dato en todo el historial.
+  vacio: string
+  // Fecha de la revisión de origen cuando el dato no es de la última.
+  notaFecha?: string | null
 }) {
   const animated = useCountUp(rawValue, decimals)
   const spark = sparklineData != null && sparklineData.filter((v) => v != null).length >= 2 ? sparklineData : null
   return (
-    <div className="rounded-card bg-surface p-4 shadow-card">
+    <div className="min-w-0 rounded-card bg-surface p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <div className="text-[12px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
         {icon && (
@@ -90,20 +106,25 @@ function KpiCard({
           </div>
         )}
       </div>
-      <div className="mt-2 flex items-end gap-2">
-        <div className="shrink-0 text-2xl font-extrabold">
-          {animated}
-          {unit && rawValue != null && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
-        </div>
-        {spark && (
-          <div className="flex flex-1 justify-center">
-            <div style={{ height: 40, width: '100%', minWidth: 60, maxWidth: 160 }}>
-              <SparkLine data={spark} />
+      {rawValue == null ? (
+        <div className="mt-2 text-sm leading-snug text-ink-muted">{vacio}</div>
+      ) : (
+        <>
+          <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+            <div className="shrink-0 text-2xl font-extrabold tabular-nums">
+              {animated}
+              {unit && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
             </div>
+            {spark && (
+              <div className="h-10 min-w-[60px] max-w-[160px] flex-1">
+                <SparkLine data={spark} />
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      {sub && <div className="mt-1 text-[13px]">{sub}</div>}
+          {sub && <div className="mt-1 text-[13px]">{sub}</div>}
+          {notaFecha != null && <div className="mt-1 text-[11px] text-ink-muted">dato del {fmtFecha(notaFecha)}</div>}
+        </>
+      )}
     </div>
   )
 }
@@ -121,9 +142,15 @@ export function AnalisisTab() {
     [edad, sexo],
   )
 
+  // Aparte de `derived`: la silueta reinicia su animación cuando cambia esta lista.
+  const ordenadas = useMemo(
+    () => revs?.toSorted((a, b) => (a.fecha || '').localeCompare(b.fecha || '')) ?? null,
+    [revs],
+  )
+
   const derived = useMemo(() => {
-    if (!revs) return null
-    const asc = revs.toSorted((a, b) => (a.fecha || '').localeCompare(b.fecha || ''))
+    if (ordenadas === null) return null
+    const asc = ordenadas
     const last = asc.at(-1)
     const first = asc[0]
     if (last === undefined || first === undefined) return null
@@ -142,7 +169,12 @@ export function AnalisisTab() {
       unit: m.unit,
     }))
 
-    const plieguesLast = PLIEGUES.filter((m) => last[m.key] != null)
+    // Último dato disponible de cada pliegue, aunque la última revisión no lo traiga.
+    const plieguesDatos = PLIEGUES.flatMap((m) => {
+      const dato = ultimoDato(asc, (r) => r[m.key])
+      return dato === null ? [] : [{ medida: m, dato }]
+    })
+    const todosDeLaUltima = plieguesDatos.every((x) => esDeLaUltimaRevision(x.dato, asc.length))
 
     return {
       asc,
@@ -151,51 +183,73 @@ export function AnalisisTab() {
       pesoGrasa: { labels: pg.labels, peso: pg.datasets[0] ?? [], grasa: pg.datasets[1] ?? [] },
       perim: { labels: perim.labels, series },
       pliegues: {
-        labels: plieguesLast.map((m) => m.short),
-        data: plieguesLast.map((m) => last[m.key] ?? 0),
-        colors: plieguesLast.map((m) => m.color),
+        labels: plieguesDatos.map((x) => x.medida.short),
+        data: plieguesDatos.map((x) => x.dato.valor),
+        colors: plieguesDatos.map((x) => x.medida.color),
+        subtitulo: todosDeLaUltima ? `Revisión del ${fmtFecha(last.fecha)}` : 'Último dato registrado de cada pliegue',
       },
     }
-  }, [revs, activas, grasaFn])
+  }, [ordenadas, activas, grasaFn])
 
   if (isLoading) return <CenteredSpinner />
   if (isError)
     return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el análisis" />
   if (!derived) return <EmptyState title="Sin datos para analizar" subtitle="Añade revisiones para ver la evolución." />
 
-  const { first, last } = derived
-  const prev = derived.asc.at(-2) ?? null
+  const { asc, first, last } = derived
+  const total = asc.length
+  const prev = asc.at(-2) ?? null
   const hayEvolucion = prev !== null
-  const grasaLast = grasaFn(last)
-  const grasaPrev = prev ? grasaFn(prev) : null
-  const imcLast = calcIMC(last.peso, p.talla)
-  const clase = clasificarGrasa(grasaLast, sexo)
 
-  const filas = [
-    { label: 'Peso (kg)', f: first.peso, a: prev?.peso ?? null, l: last.peso },
+  // Cada tarjeta usa el último dato disponible; la nota solo aparece si no es de la última revisión.
+  const notaDe = (punto: Punto<unknown> | null) =>
+    punto !== null && !esDeLaUltimaRevision(punto, total) ? punto.fecha : null
+
+  const pesoD = ultimoDato(asc, (r) => r.peso)
+  const imcD = ultimoDato(asc, (r) => calcIMC(r.peso, p.talla))
+  const grasaD = ultimoDato(asc, grasaFn)
+  const pesoGrasoD = ultimoDato(asc, (r) => pesoGraso(r.peso, grasaFn(r)))
+  const pesoMagroD = ultimoDato(asc, (r) => pesoMagro(r.peso, grasaFn(r)))
+  const tmbD = ultimoDato(asc, (r) => calcTMB(r.peso, p.talla, edad, sexo))
+  const composicionD = ultimoDato(asc, (r) => {
+    const g = grasaFn(r)
+    const graso = pesoGraso(r.peso, g)
+    const magro = pesoMagro(r.peso, g)
+    return graso !== null && magro !== null ? { graso, magro } : null
+  })
+  const clase = clasificarGrasa(grasaD?.valor ?? null, sexo)
+
+  const hayPliegues = asc.some(
+    (r) => r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null,
+  )
+  const vacioPeso = 'Sin peso registrado'
+  const vacioGrasa = hayPliegues ? 'Requiere sexo y edad' : 'Sin pliegues registrados'
+  // Con peso y % de grasa en revisiones distintas no se puede repartir el peso.
+  const vacioSinCoincidir = grasaD === null ? vacioGrasa : 'Ninguna revisión tiene peso y pliegues a la vez'
+  const vacioComposicion = pesoD === null ? vacioPeso : vacioSinCoincidir
+  const vacioImc = pesoD === null ? vacioPeso : 'Falta la talla'
+  const vacioTmb = pesoD === null ? vacioPeso : 'Requiere talla, sexo y edad'
+
+  const filas: FilaEvolucion[] = [
+    { etiqueta: 'Peso (kg)', resumen: resumirSerie(asc, (r) => r.peso), vacio: vacioPeso },
+    { etiqueta: 'IMC', resumen: resumirSerie(asc, (r) => calcIMC(r.peso, p.talla)?.val), vacio: vacioImc },
+    { etiqueta: '% Grasa', resumen: resumirSerie(asc, grasaFn), vacio: vacioGrasa },
     {
-      label: 'IMC',
-      f: calcIMC(first.peso, p.talla)?.val ?? null,
-      a: prev ? (calcIMC(prev.peso, p.talla)?.val ?? null) : null,
-      l: imcLast?.val ?? null,
+      etiqueta: 'Peso graso (kg)',
+      resumen: resumirSerie(asc, (r) => pesoGraso(r.peso, grasaFn(r))),
+      vacio: vacioComposicion,
     },
-    { label: '% Grasa', f: grasaFn(first), a: grasaPrev, l: grasaLast },
     {
-      label: 'Peso graso (kg)',
-      f: pesoGraso(first.peso, grasaFn(first)),
-      a: prev ? pesoGraso(prev.peso, grasaPrev) : null,
-      l: pesoGraso(last.peso, grasaLast),
-    },
-    {
-      label: 'Peso magro (kg)',
-      f: pesoMagro(first.peso, grasaFn(first)),
-      a: prev ? pesoMagro(prev.peso, grasaPrev) : null,
-      l: pesoMagro(last.peso, grasaLast),
+      etiqueta: 'Peso magro (kg)',
+      resumen: resumirSerie(asc, (r) => pesoMagro(r.peso, grasaFn(r))),
+      vacio: vacioComposicion,
     },
   ]
 
+  const hayPanel = composicionD !== null || imcD !== null
+
   return (
-    <div className="dash-area flex flex-col gap-4 p-6 print-content-area">
+    <div className="dash-area flex flex-col gap-4 p-4 sm:p-6 print-content-area">
       {/* Cabecera profesional — solo visible al imprimir, se repite en cada página */}
       <div className="hidden print-running-header">
         <div
@@ -225,7 +279,7 @@ export function AnalisisTab() {
             </svg>
             <div>
               <div style={{ fontSize: '18px', fontWeight: '700', lineHeight: 1.1 }}>NutriClínica</div>
-              <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '1px' }}>Gestión de pacientes</div>
+              <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '1px' }}>Gestión de clientes</div>
             </div>
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -256,7 +310,7 @@ export function AnalisisTab() {
         <div style={{ height: '3px', background: 'linear-gradient(90deg, #0F7B92, #2DD4BF, #86efac)' }} />
       </div>
 
-      <div className="flex items-center justify-between print-hide">
+      <div className="flex flex-wrap items-center justify-between gap-2 print-hide">
         <h3 className="text-lg font-bold">Análisis y evolución</h3>
         <Button
           variant="outline"
@@ -283,10 +337,12 @@ export function AnalisisTab() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard
           label="Peso actual"
-          rawValue={last.peso}
+          rawValue={pesoD?.valor ?? null}
           unit="kg"
           decimals={1}
-          sparklineData={derived.asc.map((r) => r.peso)}
+          vacio={vacioPeso}
+          notaFecha={notaDe(pesoD)}
+          sparklineData={asc.map((r) => r.peso)}
           icon={
             <svg
               width="20"
@@ -306,9 +362,11 @@ export function AnalisisTab() {
         />
         <KpiCard
           label="IMC"
-          rawValue={imcLast?.val ?? null}
-          sub={imcLast?.etiq}
+          rawValue={imcD?.valor.val ?? null}
+          sub={imcD?.valor.etiq}
           decimals={1}
+          vacio={vacioImc}
+          notaFecha={notaDe(imcD)}
           icon={
             <svg
               width="20"
@@ -326,9 +384,11 @@ export function AnalisisTab() {
         />
         <KpiCard
           label="% Grasa"
-          rawValue={grasaLast}
+          rawValue={grasaD?.valor ?? null}
           unit="%"
           decimals={1}
+          vacio={vacioGrasa}
+          notaFecha={notaDe(grasaD)}
           icon={
             <svg
               width="20"
@@ -353,9 +413,11 @@ export function AnalisisTab() {
         />
         <KpiCard
           label="Peso graso"
-          rawValue={pesoGraso(last.peso, grasaLast)}
+          rawValue={pesoGrasoD?.valor ?? null}
           unit="kg"
           decimals={1}
+          vacio={vacioComposicion}
+          notaFecha={notaDe(pesoGrasoD)}
           icon={
             <svg
               width="20"
@@ -374,9 +436,11 @@ export function AnalisisTab() {
         />
         <KpiCard
           label="Peso magro"
-          rawValue={pesoMagro(last.peso, grasaLast)}
+          rawValue={pesoMagroD?.valor ?? null}
           unit="kg"
           decimals={1}
+          vacio={vacioComposicion}
+          notaFecha={notaDe(pesoMagroD)}
           icon={
             <svg
               width="20"
@@ -394,9 +458,11 @@ export function AnalisisTab() {
         />
         <KpiCard
           label="TMB"
-          rawValue={calcTMB(last.peso, p.talla, edad, sexo)}
+          rawValue={tmbD?.valor ?? null}
           unit="kcal"
           decimals={0}
+          vacio={vacioTmb}
+          notaFecha={notaDe(tmbD)}
           sub={<span className="text-ink-muted">en reposo</span>}
           icon={
             <svg
@@ -415,150 +481,32 @@ export function AnalisisTab() {
         />
       </div>
 
-      {/* Composición corporal + Tabla evolución en la misma fila */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_3fr]">
-        {grasaLast != null &&
-          last.peso != null &&
-          (() => {
-            const pGraso = pesoGraso(last.peso, grasaLast) ?? 0
-            const pMagro = pesoMagro(last.peso, grasaLast) ?? 0
-            const total = pGraso + pMagro
-            const pctMagro = total > 0 ? (pMagro / total) * 100 : 50
-            const imcVal = imcLast?.val ?? null
-            const IMC_MIN = 14,
-              IMC_MAX = 40
-            const imcPct =
-              imcVal != null ? Math.min(Math.max(((imcVal - IMC_MIN) / (IMC_MAX - IMC_MIN)) * 100, 0), 100) : null
-            const imcZones = [
-              { label: 'Infrapeso', color: '#60a5fa', width: 17.3 },
-              { label: 'Normal', color: '#34d399', width: 25.0 },
-              { label: 'Sobrepeso', color: '#fbbf24', width: 19.2 },
-              { label: 'Obesidad', color: '#f87171', width: 38.5 },
-            ]
-            return (
-              <div className="rounded-card bg-surface p-4 shadow-card flex flex-col gap-2">
-                <div className="text-sm font-bold">Composición corporal</div>
-
-                {/* Barra composición reducida */}
-                <div>
-                  <div className="h-3 overflow-hidden rounded-full" style={{ background: '#fde68a' }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-[1800ms] ease-out"
-                      style={{ width: `${pctMagro}%`, background: 'linear-gradient(90deg,#0F7B92,#2DD4BF)' }}
-                    />
-                  </div>
-                  <div className="mt-2 flex justify-between text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#0F7B92' }} />
-                      <span className="font-semibold">{pctMagro.toFixed(1)}%</span>
-                      <span className="text-ink-muted">Masa magra: {pMagro.toFixed(1)} kg</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-ink-muted">Masa grasa: {pGraso.toFixed(1)} kg</span>
-                      <span className="font-semibold">{(100 - pctMagro).toFixed(1)}%</span>
-                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: '#fbbf24' }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Escala de clasificación IMC */}
-                {imcVal != null && (
-                  <div className="border-t border-border pt-6">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="text-sm font-bold">Clasificación IMC</span>
-                      <span className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs font-bold">{imcVal}</span>
-                    </div>
-                    <div className="relative">
-                      <div className="flex h-4 overflow-hidden rounded-full">
-                        {imcZones.map((z) => (
-                          <div key={z.label} style={{ width: `${z.width}%`, background: z.color }} />
-                        ))}
-                      </div>
-                      {imcPct != null && (
-                        <div
-                          className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-ink shadow-sm"
-                          style={{ left: `${imcPct}%` }}
-                        />
-                      )}
-                    </div>
-                    <div className="mt-1.5 flex text-xs">
-                      {imcZones.map((z) => (
-                        <div
-                          key={z.label}
-                          style={{ width: `${z.width}%`, color: z.color }}
-                          className="text-center font-bold"
-                        >
-                          {z.label}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })()}
-
-        <div className="overflow-x-auto rounded-card bg-surface p-4 shadow-card">
-          <div className="mb-2 text-sm font-bold">Evolución</div>
-          {!hayEvolucion && (
-            <div className="mb-2 text-[13px] text-ink-muted">
-              Solo hay una revisión. La comparación aparecerá al registrar la siguiente.
-            </div>
-          )}
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left whitespace-nowrap text-ink-muted">
-                <th className="py-1.5 pr-3 font-semibold">Métrica</th>
-                {hayEvolucion && <th className="py-1.5 pr-3 font-semibold">Primera</th>}
-                {hayEvolucion && <th className="py-1.5 pr-3 font-semibold">Anterior</th>}
-                <th className="py-1.5 pr-3 font-semibold">{hayEvolucion ? 'Última' : 'Valor'}</th>
-                {hayEvolucion && <th className="py-1.5 pr-3 font-bold text-ink">Δ Primera</th>}
-                {hayEvolucion && <th className="py-1.5 font-bold text-ink">Δ Anterior</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map((f) => {
-                const deltaTotal = f.f != null && f.l != null ? Math.round((f.l - f.f) * 10) / 10 : null
-                const deltaAnt = f.a != null && f.l != null ? Math.round((f.l - f.a) * 10) / 10 : null
-                return (
-                  <tr key={f.label} className="border-t border-border">
-                    <td className="py-1.5 pr-3 font-medium">{f.label}</td>
-                    {hayEvolucion && <td className="py-1.5 pr-3 text-ink-muted">{f.f ?? '-'}</td>}
-                    {hayEvolucion && <td className="py-1.5 pr-3 text-ink-muted">{f.a ?? '-'}</td>}
-                    <td className="py-1.5 pr-3 font-semibold">{f.l ?? '-'}</td>
-                    {hayEvolucion && (
-                      <td
-                        className={cn(
-                          'py-1.5 pr-3 font-semibold',
-                          deltaTotal != null && deltaTotal < 0 && 'text-success',
-                          deltaTotal != null && deltaTotal > 0 && 'text-danger',
-                        )}
-                      >
-                        {fmtDelta(deltaTotal)}
-                      </td>
-                    )}
-                    {hayEvolucion && (
-                      <td
-                        className={cn(
-                          'py-1.5 font-semibold',
-                          deltaAnt != null && deltaAnt < 0 && 'text-success',
-                          deltaAnt != null && deltaAnt > 0 && 'text-danger',
-                        )}
-                      >
-                        {fmtDelta(deltaAnt)}
-                      </td>
-                    )}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      {/* Composición corporal junto a la tabla de evolución; sin composición, la tabla ocupa todo el ancho */}
+      <div className={cn('grid grid-cols-1 gap-4', hayPanel && 'lg:grid-cols-[2fr_3fr]')}>
+        {hayPanel && (
+          <ComposicionPanel
+            composicion={
+              composicionD && {
+                pesoGraso: composicionD.valor.graso,
+                pesoMagro: composicionD.valor.magro,
+                notaFecha: notaDe(composicionD),
+              }
+            }
+            imc={imcD && { valor: imcD.valor.val, notaFecha: notaDe(imcD) }}
+          />
+        )}
+        <TablaEvolucion
+          filas={filas}
+          hayEvolucion={hayEvolucion}
+          fechaPrimera={first.fecha ?? null}
+          fechaAnterior={prev?.fecha ?? null}
+          fechaUltima={last.fecha ?? null}
+        />
       </div>
 
       {/* Gráficos: peso+grasa y perímetros en la misma fila */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 print-hide">
-        <div className="rounded-card bg-surface p-4 shadow-card">
+        <div className="min-w-0 rounded-card bg-surface p-4 shadow-card">
           <div className="mb-1 text-sm font-bold">Evolución del peso y la masa grasa</div>
           <div className="mb-3 text-[13px] text-ink-muted">kg · % grasa (Durnin-Womersley)</div>
           <div className="h-[240px]">
@@ -566,7 +514,7 @@ export function AnalisisTab() {
           </div>
         </div>
 
-        <div className="rounded-card bg-surface p-4 shadow-card">
+        <div className="min-w-0 rounded-card bg-surface p-4 shadow-card">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm font-bold">Evolución de medidas</div>
             <div className="flex flex-wrap gap-1.5 print-hide">
@@ -603,19 +551,24 @@ export function AnalisisTab() {
         </div>
       </div>
 
-      {/* Pliegues última revisión */}
+      {/* Pliegues: último dato de cada uno */}
       {derived.pliegues.data.length > 0 && (
         <div className="rounded-card bg-surface p-4 shadow-card print-hide">
-          <div className="mb-3 text-sm font-bold">Pliegues cutáneos (última revisión)</div>
+          <div className="mb-1 text-sm font-bold">Pliegues cutáneos</div>
+          <div className="mb-3 text-[13px] text-ink-muted">{derived.pliegues.subtitulo}</div>
           <div className="h-[280px]">
-            <ChartPliegues {...derived.pliegues} />
+            <ChartPliegues
+              labels={derived.pliegues.labels}
+              data={derived.pliegues.data}
+              colors={derived.pliegues.colors}
+            />
           </div>
         </div>
       )}
 
       {/* Perfil corporal con siluetas */}
       <div className="print-page-break">
-        <PerfilCorporal last={derived.last} prev={prev} sexo={p.sexo ?? ''} />
+        <PerfilCorporal revisiones={asc} sexo={p.sexo ?? ''} />
       </div>
     </div>
   )

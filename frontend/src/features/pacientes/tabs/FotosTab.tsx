@@ -122,7 +122,9 @@ export function FotosTab() {
 
       {pending.length > 0 && (
         <div className="rounded-card bg-surface p-4 shadow-card">
-          <div className="mb-2 text-sm font-semibold">{pending.length} archivo(s) listo(s) para subir</div>
+          <div className="mb-2 text-sm font-semibold">
+            {pending.length === 1 ? '1 archivo listo para subir' : `${pending.length} archivos listos para subir`}
+          </div>
           <input
             className="mb-3 w-full rounded-lg border border-border bg-app px-3 py-2 outline-hidden focus:border-primary focus:bg-surface"
             placeholder="Nota (opcional, se aplica a todas)"

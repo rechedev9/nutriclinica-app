@@ -10,6 +10,8 @@ import { fmtFecha } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import type { Compra } from '@/types'
 import { intentar } from '@/lib/api/intentar'
+import { resumenLineas } from '@/lib/format/texto'
+import { Chevron } from '@/components/ui/Chevron'
 
 export function ComprasTab() {
   const { data: compras, isLoading, isError, error, refetch, isFetching } = useCompras()
@@ -149,26 +151,33 @@ export function ComprasTab() {
       ) : (
         rows.map((c) => (
           <div key={c.id} className="rounded-card bg-surface shadow-card">
-            <div className="flex items-center gap-3 p-4">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 p-4">
               <button
                 onClick={() => setExpanded(expanded === c.id ? null : c.id)}
-                className="flex flex-1 items-center gap-3 text-left"
+                className="flex min-w-0 flex-1 basis-64 items-center gap-3 text-left"
               >
-                <div className="flex-1">
-                  <div className="font-semibold">{c.fecha ? fmtFecha(c.fecha) : 'Sin fecha'}</div>
-                  <div className="text-[13px] text-ink-muted">
-                    {c.proveedor_nombre ?? 'Sin proveedor'} · {c.lineas.length} línea(s)
-                    {c.fecha?.includes('T') && <> · {c.fecha.slice(11, 16)}</>}
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">
+                    {c.fecha ? fmtFecha(c.fecha) : 'Sin fecha'}
+                    {c.fecha?.includes('T') && (
+                      <span className="font-normal text-ink-muted"> · {c.fecha.slice(11, 16)}</span>
+                    )}
+                  </div>
+                  <div className="truncate text-[13px] text-ink-muted">
+                    {c.proveedor_nombre ?? 'Sin proveedor'} · {resumenLineas(c.lineas)}
                   </div>
                 </div>
-                <div className="font-bold">{fmtMoneda(c.total)}</div>
+                <div className="whitespace-nowrap font-bold tabular-nums">{fmtMoneda(c.total)}</div>
+                <Chevron abierto={expanded === c.id} />
               </button>
-              <Button variant="ghost" size="sm" onClick={() => abrirEditar(c)}>
-                Editar
-              </Button>
-              <Button variant="danger" size="sm" onClick={() => onDelete(c.id)}>
-                Borrar
-              </Button>
+              <div className="ml-auto flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => abrirEditar(c)}>
+                  Editar
+                </Button>
+                <Button variant="dangerGhost" size="sm" onClick={() => onDelete(c.id)}>
+                  Borrar
+                </Button>
+              </div>
             </div>
             {expanded === c.id && (
               <div className="border-t border-border p-4 text-sm">

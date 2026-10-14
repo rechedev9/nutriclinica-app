@@ -27,4 +27,4 @@ db.transaction((tx) => {
   }
 })
 
-console.log(`Pacientes y revisiones de ejemplo insertados en ${rutaBD}`)
+console.log(`Clientes y revisiones de ejemplo insertados en ${rutaBD}`)

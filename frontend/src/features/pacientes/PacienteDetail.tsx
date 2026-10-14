@@ -21,10 +21,11 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const tabs = [
-  { to: '/pacientes/$id/ficha', label: 'Ficha clínica' },
+  { to: '/pacientes/$id/ficha', label: 'Ficha' },
   { to: '/pacientes/$id/revisiones', label: 'Revisiones', count: 'num_revisiones' },
   { to: '/pacientes/$id/fotos', label: 'Fotos', count: 'num_fotos' },
   { to: '/pacientes/$id/analisis', label: 'Análisis' },
+  { to: '/pacientes/$id/historial', label: 'Historial' },
 ] as const
 
 const ruta = getRouteApi('/_sesion/_app/pacientes/$id')
@@ -40,15 +41,15 @@ export function PacienteDetail() {
 
   if (isLoading) return <CenteredSpinner />
   if (isError)
-    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el paciente" />
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="el cliente" />
   const paciente = pacientes?.find((p) => p.id === pid)
   if (!paciente) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-        <h2 className="text-xl font-semibold text-ink">Paciente no encontrado</h2>
-        <p className="text-sm text-ink-muted">Este paciente no existe o se ha eliminado.</p>
+        <h2 className="text-xl font-semibold text-ink">Cliente no encontrado</h2>
+        <p className="text-sm text-ink-muted">Este cliente no existe o se ha eliminado.</p>
         <Button variant="outline" onClick={() => void navigate({ to: '/pacientes' })}>
-          Volver a Pacientes
+          Volver a Clientes
         </Button>
       </div>
     )
@@ -59,7 +60,7 @@ export function PacienteDetail() {
 
   async function onDelete() {
     const ok = await confirm({
-      title: '¿Eliminar paciente?',
+      title: '¿Eliminar cliente?',
       message: `Se borrarán también sus revisiones y fotos. Esta acción no se puede deshacer.`,
       confirmText: 'Eliminar',
       danger: true,
@@ -88,14 +89,14 @@ export function PacienteDetail() {
           >
             <path d="m15 18-6-6 6-6" />
           </svg>
-          Pacientes
+          Clientes
         </button>
         <div className="flex items-center gap-3.5 max-md:flex-wrap">
           <Avatar
             nombre={paciente.nombre}
             className="h-[52px] w-[52px] text-xl shadow-[0_6px_16px_-4px_rgba(15,123,146,.45)]"
           />
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-[22px] font-bold">{paciente.nombre}</div>
             <div className="text-sm text-ink-muted">
               {paciente.fecha_nac ? `Nac. ${fmtFecha(paciente.fecha_nac)}` : 'Sin fecha de nacimiento'}
@@ -107,7 +108,7 @@ export function PacienteDetail() {
               {paciente.sexo && <Stat value={paciente.sexo} label="" />}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 max-md:w-full">
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               Editar
             </Button>

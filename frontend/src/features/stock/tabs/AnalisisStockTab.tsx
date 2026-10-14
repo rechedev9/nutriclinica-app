@@ -5,11 +5,22 @@ import { useCompras, useVentas, useMermas, useAlmacen } from '../hooks/useStock'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { useChartTheme, tooltipPlugin } from '@/lib/chart/useChartTheme'
+import { colorCategorico, conAlfa, paletaCategorica } from '@/lib/chart/paleta'
 import { fmtMoneda } from '@/lib/format/moneda'
+import { fmtFecha } from '@/lib/format/fecha'
 import type { ChartOptions } from 'chart.js'
 import { normaliza } from '@/lib/format/texto'
+import {
+  costesPorProducto,
+  flujoDeCaja,
+  margenDeLoVendido,
+  mesesPorDefecto,
+  monedaCompacta,
+  porcentaje,
+  valorAlmacen,
+} from '../analisisStock'
+import { productosEnAlerta } from '../estado-almacen'
 
-const PALETTE = ['#0F7B92', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6']
 const MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 const MOTIVO_LABEL: Record<string, string> = {
@@ -23,25 +34,25 @@ function KpiCard({
   value,
   sub,
   highlight,
+  className = '',
 }: {
   label: string
   value: string
   sub?: string
   highlight?: 'success' | 'warning' | 'danger'
+  className?: string
 }) {
   const cls =
     highlight === 'success'
-      ? 'text-green-500'
-      : highlight === 'warning'
-        ? 'text-amber-500'
-        : highlight === 'danger'
-          ? 'text-danger'
-          : 'text-ink'
+      ? 'text-success'
+      : highlight === 'warning' || highlight === 'danger'
+        ? 'text-danger'
+        : 'text-ink'
   return (
-    <div className="rounded-card bg-surface p-4 shadow-card">
+    <div className={`min-w-0 rounded-card bg-surface p-4 shadow-card ${className}`}>
       <div className="text-[13px] text-ink-muted">{label}</div>
-      <div className={`mt-1 text-2xl font-extrabold ${cls}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-[12px] text-ink-muted">{sub}</div>}
+      <div className={`mt-1 truncate text-xl font-extrabold tabular-nums sm:text-2xl ${cls}`}>{value}</div>
+      {sub && <div className="mt-0.5 text-[12px] leading-snug text-ink-muted">{sub}</div>}
     </div>
   )
 }
@@ -56,7 +67,7 @@ function Section({
   actions?: React.ReactNode
 }) {
   return (
-    <div className="rounded-card bg-surface p-5 shadow-card">
+    <div className="min-w-0 rounded-card bg-surface p-4 shadow-card sm:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[15px] font-bold">{title}</h3>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -100,20 +111,6 @@ export function AnalisisStockTab() {
   const mermas = useMemo(() => mermasData ?? [], [mermasData])
   const almacen = almacenData ?? []
 
-  const meses = useMemo(() => {
-    if (!filtroAnio) {
-      const now = hoy
-      return Array.from({ length: 12 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      })
-    }
-    return Array.from(
-      { length: filtroMesHasta - filtroMesDesde + 1 },
-      (_, i) => `${filtroAnio}-${String(filtroMesDesde + i).padStart(2, '0')}`,
-    )
-  }, [filtroAnio, filtroMesDesde, filtroMesHasta, hoy])
-
   const { ventasPorMes, comprasPorMes } = useMemo(() => {
     const porMesVentas: Record<string, number> = {}
     const porMesCompras: Record<string, number> = {}
@@ -127,6 +124,17 @@ export function AnalisisStockTab() {
     }
     return { ventasPorMes: porMesVentas, comprasPorMes: porMesCompras }
   }, [ventas, compras])
+
+  const meses = useMemo(() => {
+    if (!filtroAnio) {
+      const conActividad = new Set([...Object.keys(ventasPorMes), ...Object.keys(comprasPorMes)])
+      return mesesPorDefecto({ hoy, conActividad })
+    }
+    return Array.from(
+      { length: filtroMesHasta - filtroMesDesde + 1 },
+      (_, i) => `${filtroAnio}-${String(filtroMesDesde + i).padStart(2, '0')}`,
+    )
+  }, [filtroAnio, filtroMesDesde, filtroMesHasta, hoy, ventasPorMes, comprasPorMes])
 
   const anosDisponibles = useMemo(() => {
     const anos = new Set<string>()
@@ -223,8 +231,8 @@ export function AnalisisStockTab() {
       return {
         label: prov,
         data: fechas.map((f) => mapaFecha[f] ?? null),
-        borderColor: PALETTE[i % PALETTE.length] ?? '#0F7B92',
-        backgroundColor: (PALETTE[i % PALETTE.length] ?? '#0F7B92') + '22',
+        borderColor: colorCategorico({ isDark: t.isDark, indice: i }),
+        backgroundColor: conAlfa({ color: colorCategorico({ isDark: t.isDark, indice: i }), alfa: 0.13 }),
         pointRadius: 5,
         pointHoverRadius: 7,
         tension: 0.3,
@@ -237,12 +245,12 @@ export function AnalisisStockTab() {
       productosFiltrados: filtrados,
       proveedoresDeProducto: proveedores,
       precioDatasets: series,
-      precioLabels: fechas,
+      precioLabels: fechas.map((f) => fmtFecha(f)),
     }
-  }, [compras, filtroProducto, filtroProv, busquedaProducto])
+  }, [compras, filtroProducto, filtroProv, busquedaProducto, t])
 
   const evolucionTitulo = useMemo(() => {
-    if (!filtroAnio) return 'Evolución mensual: ingresos vs. gastos (últimos 12 meses)'
+    if (!filtroAnio) return 'Evolución mensual: ingresos vs. gastos'
     if (filtroMesDesde === 1 && filtroMesHasta === 12) return `Evolución mensual: ingresos vs. gastos (${filtroAnio})`
     const mesD = MESES_CORTOS[filtroMesDesde - 1] ?? ''
     const mesH = MESES_CORTOS[filtroMesHasta - 1] ?? ''
@@ -262,10 +270,10 @@ export function AnalisisStockTab() {
         },
       },
       scales: {
-        x: { grid: { color: t.grid }, ticks: { color: t.ticks } },
+        x: { grid: { display: false }, ticks: { color: t.ticks, maxRotation: 0, autoSkip: true } },
         y: {
           grid: { color: t.grid },
-          ticks: { color: t.ticks, callback: (v) => fmtMoneda(Number(v)) },
+          ticks: { color: t.ticks, callback: (v) => monedaCompacta(Number(v)) },
         },
       },
     }),
@@ -287,9 +295,9 @@ export function AnalisisStockTab() {
       scales: {
         x: {
           grid: { color: t.grid },
-          ticks: { color: t.ticks, callback: (v) => fmtMoneda(Number(v)) },
+          ticks: { color: t.ticks, callback: (v) => monedaCompacta(Number(v)) },
         },
-        y: { grid: { color: t.grid }, ticks: { color: t.ticks } },
+        y: { grid: { display: false }, ticks: { color: t.ticks } },
       },
     }),
     [t],
@@ -348,7 +356,7 @@ export function AnalisisStockTab() {
         x: { grid: { color: t.grid }, ticks: { color: t.ticks } },
         y: {
           grid: { color: t.grid },
-          ticks: { color: t.ticks, callback: (v) => fmtMoneda(Number(v)) },
+          ticks: { color: t.ticks, callback: (v) => monedaCompacta(Number(v)) },
         },
       },
     }),
@@ -370,8 +378,17 @@ export function AnalisisStockTab() {
 
   const totalIngresos = ventas.reduce((s, v) => s + v.total, 0)
   const totalGastos = compras.reduce((s, c) => s + c.total, 0)
-  const margen = totalIngresos - totalGastos
-  const bajosMinimos = almacen.filter((a) => a.stock_minimo > 0 && a.stock_actual < a.stock_minimo)
+  const flujo = flujoDeCaja({ ingresos: totalIngresos, gastos: totalGastos })
+  const costes = costesPorProducto({ almacen, compras })
+  const vendido = margenDeLoVendido({ ventas, costes })
+  const porcentajeMargen = porcentaje({ parte: vendido.margen, total: vendido.ingresos })
+  const valorGenero = valorAlmacen(almacen)
+  // La misma lista que las alertas del Almacén y de Inicio.
+  const bajosMinimos = productosEnAlerta(almacen)
+  const sinCoste = vendido.lineasSinCoste === 1 ? '1 línea sin coste' : `${vendido.lineasSinCoste} líneas sin coste`
+  const paleta = paletaCategorica(t.isDark)
+  const colorIngresos = colorCategorico({ isDark: t.isDark, indice: 0 })
+  const colorGastos = colorCategorico({ isDark: t.isDark, indice: 3 })
 
   const mesesLabels = meses.map((m) => {
     const [y, mo] = m.split('-')
@@ -379,19 +396,32 @@ export function AnalisisStockTab() {
   })
 
   return (
-    <div className="flex flex-col gap-5 p-6">
+    <div className="flex flex-col gap-5 p-4 sm:p-6">
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard label="Total ingresos" value={fmtMoneda(totalIngresos)} sub="acumulado ventas" />
-        <KpiCard label="Total gastado" value={fmtMoneda(totalGastos)} sub="acumulado compras" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <KpiCard
-          label="Margen bruto"
-          value={fmtMoneda(margen)}
-          sub="ingresos − gastos"
-          highlight={margen >= 0 ? 'success' : 'danger'}
+          className="col-span-2 lg:col-span-1"
+          label="Margen de lo vendido"
+          value={fmtMoneda(vendido.margen)}
+          sub={
+            (porcentajeMargen === null
+              ? ''
+              : `${porcentajeMargen.toFixed(1).replace('.', ',')} % sobre lo vendido · `) +
+            'estimado con el coste actual' +
+            (vendido.lineasSinCoste > 0 ? ` · ${sinCoste}` : '')
+          }
+          highlight={vendido.margen >= 0 ? 'success' : 'danger'}
         />
+        <KpiCard label="Género en almacén" value={fmtMoneda(valorGenero)} sub="existencias valoradas a coste" />
         <KpiCard
-          label="Bajo mínimo de stock"
+          label="Flujo de caja"
+          value={fmtMoneda(flujo)}
+          sub="ventas menos compras, sin contar el género que sigue en almacén"
+        />
+        <KpiCard label="Total ingresos" value={fmtMoneda(totalIngresos)} sub="acumulado de ventas" />
+        <KpiCard label="Total gastado" value={fmtMoneda(totalGastos)} sub="acumulado de compras" />
+        <KpiCard
+          label="Alertas de mínimo"
           value={String(bajosMinimos.length)}
           sub={
             bajosMinimos.length === 0
@@ -467,13 +497,13 @@ export function AnalisisStockTab() {
                 {
                   label: 'Ingresos (ventas)',
                   data: meses.map((m) => ventasPorMes[m] ?? 0),
-                  backgroundColor: 'rgba(15,123,146,0.75)',
+                  backgroundColor: conAlfa({ color: colorIngresos, alfa: 0.85 }),
                   borderRadius: 4,
                 },
                 {
                   label: 'Gastos (compras)',
                   data: meses.map((m) => comprasPorMes[m] ?? 0),
-                  backgroundColor: 'rgba(232,93,74,0.75)',
+                  backgroundColor: conAlfa({ color: colorGastos, alfa: 0.85 }),
                   borderRadius: 4,
                 },
               ],
@@ -497,7 +527,7 @@ export function AnalisisStockTab() {
                     {
                       label: 'Ingresos',
                       data: topProductos.map(([, v]) => v),
-                      backgroundColor: PALETTE.slice(0, topProductos.length).map((c) => c + 'CC'),
+                      backgroundColor: conAlfa({ color: colorIngresos, alfa: 0.85 }),
                       borderRadius: 4,
                     },
                   ],
@@ -519,7 +549,7 @@ export function AnalisisStockTab() {
                   datasets: [
                     {
                       data: comprasPorProv.map(([, v]) => v),
-                      backgroundColor: PALETTE.map((c) => c + 'CC'),
+                      backgroundColor: paleta.map((color) => conAlfa({ color, alfa: 0.85 })),
                       borderWidth: 0,
                     },
                   ],
@@ -544,7 +574,9 @@ export function AnalisisStockTab() {
                   datasets: [
                     {
                       data: Object.values(mermasPorMotivo),
-                      backgroundColor: ['rgba(245,158,11,0.85)', 'rgba(232,93,74,0.85)', 'rgba(15,123,146,0.85)'],
+                      backgroundColor: [colorGastos, paleta[1] ?? colorIngresos, colorIngresos].map((color) =>
+                        conAlfa({ color, alfa: 0.85 }),
+                      ),
                       borderWidth: 0,
                     },
                   ],
@@ -589,7 +621,7 @@ export function AnalisisStockTab() {
                           setFiltroProv('')
                           setComboAbierto(false)
                         }}
-                        className={`cursor-pointer px-3 py-2 text-sm hover:bg-primary/10 ${p === filtroProducto ? 'font-semibold text-primary' : 'text-ink'}`}
+                        className={`cursor-pointer px-3 py-2 text-sm [@media(hover:hover)]:hover:bg-primary-light ${p === filtroProducto ? 'font-semibold text-primary' : 'text-ink'}`}
                       >
                         {p}
                       </div>
@@ -625,7 +657,7 @@ export function AnalisisStockTab() {
           )}
         </Section>
 
-        <Section title="Productos bajo mínimo de stock">
+        <Section title="Productos agotados o bajo mínimo">
           {bajosMinimos.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-8">
               <svg
@@ -635,7 +667,7 @@ export function AnalisisStockTab() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                className="text-green-500"
+                className="text-success"
               >
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
@@ -645,10 +677,10 @@ export function AnalisisStockTab() {
           ) : (
             <div className="flex flex-col divide-y divide-border">
               {bajosMinimos.map((a) => (
-                <div key={a.id} className="flex items-center justify-between py-2.5">
-                  <span className="text-sm font-medium">{a.nombre}</span>
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-amber-500">{a.stock_actual}</span>
+                <div key={a.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="min-w-0 break-words text-sm font-medium">{a.nombre}</span>
+                  <div className="shrink-0 whitespace-nowrap text-right">
+                    <span className="text-sm font-bold tabular-nums text-danger">{a.stock_actual}</span>
                     <span className="text-[12px] text-ink-muted">
                       {' '}
                       / {a.stock_minimo} {a.unidad ?? 'ud'}

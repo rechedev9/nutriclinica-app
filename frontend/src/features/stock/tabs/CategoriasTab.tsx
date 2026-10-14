@@ -94,7 +94,7 @@ export function CategoriasTab() {
                     >
                       Editar
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => onDelete(c.id)}>
+                    <Button variant="dangerGhost" size="sm" onClick={() => onDelete(c.id)}>
                       Borrar
                     </Button>
                   </td>

@@ -92,7 +92,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar paciente' : 'Nuevo paciente'}>
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar cliente' : 'Nuevo cliente'}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         <Field label="Nombre *" error={formState.errors.nombre?.message}>
           <Input autoFocus {...register('nombre')} />
@@ -153,7 +153,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
         <label className="flex items-start gap-2.5 rounded-lg border border-border bg-app p-3 text-sm">
           <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-primary" {...register('consentimiento')} />
           <span className="text-ink-muted">
-            El paciente <span className="font-semibold text-ink">consiente</span> el tratamiento de sus datos de salud
+            El cliente <span className="font-semibold text-ink">consiente</span> el tratamiento de sus datos de salud
             con fines de seguimiento nutricional (RGPD, art. 9.2.a).
           </span>
         </label>
@@ -162,7 +162,7 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
             Cancelar
           </Button>
           <Button type="submit" isLoading={create.isPending || update.isPending}>
-            {isEdit ? 'Guardar cambios' : 'Crear paciente'}
+            {isEdit ? 'Guardar cambios' : 'Crear cliente'}
           </Button>
         </div>
       </form>

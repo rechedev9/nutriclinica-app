@@ -72,8 +72,10 @@
   --shadow-card: 0 1px 2px rgba(15, 27, 45, 0.04), 0 8px 22px -14px rgba(15, 27, 45, 0.16);
   --shadow-md: 0 4px 12px rgba(15, 27, 45, 0.1);
 
-  --animate-fadeIn: fadeIn 0.2s ease;
-  --animate-slideUp: slideUp 0.35s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --animate-fadeIn: fadeIn 0.15s ease;
+  --animate-slideUp: slideUp 0.2s var(--ease-out) both;
 
   @keyframes fadeIn {
     0% {
@@ -86,7 +88,7 @@
   @keyframes slideUp {
     0% {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(8px) scale(0.98);
     }
     100% {
       opacity: 1;
@@ -120,6 +122,19 @@
   }
   body {
     @apply bg-app font-sans text-ink antialiased;
+  }
+
+  /* Foco visible solo con teclado; los campos ya marcan el foco con su borde. */
+  :where(a, button, [role='button'], [role='link'], summary):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Con movimiento reducido se conservan los fundidos y se quita el desplazamiento. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slideUp {
+    animation: fadeIn 0.15s ease both;
   }
 }
 

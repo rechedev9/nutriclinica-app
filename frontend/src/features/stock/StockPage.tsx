@@ -1,7 +1,7 @@
 import { Link, Outlet } from '@tanstack/react-router'
 
 const tabs = [
-  { to: '/stock/almacen', label: 'Stock' },
+  { to: '/stock/almacen', label: 'Almacén' },
   { to: '/stock/categorias', label: 'Categorías' },
   { to: '/stock/proveedores', label: 'Proveedores' },
   { to: '/stock/compras', label: 'Compras' },
