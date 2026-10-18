@@ -104,8 +104,7 @@ verificar browser click --role button --contains "Luna Queralto Ficticia"
 verificar browser wait --text "Pulso de la tienda" --absent "Carlos Martínez Ruiz" --timeout 15
 verificar browser scroll --text "Luna Queralto Ficticia"
 verificar browser location --matches "/pacientes/[0-9]+/ficha$"
-verificar browser viewport --width 1280 --height 800
-verificar browser screenshot --path clientes/ficha.png
+verificar browser screenshot --path clientes/ficha.png --width 1280 --height 800
 verificar browser text --out clientes/ficha.txt
 verificar browser fetch --path /api/pacientes --out clientes/pacientes.json
 ```
@@ -114,7 +113,7 @@ verificar browser fetch --path /api/pacientes --out clientes/pacientes.json
 
 `fill` sets the value through the native setter and dispatches `input` and `change`, which is what the React fields listen to. `--value` may be empty.
 
-`screenshot`, `text`, `fetch`, and `verificar sql --out` write under the run's evidence directory. A relative path is resolved there. A path that escapes that directory is rejected.
+`screenshot`, `text`, `fetch`, and `verificar sql --out` write under the run's evidence directory. A relative path is resolved there. A path that escapes that directory is rejected. `screenshot --width` and `--height` set the viewport for that capture. `--scroll` brings a visible text into view before the shot. The size does not carry over to the next command.
 
 `fetch` runs in the page, so it sends the browser's session cookie. It is the same `GET` the screen uses, not a test-only route.
 
