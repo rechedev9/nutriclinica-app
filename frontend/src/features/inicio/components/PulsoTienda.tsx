@@ -15,7 +15,7 @@ export function PulsoTienda({ hoy }: { hoy: Date }) {
       titulo="Pulso de la tienda"
       subtitulo="Cobrado en caja: lo vendido menos lo devuelto cada día, como en el cierre"
       enlace={
-        <span className="flex gap-3">
+        <span className="flex flex-col items-end gap-1 sm:flex-row sm:gap-3">
           <Link to="/ventas/estadisticas" search={{ periodo: 'mes' }} className={enlaceSutil}>
             Ver estadísticas
           </Link>
