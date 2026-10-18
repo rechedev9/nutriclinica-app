@@ -20,7 +20,6 @@ import { PerfilCorporal } from './PerfilCorporal'
 import { ComposicionPanel } from './ComposicionPanel'
 import { TablaEvolucion, type FilaEvolucion } from './TablaEvolucion'
 import { esDeLaUltimaRevision, resumirSerie, ultimoDato, type Punto } from './ultimo-dato'
-import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 
 function SparkLine({ data }: { data: (number | null)[] }) {
@@ -94,7 +93,6 @@ function KpiCard({
   // Fecha de la revisión de origen cuando el dato no es de la última.
   notaFecha?: string | null
 }) {
-  const animated = useCountUp(rawValue, decimals)
   const spark = sparklineData != null && sparklineData.filter((v) => v != null).length >= 2 ? sparklineData : null
   return (
     <div className="min-w-0 rounded-card bg-surface p-4 shadow-card">
@@ -112,7 +110,7 @@ function KpiCard({
         <>
           <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
             <div className="shrink-0 text-2xl font-extrabold tabular-nums">
-              {animated}
+              {rawValue.toFixed(decimals)}
               {unit && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
             </div>
             {spark && (
