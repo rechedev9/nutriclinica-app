@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
 import { usePacienteContext } from './context'
 import { useHistorial } from '../hooks/useHistorial'
 import {
@@ -15,6 +17,19 @@ import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/cn'
 
+// Las ventas no salen en el historial: tienen su pestaña y siguen en la Auditoría general.
+function EnlaceCompras({ id, children }: { id: number; children: ReactNode }) {
+  return (
+    <Link
+      to="/pacientes/$id/compras"
+      params={{ id: String(id) }}
+      className="font-semibold text-primary hover:underline"
+    >
+      {children}
+    </Link>
+  )
+}
+
 export function HistorialTab() {
   const p = usePacienteContext()
   const { data, isLoading, isError, error, refetch, isFetching } = useHistorial(p.id)
@@ -28,7 +43,8 @@ export function HistorialTab() {
     return (
       <EmptyState
         title="Sin cambios registrados"
-        subtitle="Aquí aparecerá quién modifica la ficha, las revisiones y las fotos de este cliente, y cuándo."
+        subtitle="Aquí aparecerá quién modifica la ficha, el consentimiento, las revisiones y las fotos de este cliente, y cuándo. Sus compras están en la pestaña Compras."
+        action={<EnlaceCompras id={p.id}>Ver sus compras</EnlaceCompras>}
       />
     )
   }
@@ -37,7 +53,10 @@ export function HistorialTab() {
     <div className="flex flex-col gap-4 p-4 sm:p-6">
       <div>
         <h3 className="text-lg font-bold">Historial</h3>
-        <p className="mt-0.5 text-sm text-ink-muted">Quién cambió qué en este cliente, y cuándo.</p>
+        <p className="mt-0.5 text-sm text-ink-muted">
+          Quién cambió la ficha, las revisiones y las fotos de este cliente, y cuándo. Sus compras están en{' '}
+          <EnlaceCompras id={p.id}>Compras</EnlaceCompras>.
+        </p>
       </div>
       {[...agruparPorDia(entradas)].map(([dia, filas]) => (
         <section key={dia} className="overflow-hidden rounded-card bg-surface shadow-card">
