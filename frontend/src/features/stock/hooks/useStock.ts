@@ -2,7 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type { CompraInput, MermaInput, ProductoInput, ProveedorInput, RecuentoInput } from '@/types'
+import type {
+  CompraInput,
+  MermaInput,
+  PedidoInput,
+  ProductoInput,
+  ProveedorInput,
+  RecepcionInput,
+  RecuentoInput,
+} from '@/types'
 
 const invalidate = (qc: ReturnType<typeof useQueryClient>, keys: ReadonlyArray<readonly unknown[]>) =>
   keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
@@ -141,7 +149,7 @@ export function useCreateCompra() {
   return useMutation({
     mutationFn: (b: CompraInput) => pedir(servidor.stock.compras.post(b)),
     onSuccess: () => {
-      invalidate(qc, [qk.stock.compras, qk.stock.almacen])
+      invalidate(qc, [qk.stock.compras, qk.stock.pedidos, qk.stock.almacen])
       toast.success('Compra registrada')
     },
     onError: (e) => toast.error(mensajeError(e)),
@@ -153,7 +161,7 @@ export function useUpdateCompra() {
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: CompraInput }) => pedir(servidor.stock.compras({ id }).put(body)),
     onSuccess: () => {
-      invalidate(qc, [qk.stock.compras, qk.stock.almacen])
+      invalidate(qc, [qk.stock.compras, qk.stock.pedidos, qk.stock.almacen])
       toast.success('Compra actualizada')
     },
     onError: (e) => toast.error(mensajeError(e)),
@@ -165,8 +173,79 @@ export function useDeleteCompra() {
   return useMutation({
     mutationFn: (id: number) => pedir(servidor.stock.compras({ id }).delete()),
     onSuccess: () => {
-      invalidate(qc, [qk.stock.compras, qk.stock.almacen])
+      invalidate(qc, [qk.stock.compras, qk.stock.pedidos, qk.stock.almacen])
       toast.success('Compra eliminada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+// --- Pedidos a proveedor ---
+export const usePedidos = () =>
+  useQuery({ queryKey: qk.stock.pedidos, queryFn: () => pedir(servidor.stock.pedidos.get()) })
+
+export function useCreatePedido() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (b: PedidoInput) => pedir(servidor.stock.pedidos.post(b)),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.pedidos])
+      toast.success('Pedido guardado')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+export function useUpdatePedido() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: PedidoInput }) => pedir(servidor.stock.pedidos({ id }).put(body)),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.pedidos])
+      toast.success('Pedido actualizado')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+export function useDeletePedido() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => pedir(servidor.stock.pedidos({ id }).delete()),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.pedidos])
+      toast.success('Pedido eliminado')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+export function useCambiarEstadoPedido() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, accion }: { id: number; accion: 'cerrar' | 'reabrir' }) =>
+      pedir(
+        accion === 'cerrar'
+          ? servidor.stock.pedidos({ id }).cerrar.post()
+          : servidor.stock.pedidos({ id }).reabrir.post(),
+      ),
+    onSuccess: (_r, { accion }) => {
+      invalidate(qc, [qk.stock.pedidos])
+      toast.success(accion === 'cerrar' ? 'Pedido cerrado' : 'Pedido reabierto')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+// Un albarán suma existencias y aparece también en Compras.
+export function useRecibirPedido() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: RecepcionInput }) =>
+      pedir(servidor.stock.pedidos({ id }).recepciones.post(body)),
+    onSuccess: () => {
+      invalidate(qc, [qk.stock.pedidos, qk.stock.compras, qk.stock.almacen])
+      toast.success('Albarán entrado: el stock ya está sumado')
     },
     onError: (e) => toast.error(mensajeError(e)),
   })

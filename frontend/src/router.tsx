@@ -85,6 +85,11 @@ const almacen = createRoute({
   path: 'almacen',
   component: lazyRouteComponent(() => import('@/features/stock/tabs/AlmacenTab'), 'AlmacenTab'),
 })
+const pedidosStock = createRoute({
+  getParentRoute: () => stock,
+  path: 'pedidos',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/PedidosTab'), 'PedidosTab'),
+})
 const compras = createRoute({
   getParentRoute: () => stock,
   path: 'compras',
@@ -200,6 +205,7 @@ const arbol = raiz.addChildren([
       stock.addChildren([
         stockInicio,
         almacen,
+        pedidosStock,
         compras,
         stockVentas,
         proveedores,

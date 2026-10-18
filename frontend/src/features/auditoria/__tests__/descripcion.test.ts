@@ -34,6 +34,14 @@ describe('describirRuta', () => {
     expect(describirRuta('/api/stock/recuentos')).toEqual({ recurso: 'Recuento de inventario', pacienteId: null })
   })
 
+  test('describe los pedidos y sus albaranes', () => {
+    expect(describirRuta('/api/stock/pedidos').recurso).toBe('Pedido')
+    expect(describirRuta('/api/stock/pedidos/4').recurso).toBe('Pedido nº 4')
+    expect(describirRuta('/api/stock/pedidos/4/recepciones').recurso).toBe('Albarán del pedido nº 4')
+    expect(describirRuta('/api/stock/pedidos/4/cerrar').recurso).toBe('Cierre del pedido nº 4')
+    expect(describirRuta('/api/stock/pedidos/4/reabrir').recurso).toBe('Reapertura del pedido nº 4')
+  })
+
   test('deja la ruta tal cual si no la conoce', () => {
     expect(describirRuta('/api/otra-cosa')).toEqual({ recurso: '/api/otra-cosa', pacienteId: null })
   })
@@ -63,6 +71,12 @@ describe('tipoAccion', () => {
   test('anular una venta cuenta como borrado', () => {
     expect(tipoAccion('POST', '/api/ventas/12/anular')).toBe('borrado')
     expect(tipoAccion('POST', '/api/ventas/12/devoluciones')).toBe('alta')
+  })
+
+  test('cerrar o reabrir un pedido es una edición y entrar su albarán un alta', () => {
+    expect(tipoAccion('POST', '/api/stock/pedidos/4/cerrar')).toBe('edicion')
+    expect(tipoAccion('POST', '/api/stock/pedidos/4/reabrir')).toBe('edicion')
+    expect(tipoAccion('POST', '/api/stock/pedidos/4/recepciones')).toBe('alta')
   })
 })
 

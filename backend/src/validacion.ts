@@ -14,9 +14,11 @@ import type {
   mermaEntrada,
   pacienteEntrada,
   pagoEntrada,
+  pedidoEntrada,
   periodoQuery,
   productoEntrada,
   proveedorEntrada,
+  recepcionEntrada,
   recuentoEntrada,
   revisionEntrada,
   ventaEntrada,
@@ -198,7 +200,7 @@ export function normalizarCategoria(nombre: string | undefined): string {
   return limpio
 }
 
-function exigirLineas<L>(lineas: L[] | undefined, entidad: 'compra' | 'venta' | 'devolución'): L[] {
+function exigirLineas<L>(lineas: L[] | undefined, entidad: 'compra' | 'venta' | 'devolución' | 'recepción'): L[] {
   if (lineas === undefined || lineas.length === 0) invalido(`La ${entidad} debe tener al menos una línea`)
   return lineas
 }
@@ -259,7 +261,44 @@ export function normalizarCompra(entrada: typeof compraEntrada.static) {
     fecha: vacioANulo(entrada.fecha),
     proveedor_id: entrada.proveedor_id ?? null,
     notas: vacioANulo(entrada.notas),
+    albaran: vacioANulo(entrada.albaran?.trim()),
     lineas: exigirLineas(entrada.lineas, 'compra').map(normalizarLinea),
+  }
+}
+
+function sinProductosRepetidos<L extends { producto_id: number }>(lineas: L[], mensaje: string): L[] {
+  if (new Set(lineas.map((l) => l.producto_id)).size !== lineas.length) invalido(mensaje)
+  return lineas
+}
+
+export function normalizarPedido(entrada: typeof pedidoEntrada.static, hoy: Date) {
+  const proveedor_id = entrada.proveedor_id ?? null
+  if (proveedor_id === null) invalido('Indica el proveedor del pedido')
+  const fecha = normalizarDia(entrada.fecha, { hoy, margen: 1 })
+  const prevista = vacioANulo(entrada.fecha_prevista)
+  const fecha_prevista = prevista === null ? null : parseFecha(prevista)
+  if (fecha_prevista === null && prevista !== null) invalido('La fecha prevista no es válida')
+  if (fecha_prevista !== null && fecha_prevista < fecha) {
+    invalido('La fecha prevista no puede ser anterior a la del pedido')
+  }
+  if (entrada.lineas === undefined || entrada.lineas.length === 0) invalido('El pedido debe tener al menos un producto')
+  return {
+    fecha,
+    proveedor_id,
+    fecha_prevista,
+    notas: vacioANulo(entrada.notas),
+    lineas: sinProductosRepetidos(entrada.lineas.map(normalizarLinea), 'Un producto aparece dos veces en el pedido'),
+  }
+}
+
+export function normalizarRecepcion(entrada: typeof recepcionEntrada.static, hoy: Date) {
+  const lineas = exigirLineas(entrada.lineas, 'recepción').map(normalizarLinea)
+  return {
+    fecha: normalizarDia(entrada.fecha, { hoy, margen: 1 }),
+    albaran: vacioANulo(entrada.albaran?.trim()),
+    notas: vacioANulo(entrada.notas),
+    cerrar: entrada.cerrar ?? false,
+    lineas: sinProductosRepetidos(lineas, 'Un producto aparece dos veces en el albarán'),
   }
 }
 
@@ -389,6 +428,8 @@ export type RevisionDatos = ReturnType<typeof normalizarRevision>
 export type ProductoDatos = ReturnType<typeof normalizarProducto>
 export type ProveedorDatos = ReturnType<typeof normalizarProveedor>
 export type CompraDatos = ReturnType<typeof normalizarCompra>
+export type PedidoDatos = ReturnType<typeof normalizarPedido>
+export type RecepcionDatos = ReturnType<typeof normalizarRecepcion>
 export type VentaDatos = ReturnType<typeof normalizarVenta>
 export type CorreccionVentaDatos = ReturnType<typeof normalizarCorreccionVenta>
 export type DevolucionDatos = ReturnType<typeof normalizarDevolucion>
