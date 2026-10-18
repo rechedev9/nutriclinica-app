@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useCambiarEstadoPedido, useDeletePedido, usePedidos } from '../hooks/useStock'
 import { PedidoModal } from '../components/PedidoModal'
 import { RecepcionModal } from '../components/RecepcionModal'
@@ -17,6 +18,12 @@ import { resumenLineas } from '@/lib/format/texto'
 import { intentar } from '@/lib/api/intentar'
 import { cn } from '@/lib/cn'
 import type { Pedido, SituacionPedido } from '@/types'
+
+type AperturaPedido =
+  | { tipo: 'cerrado' }
+  | { tipo: 'nuevo' }
+  | { tipo: 'editar'; pedido: Pedido }
+  | { tipo: 'reponer'; proveedorId: number }
 
 const FILTROS: { valor: FiltroPedidos; etiqueta: string }[] = [
   { valor: 'por_recibir', etiqueta: 'Por recibir' },
@@ -102,16 +109,24 @@ function Detalle({ pedido }: { pedido: Pedido }) {
 }
 
 export function PedidosTab() {
+  const { reponer } = useSearch({ from: '/_sesion/_app/stock/pedidos' })
+  const navigate = useNavigate()
   const { data: pedidos, isLoading, isError, error, refetch, isFetching } = usePedidos()
   const del = useDeletePedido()
   const estado = useCambiarEstadoPedido()
   const confirm = useConfirm()
   const [filtro, setFiltro] = useState<FiltroPedidos>('por_recibir')
   const [expanded, setExpanded] = useState<number | null>(null)
-  const [modalPedido, setModalPedido] = useState(false)
-  const [editando, setEditando] = useState<Pedido | undefined>()
+  const [apertura, setApertura] = useState<AperturaPedido>(() =>
+    reponer != null ? { tipo: 'reponer', proveedorId: reponer } : { tipo: 'cerrado' },
+  )
   const [recibiendo, setRecibiendo] = useState<Pedido | null>(null)
   const [compraSuelta, setCompraSuelta] = useState(false)
+
+  useEffect(() => {
+    if (reponer == null) return
+    setApertura({ tipo: 'reponer', proveedorId: reponer })
+  }, [reponer])
 
   if (isLoading) return <CenteredSpinner />
   if (isError)
@@ -127,9 +142,19 @@ export function PedidosTab() {
     0,
   )
 
+  function quitarReponer() {
+    if (reponer == null) return
+    void navigate({ to: '/stock/pedidos', search: {}, replace: true })
+  }
+
   function nuevo() {
-    setEditando(undefined)
-    setModalPedido(true)
+    setApertura({ tipo: 'nuevo' })
+    quitarReponer()
+  }
+
+  function cerrarPedido() {
+    setApertura({ tipo: 'cerrado' })
+    quitarReponer()
   }
 
   async function cerrar(p: Pedido) {
@@ -239,14 +264,7 @@ export function PedidosTab() {
                     </Button>
                   )}
                   {puedeRecibir && p.recepciones.length === 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditando(p)
-                        setModalPedido(true)
-                      }}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setApertura({ tipo: 'editar', pedido: p })}>
                       Editar
                     </Button>
                   )}
@@ -281,7 +299,12 @@ export function PedidosTab() {
         Cada albarán entrado suma el stock y aparece también en la pestaña Compras.
       </p>
 
-      <PedidoModal open={modalPedido} onClose={() => setModalPedido(false)} pedido={editando} />
+      <PedidoModal
+        open={apertura.tipo !== 'cerrado'}
+        onClose={cerrarPedido}
+        pedido={apertura.tipo === 'editar' ? apertura.pedido : undefined}
+        reponer={apertura.tipo === 'reponer' ? apertura.proveedorId : undefined}
+      />
       <RecepcionModal pedido={recibiendo} onClose={() => setRecibiendo(null)} />
       <CompraModal open={compraSuelta} onClose={() => setCompraSuelta(false)} />
     </div>

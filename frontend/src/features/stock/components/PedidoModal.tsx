@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
@@ -21,15 +21,16 @@ interface Props {
   open: boolean
   onClose: () => void
   pedido?: Pedido
+  reponer?: number
 }
 
 const LINEA_VACIA: LineaInput = { producto_id: 0, cantidad: 1, precio_unitario: 0 }
 
-export function PedidoModal({ open, onClose, pedido }: Props) {
+export function PedidoModal({ open, onClose, pedido, reponer }: Props) {
   const { data: productos = [] } = useProductos()
   const { data: proveedores = [] } = useProveedores()
-  const { data: almacen = [] } = useAlmacen()
-  const { data: pedidos = [] } = usePedidos()
+  const almacenQ = useAlmacen()
+  const pedidosQ = usePedidos()
   const create = useCreatePedido()
   const update = useUpdatePedido()
   const [proveedorId, setProveedorId] = useState('')
@@ -37,23 +38,47 @@ export function PedidoModal({ open, onClose, pedido }: Props) {
   const [prevista, setPrevista] = useState('')
   const [notas, setNotas] = useState('')
   const [lineas, setLineas] = useState<LineaInput[]>([])
+  const datosListos = almacenQ.isSuccess && pedidosQ.isSuccess
+  const firma = !open ? '' : pedido ? `e${pedido.id}` : reponer != null ? (datosListos ? `r${reponer}` : '') : 'n'
+  const [firmaAplicada, setFirmaAplicada] = useState('')
 
-  useEffect(() => {
-    if (!open) return
-    setProveedorId(pedido ? String(pedido.proveedor_id) : '')
-    setFecha(pedido?.fecha ?? hoyLocal())
-    setPrevista(pedido?.fecha_prevista ?? '')
-    setNotas(pedido?.notas ?? '')
-    setLineas(
-      pedido
-        ? pedido.lineas.map((l) => ({
-            producto_id: l.producto_id,
-            cantidad: l.cantidad,
-            precio_unitario: l.precio_unitario,
-          }))
-        : [LINEA_VACIA],
-    )
-  }, [open, pedido])
+  if (firma !== firmaAplicada) {
+    setFirmaAplicada(firma)
+    if (pedido) {
+      setProveedorId(String(pedido.proveedor_id))
+      setFecha(pedido.fecha ?? hoyLocal())
+      setPrevista(pedido.fecha_prevista ?? '')
+      setNotas(pedido.notas ?? '')
+      setLineas(
+        pedido.lineas.map((l) => ({
+          producto_id: l.producto_id,
+          cantidad: l.cantidad,
+          precio_unitario: l.precio_unitario,
+        })),
+      )
+    } else if (firma === 'n') {
+      setProveedorId('')
+      setFecha(hoyLocal())
+      setPrevista('')
+      setNotas('')
+      setLineas([LINEA_VACIA])
+    } else if (open && reponer != null && datosListos) {
+      const sugeridas = sugerenciasReposicion({
+        almacen: almacenQ.data ?? [],
+        proveedorId: reponer,
+        enCamino: enCamino(pedidosQ.data ?? []),
+        excluir: new Set(),
+      })
+      setProveedorId(String(reponer))
+      setFecha(hoyLocal())
+      setPrevista('')
+      setNotas('')
+      setLineas(sugeridas.length > 0 ? sugeridas : [LINEA_VACIA])
+    }
+  }
+
+  const almacen = almacenQ.data ?? []
+  const pedidos = pedidosQ.data ?? []
 
   const elegidas = lineas.filter((l) => l.producto_id > 0)
   const sugeridas =

@@ -76,6 +76,25 @@ describe('reposición', () => {
     expect([...camino]).toEqual([[1, 8]])
   })
 
+  test('desde la alerta reúne a todos los productos en alerta de ese proveedor', () => {
+    const almacen = [
+      producto(1, { actual: 0, minimo: 3, proveedor: 7 }),
+      producto(2, { actual: 1, minimo: 4, proveedor: 7 }),
+      producto(3, { actual: 0, minimo: 2, proveedor: 8 }),
+      producto(4, { actual: 10, minimo: 2, proveedor: 7 }),
+    ]
+    const lineas = sugerenciasReposicion({
+      almacen,
+      proveedorId: 7,
+      enCamino: new Map(),
+      excluir: new Set(),
+    })
+    expect(lineas).toEqual([
+      { producto_id: 1, cantidad: 6, precio_unitario: 3 },
+      { producto_id: 2, cantidad: 7, precio_unitario: 3 },
+    ])
+  })
+
   test('propone hasta el doble del mínimo del proveedor, sin lo que ya viene ni lo ya elegido', () => {
     const almacen = [
       producto(1, { actual: 1, minimo: 4, proveedor: 7 }),
