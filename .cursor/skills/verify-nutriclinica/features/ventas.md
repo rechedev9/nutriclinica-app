@@ -45,4 +45,5 @@ Preconditions:
 - Closing the payment dialog without charging does not change the remembered method. A failed charge does not either.
 - Seeded counter sales already exist. Match the note, not "the latest sale" alone.
 - `Cierre de caja` opens on today. The counted-cash field starts empty. The expected cash stays visible, and the match or the difference appears once an amount is typed. Confirming still warns that the day will be locked. The pending-days line is the same list as Inicio, so the seeded sales from months ago are not offered as a jump away from today.
+- At the default window every Ventas tab is on one row. Below 768 px the row shows Caja, Historial, and Cierre de caja. Estadísticas and Datos del ticket are links inside the `Más` button. There is no hidden horizontal scroll.
 - Below 640 px the cart line is a stack of product, quantity, and amount. The 520 px table stays from that width up. Quantity controls keep the same accessible names. This recipe runs in the default window and uses the table.
