@@ -118,6 +118,12 @@ export const mermaEntrada = t.Object({
   notas: textoOpcional,
 })
 
+export const recuentoEntrada = t.Object({
+  motivo: textoOpcional,
+  notas: textoOpcional,
+  lineas: t.Optional(t.Array(t.Object({ producto_id: t.Optional(t.Integer()), contado: numeroOpcional }))),
+})
+
 export const loginEntrada = t.Object({
   usuario: t.Optional(t.String()),
   password: t.Optional(t.String()),

@@ -1,6 +1,8 @@
 import { useDeferredValue, useMemo, useState, type ReactNode } from 'react'
 import { useAlmacen, useProductos, useDeleteProducto } from '../hooks/useStock'
 import { ProductoModal } from '../components/ProductoModal'
+import { MovimientosModal } from '../components/MovimientosModal'
+import { RecuentoModal } from '../components/RecuentoModal'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
@@ -137,9 +139,20 @@ function EstadoBadge({ estado }: { estado: EstadoStock }) {
   )
 }
 
-function Acciones({ onEditar, onBorrar }: { onEditar: () => void; onBorrar: () => void }) {
+function Acciones({
+  onMovimientos,
+  onEditar,
+  onBorrar,
+}: {
+  onMovimientos: () => void
+  onEditar: () => void
+  onBorrar: () => void
+}) {
   return (
     <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+      <Button variant="ghost" size="sm" onClick={onMovimientos}>
+        Movimientos
+      </Button>
       <Button variant="ghost" size="sm" onClick={onEditar}>
         Editar
       </Button>
@@ -177,6 +190,8 @@ export function AlmacenTab() {
   const [cat, setCat] = useState('')
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null)
   const [estado, setEstado] = useState<FiltroEstado>('todos')
+  const [movimientosDe, setMovimientosDe] = useState<number | null>(null)
+  const [recuento, setRecuento] = useState<{ open: boolean; productoId?: number }>({ open: false })
   const deferredQ = useDeferredValue(q)
 
   // Ascendente, descendente y, al tercer clic, de vuelta al orden por defecto (alertas primero).
@@ -296,6 +311,11 @@ export function AlmacenTab() {
               />
             </div>
           )}
+          {rows.length > 0 && (
+            <Button variant="outline" onClick={() => setRecuento({ open: true })}>
+              Recuento
+            </Button>
+          )}
           <Button onClick={nuevo}>+ Nuevo producto</Button>
         </div>
       </div>
@@ -393,7 +413,11 @@ export function AlmacenTab() {
                         {fmtMoneda(valorStock)}
                       </td>
                       <td className="px-3 py-2.5 text-right">
-                        <Acciones onEditar={() => editar(p.id)} onBorrar={() => void onDelete(p.id)} />
+                        <Acciones
+                          onMovimientos={() => setMovimientosDe(p.id)}
+                          onEditar={() => editar(p.id)}
+                          onBorrar={() => void onDelete(p.id)}
+                        />
                       </td>
                     </tr>
                   )
@@ -433,7 +457,11 @@ export function AlmacenTab() {
                     </div>
                   </dl>
                   <div className="mt-2 flex justify-end">
-                    <Acciones onEditar={() => editar(p.id)} onBorrar={() => void onDelete(p.id)} />
+                    <Acciones
+                      onMovimientos={() => setMovimientosDe(p.id)}
+                      onEditar={() => editar(p.id)}
+                      onBorrar={() => void onDelete(p.id)}
+                    />
                   </div>
                 </li>
               )
@@ -443,6 +471,19 @@ export function AlmacenTab() {
       )}
 
       <ProductoModal open={modalOpen} onClose={() => setModalOpen(false)} producto={editing} />
+      <MovimientosModal
+        productoId={movimientosDe}
+        onClose={() => setMovimientosDe(null)}
+        onContar={(productoId) => {
+          setMovimientosDe(null)
+          setRecuento({ open: true, productoId })
+        }}
+      />
+      <RecuentoModal
+        open={recuento.open}
+        productoInicial={recuento.productoId}
+        onClose={() => setRecuento({ open: false })}
+      />
     </div>
   )
 }

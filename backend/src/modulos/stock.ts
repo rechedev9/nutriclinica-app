@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia'
 import type { Contexto } from '../contexto'
+import { crearRecuento, listarRecuentos, movimientosDeProducto } from '../datos/inventario'
 import {
   actualizarCategoria,
   actualizarCompra,
@@ -22,15 +23,24 @@ import {
   listarProductos,
   listarProveedores,
 } from '../datos/stock'
-import { categoriaEntrada, compraEntrada, idParams, mermaEntrada, productoEntrada, proveedorEntrada } from '../modelos'
+import {
+  categoriaEntrada,
+  compraEntrada,
+  idParams,
+  mermaEntrada,
+  productoEntrada,
+  proveedorEntrada,
+  recuentoEntrada,
+} from '../modelos'
 import {
   normalizarCategoria,
   normalizarCompra,
   normalizarMerma,
   normalizarProducto,
   normalizarProveedor,
+  normalizarRecuento,
 } from '../validacion'
-import { crearAcceso } from './acceso'
+import { anotarAuditoria, crearAcceso } from './acceso'
 
 const HECHO = { ok: true as const }
 
@@ -57,6 +67,7 @@ export function moduloStock(ctx: Contexto) {
       },
       { params: idParams },
     )
+    .get('/productos/:id/movimientos', ({ params }) => movimientosDeProducto(db, params.id), { params: idParams })
 
     .get('/categorias', () => listarCategorias(db))
     .post('/categorias', ({ body, status }) => status(201, crearCategoria(db, normalizarCategoria(body.nombre))), {
@@ -125,5 +136,35 @@ export function moduloStock(ctx: Contexto) {
         return HECHO
       },
       { params: idParams },
+    )
+
+    .get('/recuentos', () => listarRecuentos(db))
+    .post(
+      '/recuentos',
+      ({ request, body, usuario, status }) => {
+        const datos = normalizarRecuento(body)
+        const recuento = crearRecuento(db, { datos, usuario: usuario.usuario, ahora: new Date() })
+        const ajustes = recuento.lineas.filter((l) => l.diferencia !== 0)
+        anotarAuditoria(request, {
+          pacienteId: null,
+          detalle: {
+            // Cada producto con diferencia queda como un cambio: del stock esperado a lo contado.
+            cambios: ajustes.map((l) => ({ campo: `«${l.nombre}»`, antes: l.esperado, despues: l.contado })),
+            resumen: `Recuento de ${recuento.lineas.length} producto(s), ${ajustes.length} con diferencia: ${datos.motivo}`,
+            registro_id: recuento.id,
+          },
+        })
+        return status(201, {
+          ...HECHO,
+          id: recuento.id,
+          lineas: recuento.lineas.map((l) => ({
+            producto_id: l.producto_id,
+            esperado: l.esperado,
+            contado: l.contado,
+            diferencia: l.diferencia,
+          })),
+        })
+      },
+      { body: recuentoEntrada },
     )
 }
