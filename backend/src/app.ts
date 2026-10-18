@@ -6,6 +6,7 @@ import { actorDe, anotacionDe } from './modulos/acceso'
 import { moduloAuth } from './modulos/auth'
 import { moduloExportar } from './modulos/exportar'
 import { moduloFotos } from './modulos/fotos'
+import { moduloInicio } from './modulos/inicio'
 import { moduloPacientes } from './modulos/pacientes'
 import { moduloStock } from './modulos/stock'
 import { moduloUsuarios } from './modulos/usuarios'
@@ -107,6 +108,7 @@ export function crearApp(ctx: Contexto) {
     .use(moduloStock(ctx))
     .use(moduloUsuarios(ctx))
     .use(moduloVentas(ctx))
+    .use(moduloInicio(ctx))
     .get('/', () => servirSpa(ctx, ''))
     .get('/*', ({ params }) => servirSpa(ctx, params['*']))
 }

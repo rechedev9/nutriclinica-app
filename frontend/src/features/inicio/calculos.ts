@@ -1,5 +1,5 @@
-const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-const MESES = [
+export const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+export const MESES = [
   'enero',
   'febrero',
   'marzo',
@@ -21,28 +21,28 @@ export function fechaLarga(hoy: Date): string {
   return `${dia.charAt(0).toUpperCase()}${dia.slice(1)}, ${hoy.getDate()} de ${mes}`
 }
 
-export function resumenDia(datos: { pendientes: number; productos: number }): string {
-  const { pendientes, productos } = datos
-  if (pendientes === 0 && productos === 0) return 'Todo al día: ninguna revisión pendiente ni producto que reponer.'
-  const partes: string[] = []
-  if (pendientes > 0)
-    partes.push(`${pendientes} ${pendientes === 1 ? 'cliente' : 'clientes'} con la revisión pendiente`)
-  if (productos > 0) partes.push(`${productos} ${productos === 1 ? 'producto' : 'productos'} por reponer`)
-  return partes.join(' · ')
+// El día local desplazado n días (sin hora, así no le afectan los cambios de horario).
+export function desplazarDias(dia: Date, n: number): Date {
+  return new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() + n)
 }
 
-// Total y número de ventas del mes de `hoy` (las fechas llegan como YYYY-MM-DD).
-export function ventasDelMes(
-  ventas: readonly { fecha: string | null; total: number }[],
-  hoy: Date,
-): { total: number; cantidad: number } {
-  const prefijo = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-`
-  let total = 0
-  let cantidad = 0
-  for (const v of ventas) {
-    if (!v.fecha?.startsWith(prefijo)) continue
-    total += v.total
-    cantidad++
+// Fecha local de un texto AAAA-MM-DD[ HH:MM:SS].
+export function fechaDeTexto(texto: string): Date {
+  return new Date(Number(texto.slice(0, 4)), Number(texto.slice(5, 7)) - 1, Number(texto.slice(8, 10)))
+}
+
+function plural(n: number, singular: string, varios: string): string {
+  return `${n} ${n === 1 ? singular : varios}`
+}
+
+export function resumenDia(datos: { clientes: number; recompras: number; productos: number }): string {
+  const { clientes, recompras, productos } = datos
+  if (clientes === 0 && recompras === 0 && productos === 0) {
+    return 'Todo al día: ningún cliente por atender ni producto que reponer.'
   }
-  return { total, cantidad }
+  const partes: string[] = []
+  if (clientes > 0) partes.push(`${plural(clientes, 'cliente', 'clientes')} por atender`)
+  if (recompras > 0) partes.push(`${plural(recompras, 'cliente', 'clientes')} para recompra`)
+  if (productos > 0) partes.push(`${plural(productos, 'producto', 'productos')} por reponer`)
+  return partes.join(' · ')
 }

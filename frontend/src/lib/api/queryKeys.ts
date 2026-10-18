@@ -7,6 +7,7 @@ export const qk = {
   fotos: (pid: number) => ['pacientes', pid, 'fotos'] as const,
   usuarios: ['usuarios'] as const,
   auditoria: ['auditoria'] as const,
+  inicio: ['inicio'] as const,
   stock: {
     almacen: ['stock', 'almacen'] as const,
     productos: ['stock', 'productos'] as const,
