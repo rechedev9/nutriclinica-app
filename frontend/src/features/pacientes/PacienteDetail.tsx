@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, Outlet, getRouteApi, useNavigate } from '@tanstack/react-router'
 import { usePacientes, useDeletePaciente } from './hooks/usePacientes'
+import { useRevisiones } from './hooks/useRevisiones'
+import { etiquetaPeso, pesoCabecera, textoKilos } from './peso-cabecera'
 import { PacienteModal } from './components/PacienteModal'
 import { PacienteContexto } from './tabs/context'
 import { Avatar } from '@/components/ui/Avatar'
@@ -35,6 +37,7 @@ export function PacienteDetail() {
   const { id } = ruta.useParams()
   const pid = Number(id)
   const { data: pacientes, isLoading, isError, error, refetch, isFetching } = usePacientes()
+  const revisionesQuery = useRevisiones(Number.isFinite(pid) && pid > 0 ? pid : 0)
   const del = useDeletePaciente()
   const confirm = useConfirm()
   const navigate = useNavigate()
@@ -58,6 +61,11 @@ export function PacienteDetail() {
 
   const edad = calcEdad(paciente.fecha_nac)
   const pacienteId = paciente.id
+  const peso = pesoCabecera({
+    pesoFicha: paciente.peso,
+    numRevisiones: paciente.num_revisiones,
+    revisiones: revisionesQuery.isSuccess ? revisionesQuery.data : null,
+  })
 
   async function onDelete() {
     const ok = await confirm({
@@ -103,7 +111,7 @@ export function PacienteDetail() {
               {paciente.fecha_nac ? `Nac. ${fmtFecha(paciente.fecha_nac)}` : 'Sin fecha de nacimiento'}
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {paciente.peso != null && <Stat value={String(paciente.peso)} label="kg" />}
+              {peso && <Stat value={textoKilos(peso)} label={etiquetaPeso(peso)} />}
               {paciente.talla != null && <Stat value={String(paciente.talla)} label="cm" />}
               {edad != null && <Stat value={String(edad)} label="años" />}
               {paciente.sexo && <Stat value={paciente.sexo} label="" />}
