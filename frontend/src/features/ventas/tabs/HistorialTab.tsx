@@ -6,11 +6,11 @@ import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { usePacientes } from '@/features/pacientes/hooks/usePacientes'
-import { hoyLocal } from '@/lib/format/fecha'
+import { diasDesde, fmtFecha, hoyLocal } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { cn } from '@/lib/cn'
 import { METODOS } from '../carrito'
-import { SIN_FILTRO, filtrarVentas, resumenVentas } from '../filtros'
+import { SIN_FILTRO, agruparPorDia, filtrarVentas, resumenVentas } from '../filtros'
 import type { FiltroVentas } from '../filtros'
 import { useVentas } from '../hooks/useVentas'
 import { ListaVentas } from '../components/ListaVentas'
@@ -31,6 +31,15 @@ const RANGOS = [
   { etiqueta: 'Este mes', desde: () => `${hoyLocal().slice(0, 7)}-01` },
   { etiqueta: 'Todo', desde: () => '' },
 ]
+
+function nombreDia(fecha: string): string {
+  if (fecha === '') return 'Sin fecha'
+  const dias = diasDesde(fecha)
+  if (dias === 0) return 'Hoy'
+  if (dias === 1) return 'Ayer'
+  const semana = new Date(`${fecha}T12:00:00`).toLocaleDateString('es-ES', { weekday: 'long' })
+  return `${semana.charAt(0).toUpperCase()}${semana.slice(1)} ${fmtFecha(fecha)}`
+}
 
 function Cifra({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
@@ -57,6 +66,8 @@ export function HistorialTab() {
   const filtradas = filtrarVentas(ventas, filtro)
   const cifras = resumenVentas(filtradas)
   const hayFiltro = JSON.stringify(filtro) !== JSON.stringify(SIN_FILTRO)
+  // Las cifras de cada día salen de todas sus ventas filtradas, aunque «Ver más» aún no las muestre.
+  const cifrasDia = new Map(agruparPorDia(filtradas).map((g) => [g.fecha, resumenVentas(g.ventas)]))
 
   function cambiar(cambio: Partial<FiltroVentas>) {
     setFiltro((f) => ({ ...f, ...cambio }))
@@ -196,7 +207,23 @@ export function HistorialTab() {
               las cifras.
             </p>
           )}
-          <ListaVentas ventas={filtradas.slice(0, visibles)} onAbrir={setAbierta} />
+          {agruparPorDia(filtradas.slice(0, visibles)).map((g) => {
+            const dia = cifrasDia.get(g.fecha)
+            return (
+              <section key={g.fecha} className="flex flex-col gap-2" aria-label={nombreDia(g.fecha)}>
+                <h3 className="flex flex-wrap items-baseline justify-between gap-2 px-1 text-sm">
+                  <span className="font-bold">{nombreDia(g.fecha)}</span>
+                  {dia && (
+                    <span className="tabular-nums text-ink-muted">
+                      {dia.num_ventas === 1 ? '1 venta' : `${dia.num_ventas} ventas`} ·{' '}
+                      <span className="font-semibold text-ink">{fmtMoneda(dia.neto)}</span>
+                    </span>
+                  )}
+                </h3>
+                <ListaVentas ventas={g.ventas} onAbrir={setAbierta} />
+              </section>
+            )
+          })}
           {filtradas.length > visibles && (
             <Button variant="outline" className="self-center" onClick={() => setVisibles((n) => n + POR_PAGINA)}>
               Ver más ({filtradas.length - visibles} restantes)

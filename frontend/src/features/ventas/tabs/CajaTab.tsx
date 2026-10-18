@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -12,28 +12,42 @@ import { usePacientes } from '@/features/pacientes/hooks/usePacientes'
 import { useAlmacen } from '@/features/stock/hooks/useStock'
 import { fmtFecha, hoyLocal } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
-import { normaliza } from '@/lib/format/texto'
+import { normaliza, resumenLineas } from '@/lib/format/texto'
 import { cn } from '@/lib/cn'
+import { leerEscaneo, lineasParaRepetir, masVendidos, ultimaCompra } from '../caja-rapida'
 import { anadirProducto, aVentaInput, errorCarrito, importeLinea, totalesCarrito } from '../carrito'
 import type { LineaCarrito } from '../carrito'
 import { CARRITO_VACIO, useCarritoGuardado } from '../carrito-guardado'
-import { useCreateVenta, useResumenCaja } from '../hooks/useVentas'
+import { useCreateVenta, useResumenCaja, useVentas } from '../hooks/useVentas'
 import { CobroModal } from '../components/CobroModal'
 import { DescuentoInput } from '../components/DescuentoInput'
 import { TicketModal } from '../components/TicketModal'
-import type { AlmacenRow, PagoInput } from '@/types'
+import type { AlmacenRow, PagoInput, Venta } from '@/types'
 
 const MAX_RESULTADOS = 40
+const MAX_RAPIDOS = 8
+const DIAS_MAS_VENDIDOS = 30
 
 function coincide(producto: AlmacenRow, texto: string): boolean {
-  if (producto.codigo_barras !== null && producto.codigo_barras.startsWith(texto.trim())) return true
+  if (producto.codigo_barras !== null && producto.codigo_barras.startsWith(texto)) return true
   return normaliza(producto.nombre).includes(normaliza(texto))
+}
+
+function haceDias(dias: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - dias)
+  return hoyLocal(d)
+}
+
+function Tecla({ children }: { children: string }) {
+  return <kbd className="rounded border border-border bg-surface px-1 font-mono text-[11px] text-ink">{children}</kbd>
 }
 
 export function CajaTab() {
   const { cliente } = useSearch({ from: '/_sesion/_app/ventas/caja' })
   const { data: almacen, isLoading, isError, error, refetch, isFetching } = useAlmacen()
   const { data: clientes = [] } = usePacientes()
+  const { data: ventas = [] } = useVentas()
   const { data: me } = useMe()
   const [hoy] = useState(() => hoyLocal())
   const { data: caja } = useResumenCaja(hoy)
@@ -46,10 +60,6 @@ export function CajaTab() {
   const [conNota, setConNota] = useState(carrito.notas !== '')
   const buscador = useRef<HTMLInputElement>(null)
 
-  if (isLoading) return <CenteredSpinner />
-  if (isError)
-    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los productos" />
-
   const productos = almacen ?? []
   const stockDe = new Map(productos.map((p) => [p.id, p.stock_actual]))
   // Las existencias se leen siempre del almacén: el carrito guardado puede ser de hace un rato.
@@ -57,8 +67,37 @@ export function CajaTab() {
   const totales = totalesCarrito(lineas, carrito.descuento)
   const problema = errorCarrito(lineas, carrito.descuento)
   const cajaCerrada = (caja?.cierre ?? null) !== null
-  const filtrados = busqueda.trim() === '' ? productos : productos.filter((p) => coincide(p, busqueda))
+  const { cantidad: multiplicador, buscado } = leerEscaneo(busqueda)
+  const filtrados = buscado === '' ? productos : productos.filter((p) => coincide(p, buscado))
   const resultados = filtrados.slice(0, MAX_RESULTADOS)
+  const porId = new Map(productos.map((p) => [p.id, p]))
+  const rapidos = masVendidos(ventas, { desde: haceDias(DIAS_MAS_VENDIDOS), limite: MAX_RAPIDOS }).flatMap((id) => {
+    const p = porId.get(id)
+    return p === undefined ? [] : [p]
+  })
+  const ultima = carrito.pacienteId === null ? undefined : ultimaCompra(ventas, carrito.pacienteId)
+
+  const atajo = useEffectEvent((e: globalThis.KeyboardEvent) => {
+    if (e.key !== 'F2' && e.key !== 'F9') return
+    // Con un diálogo abierto los atajos de la caja no deben actuar por detrás.
+    if (document.querySelector('[role="dialog"], [role="alertdialog"]') !== null) return
+    e.preventDefault()
+    if (e.key === 'F2') {
+      buscador.current?.focus()
+      buscador.current?.select()
+    } else if (cajaCerrada) toast.error(`La caja de hoy (${fmtFecha(hoy)}) está cerrada`)
+    else if (problema !== null) toast.error(problema)
+    else setCobrando(true)
+  })
+  useEffect(() => {
+    const escuchar = (e: globalThis.KeyboardEvent) => atajo(e)
+    window.addEventListener('keydown', escuchar)
+    return () => window.removeEventListener('keydown', escuchar)
+  }, [])
+
+  if (isLoading) return <CenteredSpinner />
+  if (isError)
+    return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="los productos" />
 
   function cambiarLineas(nuevas: LineaCarrito[]) {
     setCarrito((c) => ({ ...c, lineas: nuevas }))
@@ -72,7 +111,7 @@ export function CajaTab() {
     cambiarLineas(lineas.filter((_, j) => j !== i))
   }
 
-  function anadir(p: AlmacenRow) {
+  function anadir(p: AlmacenRow, cantidad = 1) {
     if (p.stock_actual <= 0) {
       toast.error(`No queda stock de «${p.nombre}»`)
       return
@@ -84,23 +123,43 @@ export function CajaTab() {
         unidad: p.unidad,
         precio_unitario: p.precio_venta,
         stock: p.stock_actual,
+        cantidad,
       }),
     )
     setBusqueda('')
     buscador.current?.focus()
   }
 
+  function repetir(venta: Venta) {
+    const { lineas: nuevas, avisos } = lineasParaRepetir(venta, productos)
+    if (nuevas.length === 0) {
+      toast.error('No se puede repetir esa compra', { description: avisos.join('. ') })
+      return
+    }
+    cambiarLineas(nuevas.reduce((carro, l) => anadirProducto(carro, l), lineas))
+    if (avisos.length > 0) toast.warning('Compra repetida en parte', { description: avisos.join('. ') })
+  }
+
   // El lector de códigos teclea el código y pulsa Intro.
   function onKeyDownBuscador(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Escape' && busqueda !== '') {
+      e.preventDefault()
+      setBusqueda('')
+      return
+    }
     if (e.key !== 'Enter') return
     e.preventDefault()
-    const texto = busqueda.trim()
-    if (texto === '') return
-    const exacto = productos.find((p) => p.codigo_barras === texto)
+    if (buscado === '') return
+    const exacto = productos.find((p) => p.codigo_barras === buscado)
     const elegido = exacto ?? (filtrados.length === 1 ? filtrados[0] : undefined)
-    if (elegido) anadir(elegido)
-    else if (filtrados.length === 0) toast.error(`Ningún producto coincide con «${texto}»`)
-    else toast.info('Hay varios productos: elige uno de la lista')
+    if (elegido) anadir(elegido, multiplicador)
+    else if (filtrados.length === 0) {
+      // Seleccionado, el siguiente escaneo sustituye al código fallido en lugar de pegarse detrás.
+      e.currentTarget.select()
+      toast.error(`Ningún producto tiene el código o el nombre «${buscado}»`, {
+        description: 'Si es un producto nuevo, dalo de alta en Tienda › Almacén con su código de barras.',
+      })
+    } else toast.info(`Hay ${filtrados.length} productos que coinciden: elige uno de la lista`)
   }
 
   async function vaciar() {
@@ -152,6 +211,49 @@ export function CajaTab() {
           onChange={(e) => setBusqueda(e.target.value)}
           onKeyDown={onKeyDownBuscador}
         />
+        <p className="-mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
+          {multiplicador > 1 ? (
+            <span className="font-semibold text-primary">
+              Se añadirán {multiplicador} unidades del producto que escanees o elijas.
+            </span>
+          ) : (
+            <span>
+              <Tecla>3*</Tecla> antes del código añade 3 unidades
+            </span>
+          )}
+          <span>
+            <Tecla>F2</Tecla> buscar
+          </span>
+          <span>
+            <Tecla>F9</Tecla> cobrar
+          </span>
+          <span>
+            <Tecla>Esc</Tecla> borra la búsqueda
+          </span>
+        </p>
+        {buscado === '' && rapidos.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-[13px] font-semibold text-ink-muted">
+              Más vendidos (últimos {DIAS_MAS_VENDIDOS} días)
+            </h3>
+            <ul className="flex flex-wrap gap-2">
+              {rapidos.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => anadir(p, multiplicador)}
+                    disabled={p.stock_actual <= 0}
+                    className="flex items-baseline gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-left text-sm shadow-card transition-colors hover:border-primary hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className="font-semibold">{p.nombre}</span>
+                    <span className="tabular-nums text-ink-muted">{fmtMoneda(p.precio_venta)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <h3 className="mt-1 text-[13px] font-semibold text-ink-muted">Todos los productos</h3>
+          </div>
+        )}
         {productos.length === 0 ? (
           <p className="rounded-card bg-surface p-6 text-center text-sm text-ink-muted shadow-card">
             Aún no hay productos.{' '}
@@ -162,7 +264,10 @@ export function CajaTab() {
           </p>
         ) : resultados.length === 0 ? (
           <p className="rounded-card bg-surface p-6 text-center text-sm text-ink-muted shadow-card">
-            Ningún producto coincide con «{busqueda.trim()}».
+            Ningún producto coincide con «{buscado}».{' '}
+            <Link to="/stock/almacen" className="font-semibold text-primary hover:underline">
+              Dar de alta en el almacén
+            </Link>
           </p>
         ) : (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
@@ -172,7 +277,7 @@ export function CajaTab() {
                 <li key={p.id}>
                   <button
                     type="button"
-                    onClick={() => anadir(p)}
+                    onClick={() => anadir(p, multiplicador)}
                     disabled={agotado}
                     className={cn(
                       'flex h-full w-full flex-col gap-1 rounded-card border border-border bg-surface p-3 text-left shadow-card transition-colors',
@@ -232,6 +337,19 @@ export function CajaTab() {
             ))}
           </Select>
         </Field>
+        {ultima && (
+          <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px]">
+            <div className="min-w-0">
+              <div className="font-semibold">Última compra · {fmtFecha(ultima.fecha)}</div>
+              <div className="truncate text-ink-muted" title={resumenLineas(ultima.lineas)}>
+                {resumenLineas(ultima.lineas)}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => repetir(ultima)}>
+              Repetir
+            </Button>
+          </div>
+        )}
 
         {lineas.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-ink-muted">
@@ -353,6 +471,7 @@ export function CajaTab() {
         )}
         <Button
           className="py-3 text-base"
+          title="F9"
           disabled={lineas.length === 0 || problema !== null || cajaCerrada}
           onClick={() => setCobrando(true)}
         >
