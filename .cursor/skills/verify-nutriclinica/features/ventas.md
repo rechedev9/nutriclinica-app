@@ -31,8 +31,8 @@ Preconditions:
 - **Search the product.** Type in `Añadir producto`. Run `verificar browser fill --aria "Añadir producto" --value "Whey Protein Concentrada"` and `verificar browser wait --text "Whey Protein Concentrada 1 kg" --timeout 15`.
 - **Add it.** Choose the option. Run `verificar browser click --role option --contains "Whey Protein Concentrada 1 kg"` and `verificar browser wait --text "Cantidad de Whey Protein Concentrada 1 kg" --timeout 15`. The cart line is visible.
 - **Open payment.** Choose the till's `Cobrar` button. Run `verificar browser click --role button --contains "Cobrar"` and `verificar browser wait --text "Total a cobrar" --timeout 15`. The dialog title is `Cobrar`.
-- **Charge by card.** Choose `Tarjeta`, then the dialog's `Cobrar` button. Run `verificar browser click --role radio --name "Tarjeta"` and `verificar browser click --role button --contains "Cobrar"`. Run `verificar browser wait --text "cobrada" --timeout 15`.
-- **Proof.** Capture the ticket and the row. Run `verificar browser screenshot --path ventas/ticket.png`, `verificar browser text --out ventas/ticket.txt`, and `verificar sql --out ventas/fila.json "SELECT id, estado, notas FROM stock_ventas WHERE notas = 'verificacion-luna-ficticia'"`. The screenshot shows `cobrada`. The JSON array has one row with `estado` `completada` and that note.
+- **Charge by card.** Choose `Tarjeta`, then the dialog's `Cobrar` button. Run `verificar browser click --role radio --name "Tarjeta"` and `verificar browser click --role button --contains "Cobrar"`. Run `verificar browser wait --text "cobrada" --timeout 15`. A fresh browser profile opens the dialog on `Efectivo`, so the `Tarjeta` click is required the first time. The next dialog in that profile opens on the method just used.
+- **Proof.** The till stays usable. The status line shows `cobrada`, `Imprimir ticket`, and `Ver ticket`, and `Añadir producto` is still on the page. There is no `Nueva venta` button on that status. Run `verificar browser wait --text "Añadir producto"`, `verificar browser screenshot --path ventas/ticket.png`, `verificar browser text --out ventas/ticket.txt`, and `verificar sql --out ventas/fila.json "SELECT id, estado, notas FROM stock_ventas WHERE notas = 'verificacion-luna-ficticia'"`. The JSON array has one row with `estado` `completada` and that note. `Ver ticket` opens the full ticket. `Imprimir ticket` prints it.
 
 ## Gotchas
 
@@ -41,5 +41,6 @@ Preconditions:
 - The cart lives in `sessionStorage` of the verification browser. A second attempt in the same run can still show the previous line until the profile is removed by cleanup.
 - If the alert `La caja de hoy` is visible, the day is closed and charging returns 409. This recipe expects a fresh launch, which has no closing.
 - F2 focuses the search and F9 opens payment. This recipe uses the visible controls.
-- The note is stored on the sale and is not printed on the ticket. The ticket proof is the `cobrada` dialog; the note proof is the SQL row.
+- The note is stored on the sale and is not printed on the ticket. The `cobrada` proof is the status line on the till. The note proof is the SQL row.
+- Closing the payment dialog without charging does not change the remembered method. A failed charge does not either.
 - Seeded counter sales already exist. Match the note, not "the latest sale" alone.

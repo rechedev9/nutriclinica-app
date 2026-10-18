@@ -17,10 +17,13 @@ import { anadirProducto, aVentaInput, errorCarrito, importeLinea, totalesCarrito
 import type { LineaCarrito } from '../carrito'
 import { CARRITO_VACIO, useCarritoGuardado } from '../carrito-guardado'
 import { useCreateVenta, useResumenCaja, useVentas } from '../hooks/useVentas'
+import { AvisoVenta } from '../components/AvisoVenta'
 import { BuscadorProductos } from '../components/BuscadorProductos'
 import { CobroModal } from '../components/CobroModal'
 import { DescuentoInput } from '../components/DescuentoInput'
 import { TicketModal } from '../components/TicketModal'
+import { guardarUltimoModo, leerUltimoModo } from '../ultimo-cobro'
+import type { ModoCobro } from '../ultimo-cobro'
 import type { AlmacenRow, PagoInput, Venta } from '@/types'
 
 const MAX_RAPIDOS = 8
@@ -45,6 +48,7 @@ export function CajaTab() {
   const [carrito, setCarrito] = useCarritoGuardado(cliente ?? null)
   const [cobrando, setCobrando] = useState(false)
   const [ventaCobrada, setVentaCobrada] = useState<number | null>(null)
+  const [viendoTicket, setViendoTicket] = useState(false)
   const [conNota, setConNota] = useState(carrito.notas !== '')
   const buscador = useRef<HTMLInputElement>(null)
 
@@ -79,6 +83,15 @@ export function CajaTab() {
     window.addEventListener('keydown', escuchar)
     return () => window.removeEventListener('keydown', escuchar)
   }, [])
+
+  const enfocarBuscador = useEffectEvent(() => {
+    buscador.current?.focus()
+  })
+  useEffect(() => {
+    if (ventaCobrada === null || cobrando || viendoTicket) return
+    const id = requestAnimationFrame(() => enfocarBuscador())
+    return () => cancelAnimationFrame(id)
+  }, [ventaCobrada, cobrando, viendoTicket])
 
   if (isLoading) return <CenteredSpinner />
   if (isError)
@@ -125,19 +138,22 @@ export function CajaTab() {
     if (ok) setCarrito(CARRITO_VACIO)
   }
 
-  function cobrar(cobro: { pagos: PagoInput[]; entregado: number | null }) {
+  function cobrar(cobro: { pagos: PagoInput[]; entregado: number | null; modo: ModoCobro }) {
     const cuerpo = aVentaInput({
       lineas,
       descuentoTotal: carrito.descuento,
       pacienteId: carrito.pacienteId,
       notas: carrito.notas,
-      ...cobro,
+      pagos: cobro.pagos,
+      entregado: cobro.entregado,
     })
     crear.mutate(cuerpo, {
       onSuccess: (r) => {
+        guardarUltimoModo(cobro.modo)
         setCobrando(false)
         setCarrito(CARRITO_VACIO)
         setConNota(false)
+        setViendoTicket(false)
         setVentaCobrada(r.id)
       },
     })
@@ -156,6 +172,18 @@ export function CajaTab() {
           </Link>
           .
         </div>
+      )}
+
+      {ventaCobrada !== null && (
+        <AvisoVenta
+          ventaId={ventaCobrada}
+          montarImpresion={!viendoTicket}
+          onVer={() => setViendoTicket(true)}
+          onOcultar={() => {
+            setViendoTicket(false)
+            setVentaCobrada(null)
+          }}
+        />
       )}
 
       <section className="flex min-w-0 flex-col gap-3">
@@ -346,19 +374,14 @@ export function CajaTab() {
       {cobrando && (
         <CobroModal
           total={totales.total}
+          modoInicial={leerUltimoModo()}
           isLoading={crear.isPending}
           onClose={() => setCobrando(false)}
           onCobrar={cobrar}
         />
       )}
-      {ventaCobrada !== null && (
-        <TicketModal
-          ventaId={ventaCobrada}
-          onClose={() => {
-            setVentaCobrada(null)
-            buscador.current?.focus()
-          }}
-        />
+      {viendoTicket && ventaCobrada !== null && (
+        <TicketModal ventaId={ventaCobrada} onClose={() => setViendoTicket(false)} />
       )}
     </div>
   )
