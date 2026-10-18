@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/Button'
 import { Chevron } from '@/components/ui/Chevron'
 import { Field, Input, Textarea } from '@/components/ui/Field'
 import { ALL_MEDIDAS } from '@/types'
-import type { ClaveMedida, MedidaDef, Revision, RevisionInput } from '@/types'
+import type { MedidaDef, Revision } from '@/types'
 import { intentar } from '@/lib/api/intentar'
 import { esquemaRevision } from '@/lib/validacion/esquemas'
 import { useCreateRevision, useUpdateRevision } from '../hooks/useRevisiones'
+import { cuerpoRevision } from '../cuerpo-revision'
 import {
   abrirMasMedidas,
   CLAVES_PLEGADAS,
@@ -26,8 +27,6 @@ interface Props {
   revision?: Revision
   anterior?: Revision
 }
-
-const num = (s: string) => (s.trim() === '' ? null : Number(s))
 
 const esquema = esquemaRevision()
 
@@ -65,32 +64,7 @@ function FormularioRevision({ open, onClose, pid, revision, anterior }: Props) {
   }, [open, revision, reset])
 
   async function onSubmit(v: Record<string, string>) {
-    const medida = (k: ClaveMedida) => num(v[k] ?? '')
-    const body: RevisionInput = {
-      fecha: v.fecha?.trim() || null,
-      peso: num(v.peso ?? ''),
-      talla: null,
-      envergadura: num(v.envergadura ?? ''),
-      notas: v.notas?.trim() || null,
-      pl_bicipital: medida('pl_bicipital'),
-      pl_tricipital: medida('pl_tricipital'),
-      pl_subescapular: medida('pl_subescapular'),
-      pl_supraespinal: medida('pl_supraespinal'),
-      pl_supracrestal: medida('pl_supracrestal'),
-      pl_abdominal: medida('pl_abdominal'),
-      pl_muslo_int: medida('pl_muslo_int'),
-      pl_pierna_med: medida('pl_pierna_med'),
-      per_antebrazo: medida('per_antebrazo'),
-      per_brazo_rel: medida('per_brazo_rel'),
-      per_brazo_cont: medida('per_brazo_cont'),
-      per_hombros: medida('per_hombros'),
-      per_pecho: medida('per_pecho'),
-      per_cintura: medida('per_cintura'),
-      per_caderas: medida('per_caderas'),
-      per_muslo: medida('per_muslo'),
-      per_muslo_cont: medida('per_muslo_cont'),
-      per_gemelo: medida('per_gemelo'),
-    }
+    const body = cuerpoRevision({ valores: v, talla: revision?.talla ?? null })
     const ok = await intentar(revision ? update.mutateAsync({ id: revision.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
   }
