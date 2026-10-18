@@ -9,7 +9,7 @@ import { intentar } from '@/lib/api/intentar'
 import { fmtFecha, hoyLocal } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { cn } from '@/lib/cn'
-import { importeEditable, leerImporte, sumarImportes } from '../carrito'
+import { leerImporte, sumarImportes } from '../carrito'
 import { InformeCajaImprimible } from '../components/InformeCaja'
 import { imprimirTicket } from '../components/Ticket'
 import { useCerrarCaja, useCierres, useReabrirCaja, useResumenCaja, useTienda } from '../hooks/useVentas'
@@ -132,7 +132,6 @@ function FormularioCierre({ resumen }: { resumen: ResumenCaja }) {
       >
         <Input
           inputMode="decimal"
-          placeholder={importeEditable(esperado)}
           className="py-3 text-lg"
           value={contado}
           onChange={(e) => setContado(e.target.value)}
