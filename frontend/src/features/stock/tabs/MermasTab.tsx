@@ -9,12 +9,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { fmtFecha } from '@/lib/format/fecha'
 import type { MotivoMerma } from '@/types'
 import { intentar } from '@/lib/api/intentar'
-
-const MOTIVO_LABEL: Record<MotivoMerma, string> = {
-  caducidad: 'Caducidad',
-  accidente_rotura: 'Accidente / Rotura',
-  devolucion_cliente: 'Devolución cliente',
-}
+import { ETIQUETA_MOTIVO_MERMA } from '../movimientos'
 
 const MOTIVO_CLS: Record<MotivoMerma, string> = {
   caducidad: 'bg-amber-500/10 text-amber-600',
@@ -180,7 +175,7 @@ export function MermasTab() {
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[12px] font-semibold ${MOTIVO_CLS[m.motivo]}`}
                     >
-                      {MOTIVO_LABEL[m.motivo]}
+                      {ETIQUETA_MOTIVO_MERMA[m.motivo]}
                     </span>
                   </td>
                   <td className="p-3 text-right tabular-nums font-bold">

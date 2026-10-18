@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
@@ -70,6 +70,16 @@ export function useDevolucion() {
     onError: (e) => toast.error(mensajeError(e)),
   })
 }
+
+// Mantiene las cifras anteriores mientras llegan las del periodo nuevo, para que la pantalla no parpadee.
+export const useEstadisticasVentas = (rango: { desde: string; hasta: string } | null) =>
+  useQuery({
+    queryKey: qk.ventas.estadisticas(rango?.desde ?? '', rango?.hasta ?? ''),
+    queryFn: () =>
+      pedir(servidor.ventas.estadisticas.get({ query: { desde: rango?.desde ?? '', hasta: rango?.hasta ?? '' } })),
+    enabled: rango !== null,
+    placeholderData: keepPreviousData,
+  })
 
 export const useResumenCaja = (fecha: string) =>
   useQuery({ queryKey: qk.caja.dia(fecha), queryFn: () => pedir(servidor.caja.dia({ fecha }).get()) })

@@ -14,6 +14,7 @@ import { FichaTab } from '@/features/pacientes/tabs/FichaTab'
 import { RevisionesTab } from '@/features/pacientes/tabs/RevisionesTab'
 import { FotosTab } from '@/features/pacientes/tabs/FotosTab'
 import { HistorialTab } from '@/features/pacientes/tabs/HistorialTab'
+import { leerBusqueda } from '@/features/ventas/periodos'
 
 const raiz = createRootRoute({ notFoundComponent: NoEncontrada })
 
@@ -112,6 +113,11 @@ const mermas = createRoute({
   path: 'mermas',
   component: lazyRouteComponent(() => import('@/features/stock/tabs/MermasTab'), 'MermasTab'),
 })
+const recuentos = createRoute({
+  getParentRoute: () => stock,
+  path: 'recuentos',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/RecuentosTab'), 'RecuentosTab'),
+})
 const analisisStock = createRoute({
   getParentRoute: () => stock,
   path: 'analisis',
@@ -156,6 +162,13 @@ const cierreCaja = createRoute({
   path: 'cierre',
   component: lazyRouteComponent(() => import('@/features/ventas/tabs/CierreTab'), 'CierreTab'),
 })
+// Arrastra Chart.js. ?periodo=30d (o personalizado con ?desde&hasta) fija el periodo.
+const estadisticasVentas = createRoute({
+  getParentRoute: () => ventas,
+  path: 'estadisticas',
+  component: lazyRouteComponent(() => import('@/features/ventas/tabs/EstadisticasTab'), 'EstadisticasTab'),
+  validateSearch: leerBusqueda,
+})
 const datosTicket = createRoute({
   getParentRoute: () => ventas,
   path: 'ticket',
@@ -184,8 +197,18 @@ const arbol = raiz.addChildren([
         pacientesInicio,
         paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis, comprasCliente, historial]),
       ]),
-      stock.addChildren([stockInicio, almacen, compras, stockVentas, proveedores, categorias, mermas, analisisStock]),
-      ventas.addChildren([ventasInicio, caja, historialVentas, cierreCaja, datosTicket]),
+      stock.addChildren([
+        stockInicio,
+        almacen,
+        compras,
+        stockVentas,
+        proveedores,
+        categorias,
+        mermas,
+        recuentos,
+        analisisStock,
+      ]),
+      ventas.addChildren([ventasInicio, caja, historialVentas, cierreCaja, estadisticasVentas, datosTicket]),
       soloAdmin.addChildren([usuarios, auditoria]),
     ]),
   ]),

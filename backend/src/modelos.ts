@@ -109,6 +109,8 @@ export const ajustesEntrada = t.Object({
 
 export const fechaParams = t.Object({ fecha: t.String() })
 
+export const periodoQuery = t.Object({ desde: t.Optional(t.String()), hasta: t.Optional(t.String()) })
+
 export const mermaEntrada = t.Object({
   producto_id: t.Optional(t.Integer()),
   proveedor_id: idOpcional,
@@ -116,6 +118,12 @@ export const mermaEntrada = t.Object({
   motivo: t.Optional(t.String()),
   fecha: textoOpcional,
   notas: textoOpcional,
+})
+
+export const recuentoEntrada = t.Object({
+  motivo: textoOpcional,
+  notas: textoOpcional,
+  lineas: t.Optional(t.Array(t.Object({ producto_id: t.Optional(t.Integer()), contado: numeroOpcional }))),
 })
 
 export const loginEntrada = t.Object({

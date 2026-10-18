@@ -26,6 +26,8 @@ const TABLAS = [
   'stock_devoluciones',
   'stock_devoluciones_lineas',
   'stock_mermas',
+  'stock_recuentos',
+  'stock_recuentos_lineas',
   'caja_cierres',
   'ajustes',
   'audit_log',

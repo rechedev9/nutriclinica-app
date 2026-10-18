@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq, notLike } from 'drizzle-orm'
 import type { BD } from '../db/cliente'
 import { audit_log } from '../db/esquema'
 import { leerDetalle } from '../lib/cambios'
@@ -32,12 +32,13 @@ export function listarAuditoria(db: BD, limite: number) {
   return db.select().from(audit_log).orderBy(desc(audit_log.id)).limit(tope).all().map(conDetalle)
 }
 
-// La traza de un cliente, de la más reciente a la más antigua.
+// La traza de un cliente, de la más reciente a la más antigua. Sus ventas se ven en la pestaña Compras
+// y siguen en la auditoría general; aquí no gastan el tope de 500 ni tapan los cambios de la ficha.
 export function listarHistorial(db: BD, pacienteId: number) {
   return db
     .select()
     .from(audit_log)
-    .where(eq(audit_log.paciente_id, pacienteId))
+    .where(and(eq(audit_log.paciente_id, pacienteId), notLike(audit_log.ruta, '/api/ventas%')))
     .orderBy(desc(audit_log.id))
     .limit(500)
     .all()
