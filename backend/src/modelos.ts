@@ -21,6 +21,7 @@ export const productoEntrada = t.Partial(
       precio_coste: numeroOpcional,
       precio_venta: numeroOpcional,
       stock_minimo: numeroOpcional,
+      iva: numeroOpcional,
     }),
     ['id', 'activo', 'creado'],
   ),
@@ -46,12 +47,67 @@ export const compraEntrada = t.Object({
   lineas: t.Optional(t.Array(lineaEntrada)),
 })
 
+export const lineaVentaEntrada = t.Object({
+  producto_id: t.Optional(t.Integer()),
+  cantidad: t.Optional(t.Number()),
+  precio_unitario: numeroOpcional,
+  descuento: numeroOpcional,
+})
+
+export const pagoEntrada = t.Object({
+  metodo: t.Optional(t.String()),
+  importe: t.Optional(t.Number()),
+})
+
 export const ventaEntrada = t.Object({
   fecha: textoOpcional,
   paciente_id: idOpcional,
   notas: textoOpcional,
-  lineas: t.Optional(t.Array(lineaEntrada)),
+  lineas: t.Optional(t.Array(lineaVentaEntrada)),
+  descuento_total: numeroOpcional,
+  pagos: t.Optional(t.Array(pagoEntrada)),
+  entregado: numeroOpcional,
 })
+
+export const correccionVentaEntrada = t.Object({
+  paciente_id: idOpcional,
+  notas: textoOpcional,
+  pagos: t.Optional(t.Array(pagoEntrada)),
+})
+
+export const anulacionEntrada = t.Object({ motivo: textoOpcional })
+
+export const devolucionEntrada = t.Object({
+  motivo: textoOpcional,
+  metodo_reembolso: textoOpcional,
+  notas: textoOpcional,
+  lineas: t.Optional(
+    t.Array(
+      t.Object({
+        venta_linea_id: t.Optional(t.Integer()),
+        cantidad: t.Optional(t.Number()),
+        reingresa: t.Optional(t.Boolean()),
+      }),
+    ),
+  ),
+})
+
+export const cierreEntrada = t.Object({
+  fecha: textoOpcional,
+  fondo_inicial: numeroOpcional,
+  efectivo_contado: numeroOpcional,
+  notas: textoOpcional,
+})
+
+export const ajustesEntrada = t.Object({
+  tienda_nombre: textoOpcional,
+  tienda_nif: textoOpcional,
+  tienda_direccion: textoOpcional,
+  tienda_telefono: textoOpcional,
+  ticket_pie: textoOpcional,
+})
+
+export const fechaParams = t.Object({ fecha: t.String() })
 
 export const mermaEntrada = t.Object({
   producto_id: t.Optional(t.Integer()),

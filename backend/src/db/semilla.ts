@@ -10,6 +10,7 @@ import {
   stock_proveedores,
   stock_ventas,
   stock_ventas_lineas,
+  stock_ventas_pagos,
   usuarios,
 } from './esquema'
 
@@ -328,14 +329,24 @@ export function sembrarStock(db: BD): void {
         .values(lineasDe(compra.lineas).map((l) => ({ ...l, compra_id: id })))
         .run()
     }
-    for (const venta of VENTAS) {
+    for (const [i, venta] of VENTAS.entries()) {
+      const importe = total(venta.lineas)
       const { id } = tx
         .insert(stock_ventas)
-        .values({ fecha: venta.fecha, notas: venta.notas, total: total(venta.lineas) })
+        .values({
+          fecha: venta.fecha,
+          notas: venta.notas,
+          total: importe,
+          creado: `${venta.fecha} 11:30:00`,
+          usuario: 'admin',
+        })
         .returning({ id: stock_ventas.id })
         .get()
       tx.insert(stock_ventas_lineas)
         .values(lineasDe(venta.lineas).map((l) => ({ ...l, venta_id: id })))
+        .run()
+      tx.insert(stock_ventas_pagos)
+        .values({ venta_id: id, metodo: i % 2 === 0 ? 'efectivo' : 'tarjeta', importe })
         .run()
     }
     tx.insert(stock_mermas)

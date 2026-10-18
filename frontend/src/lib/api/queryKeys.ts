@@ -13,7 +13,17 @@ export const qk = {
     categorias: ['stock', 'categorias'] as const,
     proveedores: ['stock', 'proveedores'] as const,
     compras: ['stock', 'compras'] as const,
-    ventas: ['stock', 'ventas'] as const,
     mermas: ['stock', 'mermas'] as const,
   },
+  ventas: {
+    todas: ['ventas'] as const,
+    lista: (pacienteId: number | null) => ['ventas', 'lista', pacienteId] as const,
+    una: (id: number) => ['ventas', 'una', id] as const,
+  },
+  caja: {
+    todo: ['caja'] as const,
+    dia: (fecha: string) => ['caja', 'dia', fecha] as const,
+    cierres: ['caja', 'cierres'] as const,
+  },
+  tienda: ['tienda'] as const,
 }

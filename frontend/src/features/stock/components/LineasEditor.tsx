@@ -5,17 +5,15 @@ import { Button } from '@/components/ui/Button'
 import { ProductoCombobox } from './ProductoCombobox'
 import { errorLinea } from '@/lib/validacion/lineas'
 import { fmtMoneda } from '@/lib/format/moneda'
-import type { StockPorProducto } from '@/lib/validacion/lineas'
 
 interface Props {
   productos: Producto[]
   lineas: LineaInput[]
   onChange: (lineas: LineaInput[]) => void
   precioDe: (p: ProductoBase) => number // precio por defecto (coste o venta)
-  stock?: StockPorProducto // solo en ventas: avisa si la cantidad lo supera
 }
 
-export function LineasEditor({ productos, lineas, onChange, precioDe, stock }: Props) {
+export function LineasEditor({ productos, lineas, onChange, precioDe }: Props) {
   // Claves estables por fila (no el índice): así borrar una línea intermedia no
   // reutiliza el estado/foco de la fila contigua. Se sincronizan con add/remove
   // y se reconstruyen solo si la longitud cambia por fuera (reset del modal).
@@ -54,7 +52,7 @@ export function LineasEditor({ productos, lineas, onChange, precioDe, stock }: P
         </div>
       )}
       {lineas.map((l, i) => {
-        const problema = errorLinea(l, lineas, stock)
+        const problema = errorLinea(l)
         return (
           <div key={keys.current[i]} className="flex flex-col gap-1">
             <div className="grid grid-cols-[1fr_80px_100px_36px] items-center gap-2 max-md:grid-cols-2">

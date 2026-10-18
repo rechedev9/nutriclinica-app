@@ -19,6 +19,8 @@ export interface ProductoInput {
   precio_venta?: number | null
   unidad?: string | null
   stock_minimo?: number | null
+  codigo_barras?: string | null
+  iva?: number | null
 }
 
 export interface ProveedorInput {
@@ -37,13 +39,6 @@ export interface LineaInput {
 export interface CompraInput {
   fecha?: string | null
   proveedor_id?: number | null
-  notas?: string | null
-  lineas: LineaInput[]
-}
-
-export interface VentaInput {
-  fecha?: string | null
-  paciente_id?: number | null
   notas?: string | null
   lineas: LineaInput[]
 }

@@ -23,6 +23,8 @@ interface FormValues {
   precio_venta: string
   unidad: string
   stock_minimo: string
+  codigo_barras: string
+  iva: string
 }
 
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -48,6 +50,8 @@ export function ProductoModal({ open, onClose, producto }: Props) {
         precio_venta: producto?.precio_venta != null ? String(producto.precio_venta) : '',
         unidad: producto?.unidad ?? 'ud',
         stock_minimo: producto?.stock_minimo != null ? String(producto.stock_minimo) : '',
+        codigo_barras: producto?.codigo_barras ?? '',
+        iva: String(producto?.iva ?? 10),
       })
   }, [open, producto, reset])
 
@@ -60,6 +64,8 @@ export function ProductoModal({ open, onClose, producto }: Props) {
       precio_venta: num(v.precio_venta),
       unidad: v.unidad.trim() || 'ud',
       stock_minimo: num(v.stock_minimo),
+      codigo_barras: v.codigo_barras.trim() || null,
+      iva: Number(v.iva),
     }
     const ok = await intentar(producto ? update.mutateAsync({ id: producto.id, body }) : create.mutateAsync(body))
     if (ok) onClose()
@@ -116,6 +122,26 @@ export function ProductoModal({ open, onClose, producto }: Props) {
           </Field>
           <Field label="Stock mínimo" error={formState.errors.stock_minimo?.message}>
             <Input type="number" step="0.1" {...register('stock_minimo')} />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {/* Con el cursor en este campo, el lector de códigos escribe el código y pulsa Intro. */}
+          <Field label="Código de barras">
+            <Input
+              inputMode="numeric"
+              placeholder="Escanéalo aquí"
+              onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+              {...register('codigo_barras')}
+            />
+          </Field>
+          <Field label="IVA (incluido en el precio)">
+            <Select {...register('iva')}>
+              <option value="10">10 % (complementos alimenticios)</option>
+              <option value="21">21 % (general)</option>
+              <option value="4">4 % (superreducido)</option>
+              <option value="0">0 % (exento)</option>
+            </Select>
           </Field>
         </div>
 

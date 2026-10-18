@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { usePacientes } from '@/features/pacientes/hooks/usePacientes'
 import { PacienteModal } from '@/features/pacientes/components/PacienteModal'
 import { pendientesOrdenados, seguimiento } from '@/features/pacientes/seguimiento'
 import { estadoDe, productosEnAlerta } from '@/features/stock/estado-almacen'
-import { useAlmacen, useVentas } from '@/features/stock/hooks/useStock'
-import { VentaModal } from '@/features/stock/components/VentaModal'
+import { useAlmacen } from '@/features/stock/hooks/useStock'
+import { useVentas } from '@/features/ventas/hooks/useVentas'
+import { ventasNetas } from '@/features/ventas/netas'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
@@ -29,7 +30,7 @@ const filaEnlace =
 
 export function InicioPage() {
   const [clienteAbierto, setClienteAbierto] = useState(false)
-  const [ventaAbierta, setVentaAbierta] = useState(false)
+  const navigate = useNavigate()
   const [hoy] = useState(() => new Date())
 
   return (
@@ -40,7 +41,7 @@ export function InicioPage() {
           <Resumen hoy={hoy} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setVentaAbierta(true)}>
+          <Button variant="outline" onClick={() => void navigate({ to: '/ventas/caja' })}>
             + Nueva venta
           </Button>
           <Button onClick={() => setClienteAbierto(true)}>+ Nuevo cliente</Button>
@@ -54,7 +55,6 @@ export function InicioPage() {
       <UltimasVentas hoy={hoy} />
 
       <PacienteModal open={clienteAbierto} onClose={() => setClienteAbierto(false)} />
-      <VentaModal open={ventaAbierta} onClose={() => setVentaAbierta(false)} />
     </div>
   )
 }
@@ -210,15 +210,15 @@ function Tienda() {
 }
 
 function UltimasVentas({ hoy }: { hoy: Date }) {
-  const { data: ventas, isLoading, isError, error, refetch, isFetching } = useVentas()
-
+  const { data, isLoading, isError, error, refetch, isFetching } = useVentas()
+  const ventas = data ? ventasNetas(data) : null
   const mes = ventas ? ventasDelMes(ventas, hoy) : null
 
   return (
     <Tarjeta
       titulo="Últimas ventas"
       enlace={
-        <Link to="/stock/ventas" className={enlaceSutil}>
+        <Link to="/ventas/historial" className={enlaceSutil}>
           Ver todas
         </Link>
       }
@@ -234,7 +234,7 @@ function UltimasVentas({ hoy }: { hoy: Date }) {
           className="p-6"
         />
       ) : !ventas || ventas.length === 0 ? (
-        <Vacio>Aún no hay ventas. Registra la primera con «Nueva venta».</Vacio>
+        <Vacio>Aún no hay ventas. Cobra la primera desde «Nueva venta».</Vacio>
       ) : (
         <>
           {mes && (

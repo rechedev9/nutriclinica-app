@@ -25,6 +25,7 @@ const tabs = [
   { to: '/pacientes/$id/revisiones', label: 'Revisiones', count: 'num_revisiones' },
   { to: '/pacientes/$id/fotos', label: 'Fotos', count: 'num_fotos' },
   { to: '/pacientes/$id/analisis', label: 'Análisis' },
+  { to: '/pacientes/$id/compras', label: 'Compras' },
   { to: '/pacientes/$id/historial', label: 'Historial' },
 ] as const
 

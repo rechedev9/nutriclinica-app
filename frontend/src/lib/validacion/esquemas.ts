@@ -100,6 +100,8 @@ export const esquemaProducto = z.object({
   precio_venta: numeroEnRango(0, Number.MAX_SAFE_INTEGER, 'El precio no puede ser negativo'),
   unidad: z.string(),
   stock_minimo: numeroEnRango(0, Number.MAX_SAFE_INTEGER, 'El stock mínimo no puede ser negativo'),
+  codigo_barras: z.string(),
+  iva: z.enum(['0', '4', '10', '21']),
 })
 
 export const esquemaNombre = z.object({ nombre: nombreObligatorio })

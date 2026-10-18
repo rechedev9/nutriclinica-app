@@ -57,3 +57,10 @@ export function calcEdad(fechaNac: string | null | undefined): number | null {
   if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) e--
   return e
 }
+
+// Día de hoy en la zona del navegador (toISOString daría el día UTC).
+export function hoyLocal(ahora: Date = new Date()): string {
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0')
+  const dia = String(ahora.getDate()).padStart(2, '0')
+  return `${ahora.getFullYear()}-${mes}-${dia}`
+}

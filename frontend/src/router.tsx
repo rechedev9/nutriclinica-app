@@ -53,9 +53,14 @@ const ficha = createRoute({ getParentRoute: () => paciente, path: 'ficha', compo
 const revisiones = createRoute({ getParentRoute: () => paciente, path: 'revisiones', component: RevisionesTab })
 const fotos = createRoute({ getParentRoute: () => paciente, path: 'fotos', component: FotosTab })
 const historial = createRoute({ getParentRoute: () => paciente, path: 'historial', component: HistorialTab })
+const comprasCliente = createRoute({
+  getParentRoute: () => paciente,
+  path: 'compras',
+  component: lazyRouteComponent(() => import('@/features/ventas/ComprasClienteTab'), 'ComprasClienteTab'),
+})
 
 // Rutas con carga diferida: el módulo de Análisis arrastra Chart.js (~200 KB) y
-// el módulo de Stock y la gestión de Usuarios no se necesitan en el arranque.
+// los módulos de Stock y Ventas y la gestión de Usuarios no se necesitan en el arranque.
 const analisis = createRoute({
   getParentRoute: () => paciente,
   path: 'analisis',
@@ -84,10 +89,13 @@ const compras = createRoute({
   path: 'compras',
   component: lazyRouteComponent(() => import('@/features/stock/tabs/ComprasTab'), 'ComprasTab'),
 })
-const ventas = createRoute({
+// Enlace antiguo: las ventas tienen ahora su propia sección.
+const stockVentas = createRoute({
   getParentRoute: () => stock,
   path: 'ventas',
-  component: lazyRouteComponent(() => import('@/features/stock/tabs/VentasTab'), 'VentasTab'),
+  beforeLoad: () => {
+    throw redirect({ to: '/ventas/historial', replace: true })
+  },
 })
 const proveedores = createRoute({
   getParentRoute: () => stock,
@@ -110,6 +118,50 @@ const analisisStock = createRoute({
   component: lazyRouteComponent(() => import('@/features/stock/tabs/AnalisisStockTab'), 'AnalisisStockTab'),
 })
 
+const ventas = createRoute({
+  getParentRoute: () => marco,
+  path: 'ventas',
+  component: lazyRouteComponent(() => import('@/features/ventas/VentasPage'), 'VentasPage'),
+})
+const ventasInicio = createRoute({
+  getParentRoute: () => ventas,
+  path: '/',
+  beforeLoad: () => {
+    throw redirect({ to: '/ventas/caja', replace: true })
+  },
+})
+const caja = createRoute({
+  getParentRoute: () => ventas,
+  path: 'caja',
+  component: lazyRouteComponent(() => import('@/features/ventas/tabs/CajaTab'), 'CajaTab'),
+  // ?cliente=12 abre la caja con ese cliente ya elegido (desde su ficha).
+  validateSearch: (busqueda: Record<string, unknown>): { cliente?: number } => {
+    const id = Number(busqueda.cliente)
+    return Number.isInteger(id) && id > 0 ? { cliente: id } : {}
+  },
+})
+// ?ticket=V-000123 abre el historial buscando ese ticket.
+const historialVentas = createRoute({
+  getParentRoute: () => ventas,
+  path: 'historial',
+  component: lazyRouteComponent(() => import('@/features/ventas/tabs/HistorialTab'), 'HistorialTab'),
+  validateSearch: (busqueda: Record<string, unknown>): { ticket?: string } =>
+    // ?ticket=9 llega como número: el router interpreta la búsqueda como JSON.
+    typeof busqueda.ticket === 'string' || typeof busqueda.ticket === 'number'
+      ? { ticket: String(busqueda.ticket) }
+      : {},
+})
+const cierreCaja = createRoute({
+  getParentRoute: () => ventas,
+  path: 'cierre',
+  component: lazyRouteComponent(() => import('@/features/ventas/tabs/CierreTab'), 'CierreTab'),
+})
+const datosTicket = createRoute({
+  getParentRoute: () => ventas,
+  path: 'ticket',
+  component: lazyRouteComponent(() => import('@/features/ventas/tabs/TicketTab'), 'TicketTab'),
+})
+
 const soloAdmin = createRoute({ getParentRoute: () => marco, id: '_admin', component: RequireAdmin })
 const usuarios = createRoute({
   getParentRoute: () => soloAdmin,
@@ -130,9 +182,10 @@ const arbol = raiz.addChildren([
       inicio,
       pacientes.addChildren([
         pacientesInicio,
-        paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis, historial]),
+        paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis, comprasCliente, historial]),
       ]),
-      stock.addChildren([stockInicio, almacen, compras, ventas, proveedores, categorias, mermas, analisisStock]),
+      stock.addChildren([stockInicio, almacen, compras, stockVentas, proveedores, categorias, mermas, analisisStock]),
+      ventas.addChildren([ventasInicio, caja, historialVentas, cierreCaja, datosTicket]),
       soloAdmin.addChildren([usuarios, auditoria]),
     ]),
   ]),

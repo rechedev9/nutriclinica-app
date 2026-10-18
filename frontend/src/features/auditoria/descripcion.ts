@@ -51,6 +51,11 @@ const REGLAS: Regla[] = [
   [/^\/api\/stock\/compras(?:\/(\d+))?$/, 'Compra', 'propio'],
   [/^\/api\/stock\/ventas(?:\/(\d+))?$/, 'Venta', 'propio'],
   [/^\/api\/stock\/mermas(?:\/(\d+))?$/, 'Merma', 'propio'],
+  [/^\/api\/ventas\/(\d+)\/anular$/, 'Anulación de la venta', 'propio'],
+  [/^\/api\/ventas\/(\d+)\/devoluciones$/, 'Devolución de la venta', 'propio'],
+  [/^\/api\/ventas(?:\/(\d+))?$/, 'Venta', 'propio'],
+  [/^\/api\/caja\/cierres(?:\/(\d+))?$/, 'Cierre de caja', 'propio'],
+  [/^\/api\/tienda$/, 'Datos del ticket'],
   [/^\/api\/usuarios\/(\d+)\/password$/, 'Contraseña del usuario', 'propio'],
   [/^\/api\/usuarios(?:\/(\d+))?$/, 'Usuario', 'propio'],
 ]
@@ -58,6 +63,8 @@ const REGLAS: Regla[] = [
 export function tipoAccion(metodo: string, ruta: string): TipoAccion | null {
   // Cambiar una contraseña llega como POST, pero modifica un usuario que ya existe.
   if (metodo === 'POST' && ruta.endsWith('/password')) return 'edicion'
+  // Anular una venta llega como POST, pero la deja sin efecto.
+  if (metodo === 'POST' && ruta.endsWith('/anular')) return 'borrado'
   return TIPOS[metodo] ?? null
 }
 

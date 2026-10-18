@@ -1,7 +1,9 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import '@/lib/chart/chartSetup'
 import { Bar, Doughnut, Line } from 'react-chartjs-2'
-import { useCompras, useVentas, useMermas, useAlmacen } from '../hooks/useStock'
+import { useCompras, useMermas, useAlmacen } from '../hooks/useStock'
+import { useVentas } from '@/features/ventas/hooks/useVentas'
+import { ventasNetas } from '@/features/ventas/netas'
 import { CenteredSpinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { useChartTheme, tooltipPlugin } from '@/lib/chart/useChartTheme'
@@ -107,7 +109,7 @@ export function AnalisisStockTab() {
   }, [])
 
   const compras = useMemo(() => comprasData ?? [], [comprasData])
-  const ventas = useMemo(() => ventasData ?? [], [ventasData])
+  const ventas = useMemo(() => ventasNetas(ventasData ?? []), [ventasData])
   const mermas = useMemo(() => mermasData ?? [], [mermasData])
   const almacen = almacenData ?? []
 
@@ -154,7 +156,7 @@ export function AnalisisStockTab() {
     for (const v of ventas) {
       for (const l of v.lineas) {
         const nombre = l.producto_nombre ?? 'Desconocido'
-        totales[nombre] = (totales[nombre] ?? 0) + l.cantidad * l.precio_unitario
+        totales[nombre] = (totales[nombre] ?? 0) + l.importe
       }
     }
     return Object.entries(totales)

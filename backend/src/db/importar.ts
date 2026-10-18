@@ -22,7 +22,12 @@ const TABLAS = [
   'stock_compras_lineas',
   'stock_ventas',
   'stock_ventas_lineas',
+  'stock_ventas_pagos',
+  'stock_devoluciones',
+  'stock_devoluciones_lineas',
   'stock_mermas',
+  'caja_cierres',
+  'ajustes',
   'audit_log',
 ] as const
 

@@ -32,3 +32,8 @@ export function sumarDias(dia: string, n: number): string {
   d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
+
+// "DD/MM/AAAA" de un día AAAA-MM-DD, para los mensajes.
+export function fechaEs(dia: string): string {
+  return `${dia.slice(8, 10)}/${dia.slice(5, 7)}/${dia.slice(0, 4)}`
+}
