@@ -1,30 +1,31 @@
 import { and, desc, eq, getTableColumns, inArray, ne, sql } from 'drizzle-orm'
 import type { BD, Ejecutor } from '../db/cliente'
 import {
-  pacientes,
   stock_categorias,
   stock_compras,
   stock_compras_lineas,
   stock_mermas,
   stock_productos,
   stock_proveedores,
-  stock_ventas,
-  stock_ventas_lineas,
 } from '../db/esquema'
 import { ErrorHttp } from '../lib/errores'
 import { fechaLocal } from '../lib/fechas'
 import { porNombre } from '../lib/texto'
-import type { CompraDatos, MermaDatos, ProductoDatos, ProveedorDatos, VentaDatos } from '../validacion'
+import type { CompraDatos, MermaDatos, ProductoDatos, ProveedorDatos } from '../validacion'
 
 type LineaDatos = CompraDatos['lineas'][number]
 
 const INMEDIATA = { behavior: 'immediate' } as const
 
-// Existencias de un producto: compras - ventas - mermas. No se guarda, siempre se deriva.
+// Existencias de un producto: compras - ventas no anuladas + devoluciones que vuelven al
+// almacén - mermas. No se guarda, siempre se deriva.
 // La columna exterior va calificada a mano (Drizzle no lo hace en un select de una tabla).
 const stockActual = sql`(
   coalesce((select sum(cantidad) from stock_compras_lineas where producto_id = ${stock_productos}.id), 0)
-  - coalesce((select sum(cantidad) from stock_ventas_lineas where producto_id = ${stock_productos}.id), 0)
+  - coalesce((select sum(l.cantidad) from stock_ventas_lineas l join stock_ventas v on v.id = l.venta_id
+      where l.producto_id = ${stock_productos}.id and v.estado <> 'anulada'), 0)
+  + coalesce((select sum(cantidad) from stock_devoluciones_lineas
+      where producto_id = ${stock_productos}.id and reingresa = 1), 0)
   - coalesce((select sum(cantidad) from stock_mermas where producto_id = ${stock_productos}.id), 0)
 )`.mapWith(Number)
 
@@ -40,6 +41,8 @@ export function listarAlmacen(db: BD) {
       precio_coste: stock_productos.precio_coste,
       precio_venta: stock_productos.precio_venta,
       stock_minimo: stock_productos.stock_minimo,
+      codigo_barras: stock_productos.codigo_barras,
+      iva: stock_productos.iva,
       categoria: stock_categorias.nombre,
       proveedor_nombre: stock_proveedores.nombre,
       stock_actual: stockActual,
@@ -68,19 +71,37 @@ export function listarProductos(db: BD) {
   return porNombre(filas, (p) => p.nombre)
 }
 
+// Un código de barras solo puede estar en un producto activo (los de baja lo pierden).
+function comprobarCodigoLibre(tx: Ejecutor, codigo: string | null, excepto: number): void {
+  if (codigo === null) return
+  const otro = tx
+    .select({ nombre: stock_productos.nombre })
+    .from(stock_productos)
+    .where(and(eq(stock_productos.codigo_barras, codigo), ne(stock_productos.id, excepto)))
+    .get()
+  if (otro !== undefined) throw new ErrorHttp(409, `El código de barras ya es de «${otro.nombre}»`)
+}
+
 export function crearProducto(db: BD, datos: ProductoDatos) {
-  return db.insert(stock_productos).values(datos).returning().get()
+  return db.transaction((tx) => {
+    comprobarCodigoLibre(tx, datos.codigo_barras, 0)
+    return tx.insert(stock_productos).values(datos).returning().get()
+  }, INMEDIATA)
 }
 
 export function actualizarProducto(db: BD, id: number, datos: ProductoDatos) {
-  const fila = db.update(stock_productos).set(datos).where(eq(stock_productos.id, id)).returning().all()[0]
-  if (fila === undefined) throw new ErrorHttp(404, 'Producto no encontrado')
-  return fila
+  return db.transaction((tx) => {
+    comprobarCodigoLibre(tx, datos.codigo_barras, id)
+    const fila = tx.update(stock_productos).set(datos).where(eq(stock_productos.id, id)).returning().all()[0]
+    if (fila === undefined) throw new ErrorHttp(404, 'Producto no encontrado')
+    return fila
+  }, INMEDIATA)
 }
 
 // darDeBajaProducto lo marca inactivo: sus compras y ventas siguen apuntando a él.
+// Suelta el código de barras para que pueda usarlo un producto nuevo.
 export function darDeBajaProducto(db: BD, id: number): void {
-  db.update(stock_productos).set({ activo: 0 }).where(eq(stock_productos.id, id)).run()
+  db.update(stock_productos).set({ activo: 0, codigo_barras: null }).where(eq(stock_productos.id, id)).run()
 }
 
 // --- Categorías ---
@@ -177,7 +198,7 @@ function totalDe(lineas: LineaDatos[]): number {
   return lineas.reduce((suma, l) => suma + l.cantidad * l.precio_unitario, 0)
 }
 
-function idsDe(lineas: { producto_id: number }[]): number[] {
+export function idsDe(lineas: { producto_id: number }[]): number[] {
   return [...new Set(lineas.map((l) => l.producto_id))].toSorted((a, b) => a - b)
 }
 
@@ -190,7 +211,7 @@ function productoConStock(tx: Ejecutor, id: number) {
 }
 
 // Una salida (venta o merma) exige que el producto exista, esté activo y haya existencias.
-function verificarStockSalida(tx: Ejecutor, lineas: { producto_id: number; cantidad: number }[]): void {
+export function verificarStockSalida(tx: Ejecutor, lineas: { producto_id: number; cantidad: number }[]): void {
   for (const id of idsDe(lineas)) {
     const producto = productoConStock(tx, id)
     if (producto === undefined || producto.activo !== 1) {
@@ -227,7 +248,7 @@ function comprobarProductosExisten(tx: Ejecutor, lineas: LineaDatos[]): void {
 }
 
 // Reparte las líneas por su compra o venta; cada padre recibe al menos una lista vacía.
-function agrupar<L extends { padre: number }>(ids: number[], lineas: L[]) {
+export function agrupar<L extends { padre: number }>(ids: number[], lineas: L[]) {
   const porPadre = new Map(ids.map((id) => [id, new Array<Omit<L, 'padre'>>()]))
   for (const { padre, ...linea } of lineas) porPadre.get(padre)?.push(linea)
   return porPadre
@@ -313,57 +334,6 @@ export function eliminarCompra(db: BD, id: number): void {
     tx.delete(stock_compras_lineas).where(eq(stock_compras_lineas.compra_id, id)).run()
     tx.delete(stock_compras).where(eq(stock_compras.id, id)).run()
     comprobarStockNoNegativo(tx, afectados)
-  }, INMEDIATA)
-}
-
-// --- Ventas ---
-
-export function listarVentas(db: BD) {
-  const ventas = db
-    .select({ ...getTableColumns(stock_ventas), paciente_nombre: pacientes.nombre })
-    .from(stock_ventas)
-    .leftJoin(pacientes, eq(pacientes.id, stock_ventas.paciente_id))
-    .orderBy(desc(stock_ventas.fecha), desc(stock_ventas.id))
-    .all()
-  const ids = ventas.map((v) => v.id)
-  const lineas = db
-    .select({
-      padre: stock_ventas_lineas.venta_id,
-      id: stock_ventas_lineas.id,
-      producto_id: stock_ventas_lineas.producto_id,
-      cantidad: stock_ventas_lineas.cantidad,
-      precio_unitario: stock_ventas_lineas.precio_unitario,
-      producto_nombre: stock_productos.nombre,
-      unidad: stock_productos.unidad,
-    })
-    .from(stock_ventas_lineas)
-    .innerJoin(stock_productos, eq(stock_productos.id, stock_ventas_lineas.producto_id))
-    .orderBy(stock_ventas_lineas.id)
-    .all()
-  const porVenta = agrupar(ids, lineas)
-  return ventas.map((v) => ({ ...v, lineas: porVenta.get(v.id) ?? [] }))
-}
-
-export function crearVenta(db: BD, datos: VentaDatos): number {
-  const { lineas, ...cabecera } = datos
-  return db.transaction((tx) => {
-    verificarStockSalida(tx, lineas)
-    const { id } = tx
-      .insert(stock_ventas)
-      .values({ ...cabecera, fecha: cabecera.fecha ?? fechaLocal(new Date()), total: totalDe(lineas) })
-      .returning({ id: stock_ventas.id })
-      .get()
-    tx.insert(stock_ventas_lineas)
-      .values(lineas.map((l) => ({ ...l, venta_id: id })))
-      .run()
-    return id
-  }, INMEDIATA)
-}
-
-export function eliminarVenta(db: BD, id: number): void {
-  db.transaction((tx) => {
-    tx.delete(stock_ventas_lineas).where(eq(stock_ventas_lineas.venta_id, id)).run()
-    tx.delete(stock_ventas).where(eq(stock_ventas.id, id)).run()
   }, INMEDIATA)
 }
 

@@ -21,6 +21,15 @@ describe('describirRuta', () => {
     expect(describirRuta('/api/usuarios/2/password').recurso).toBe('Contraseña del usuario nº 2')
   })
 
+  test('describe las rutas de la sección de ventas', () => {
+    expect(describirRuta('/api/ventas').recurso).toBe('Venta')
+    expect(describirRuta('/api/ventas/12').recurso).toBe('Venta nº 12')
+    expect(describirRuta('/api/ventas/12/anular').recurso).toBe('Anulación de la venta nº 12')
+    expect(describirRuta('/api/ventas/12/devoluciones').recurso).toBe('Devolución de la venta nº 12')
+    expect(describirRuta('/api/caja/cierres/3').recurso).toBe('Cierre de caja nº 3')
+    expect(describirRuta('/api/tienda').recurso).toBe('Datos del ticket')
+  })
+
   test('deja la ruta tal cual si no la conoce', () => {
     expect(describirRuta('/api/otra-cosa')).toEqual({ recurso: '/api/otra-cosa', pacienteId: null })
   })
@@ -45,6 +54,11 @@ describe('tipoAccion', () => {
   test('un cambio de contraseña es una edición', () => {
     expect(tipoAccion('POST', '/api/usuarios/2/password')).toBe('edicion')
     expect(tipoAccion('POST', '/api/usuarios')).toBe('alta')
+  })
+
+  test('anular una venta cuenta como borrado', () => {
+    expect(tipoAccion('POST', '/api/ventas/12/anular')).toBe('borrado')
+    expect(tipoAccion('POST', '/api/ventas/12/devoluciones')).toBe('alta')
   })
 })
 

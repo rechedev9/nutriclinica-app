@@ -10,37 +10,25 @@ import {
   crearMerma,
   crearProducto,
   crearProveedor,
-  crearVenta,
   darDeBajaProducto,
   eliminarCategoria,
   eliminarCompra,
   eliminarMerma,
   eliminarProveedor,
-  eliminarVenta,
   listarAlmacen,
   listarCategorias,
   listarCompras,
   listarMermas,
   listarProductos,
   listarProveedores,
-  listarVentas,
 } from '../datos/stock'
-import {
-  categoriaEntrada,
-  compraEntrada,
-  idParams,
-  mermaEntrada,
-  productoEntrada,
-  proveedorEntrada,
-  ventaEntrada,
-} from '../modelos'
+import { categoriaEntrada, compraEntrada, idParams, mermaEntrada, productoEntrada, proveedorEntrada } from '../modelos'
 import {
   normalizarCategoria,
   normalizarCompra,
   normalizarMerma,
   normalizarProducto,
   normalizarProveedor,
-  normalizarVenta,
 } from '../validacion'
 import { crearAcceso } from './acceso'
 
@@ -121,19 +109,6 @@ export function moduloStock(ctx: Contexto) {
       '/compras/:id',
       ({ params }) => {
         eliminarCompra(db, params.id)
-        return HECHO
-      },
-      { params: idParams },
-    )
-
-    .get('/ventas', () => listarVentas(db))
-    .post('/ventas', ({ body, status }) => status(201, { ...HECHO, id: crearVenta(db, normalizarVenta(body)) }), {
-      body: ventaEntrada,
-    })
-    .delete(
-      '/ventas/:id',
-      ({ params }) => {
-        eliminarVenta(db, params.id)
         return HECHO
       },
       { params: idParams },

@@ -207,3 +207,21 @@
     background: white !important;
   }
 }
+
+/* Ticket de venta: al imprimirlo solo sale el justificante, al ancho de un rollo de 80 mm. */
+.ticket-impresion {
+  display: none;
+}
+@media print {
+  @page ticket {
+    margin: 4mm;
+  }
+  body.imprimiendo-ticket > *:not(.ticket-impresion) {
+    display: none !important;
+  }
+  body.imprimiendo-ticket .ticket-impresion {
+    display: block;
+    page: ticket;
+    width: 72mm;
+  }
+}

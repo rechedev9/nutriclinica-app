@@ -1,12 +1,19 @@
-import { MOTIVOS_MERMA, ROLES } from './db/esquema'
+import { METODOS_PAGO, MOTIVOS_MERMA, ROLES, TIPOS_IVA } from './db/esquema'
 import { ErrorHttp } from './lib/errores'
 import { fechaLocal, parseFecha, sumarDias } from './lib/fechas'
 import { vacioANulo } from './lib/texto'
 import type {
+  ajustesEntrada,
+  anulacionEntrada,
+  cierreEntrada,
   compraEntrada,
+  correccionVentaEntrada,
+  devolucionEntrada,
   lineaEntrada,
+  lineaVentaEntrada,
   mermaEntrada,
   pacienteEntrada,
+  pagoEntrada,
   productoEntrada,
   proveedorEntrada,
   revisionEntrada,
@@ -157,6 +164,8 @@ export function normalizarProducto(entrada: typeof productoEntrada.static) {
   const stock_minimo = entrada.stock_minimo ?? 0
   if (precio_coste < 0 || precio_venta < 0) invalido('El precio no puede ser negativo')
   if (stock_minimo < 0) invalido('El stock mínimo no puede ser negativo')
+  const iva = TIPOS_IVA.find((tipo) => tipo === (entrada.iva ?? 10))
+  if (iva === undefined) invalido('El IVA debe ser 0, 4, 10 o 21 %')
   return {
     nombre,
     categoria_id: entrada.categoria_id ?? null,
@@ -165,6 +174,8 @@ export function normalizarProducto(entrada: typeof productoEntrada.static) {
     precio_venta,
     unidad: vacioANulo(entrada.unidad) ?? 'ud',
     stock_minimo,
+    codigo_barras: vacioANulo(entrada.codigo_barras?.trim()),
+    iva,
   }
 }
 
@@ -185,17 +196,60 @@ export function normalizarCategoria(nombre: string | undefined): string {
   return limpio
 }
 
-function normalizarLineas(lineas: (typeof lineaEntrada.static)[] | undefined, entidad: 'compra' | 'venta') {
+function exigirLineas<L>(lineas: L[] | undefined, entidad: 'compra' | 'venta' | 'devolución'): L[] {
   if (lineas === undefined || lineas.length === 0) invalido(`La ${entidad} debe tener al menos una línea`)
-  return lineas.map((linea) => {
-    const producto_id = linea.producto_id ?? 0
-    const cantidad = linea.cantidad ?? 0
-    const precio_unitario = linea.precio_unitario ?? 0
-    if (producto_id === 0) invalido('El producto es obligatorio')
-    if (cantidad <= 0) invalido('La cantidad debe ser mayor que 0')
-    if (precio_unitario < 0) invalido('El precio no puede ser negativo')
-    return { producto_id, cantidad, precio_unitario }
+  return lineas
+}
+
+function normalizarLinea(linea: typeof lineaEntrada.static) {
+  const producto_id = linea.producto_id ?? 0
+  const cantidad = linea.cantidad ?? 0
+  const precio_unitario = linea.precio_unitario ?? 0
+  if (producto_id === 0) invalido('El producto es obligatorio')
+  if (cantidad <= 0) invalido('La cantidad debe ser mayor que 0')
+  if (precio_unitario < 0) invalido('El precio no puede ser negativo')
+  return { producto_id, cantidad, precio_unitario }
+}
+
+function normalizarLineaVenta(linea: typeof lineaVentaEntrada.static) {
+  const base = normalizarLinea(linea)
+  const descuento = linea.descuento ?? 0
+  if (descuento < 0) invalido('El descuento no puede ser negativo')
+  if (descuento > base.cantidad * base.precio_unitario + 0.005) {
+    invalido('El descuento de una línea no puede superar su importe')
+  }
+  return { ...base, descuento }
+}
+
+function normalizarMetodo(metodo: string | null | undefined, mensaje: string) {
+  const valido = METODOS_PAGO.find((m) => m === metodo)
+  if (valido === undefined) invalido(mensaje)
+  return valido
+}
+
+function normalizarPagos(pagos: (typeof pagoEntrada.static)[] | undefined) {
+  return (pagos ?? []).map((pago) => {
+    const metodo = normalizarMetodo(pago.metodo, 'El método de pago no es válido')
+    const importe = pago.importe ?? 0
+    if (importe <= 0) invalido('El importe de cada pago debe ser mayor que 0')
+    return { metodo, importe }
   })
+}
+
+function motivoObligatorio(motivo: string | null | undefined, mensaje: string): string {
+  const limpio = (motivo ?? '').trim()
+  if (limpio === '') invalido(mensaje)
+  return limpio
+}
+
+// Día de una operación de caja: hoy si no llega, y nunca después de hoy + margen.
+function normalizarDia(texto: string | null | undefined, rango: { hoy: Date; margen: number }): string {
+  const valor = vacioANulo(texto)
+  if (valor === null) return fechaLocal(rango.hoy)
+  const dia = parseFecha(valor)
+  if (dia === null) invalido('La fecha no es válida')
+  if (dia > sumarDias(fechaLocal(rango.hoy), rango.margen)) invalido('La fecha no puede ser futura')
+  return dia
 }
 
 export function normalizarCompra(entrada: typeof compraEntrada.static) {
@@ -203,16 +257,79 @@ export function normalizarCompra(entrada: typeof compraEntrada.static) {
     fecha: vacioANulo(entrada.fecha),
     proveedor_id: entrada.proveedor_id ?? null,
     notas: vacioANulo(entrada.notas),
-    lineas: normalizarLineas(entrada.lineas, 'compra'),
+    lineas: exigirLineas(entrada.lineas, 'compra').map(normalizarLinea),
   }
 }
 
-export function normalizarVenta(entrada: typeof ventaEntrada.static) {
+export function normalizarVenta(entrada: typeof ventaEntrada.static, hoy: Date) {
+  const descuento_total = entrada.descuento_total ?? 0
+  if (descuento_total < 0) invalido('El descuento no puede ser negativo')
+  const entregado = entrada.entregado ?? null
+  if (entregado !== null && entregado < 0) invalido('El efectivo entregado no puede ser negativo')
   return {
-    fecha: vacioANulo(entrada.fecha),
+    // Se admite el día siguiente por si el reloj del navegador y el del servidor difieren.
+    fecha: normalizarDia(entrada.fecha, { hoy, margen: 1 }),
     paciente_id: entrada.paciente_id ?? null,
     notas: vacioANulo(entrada.notas),
-    lineas: normalizarLineas(entrada.lineas, 'venta'),
+    lineas: exigirLineas(entrada.lineas, 'venta').map(normalizarLineaVenta),
+    descuento_total,
+    pagos: normalizarPagos(entrada.pagos),
+    entregado,
+  }
+}
+
+export function normalizarCorreccionVenta(entrada: typeof correccionVentaEntrada.static) {
+  return {
+    paciente_id: entrada.paciente_id ?? null,
+    notas: vacioANulo(entrada.notas),
+    pagos: normalizarPagos(entrada.pagos),
+  }
+}
+
+export function normalizarAnulacion(entrada: typeof anulacionEntrada.static): string {
+  return motivoObligatorio(entrada.motivo, 'Indica el motivo de la anulación')
+}
+
+export function normalizarDevolucion(entrada: typeof devolucionEntrada.static) {
+  return {
+    motivo: motivoObligatorio(entrada.motivo, 'Indica el motivo de la devolución'),
+    metodo_reembolso: normalizarMetodo(entrada.metodo_reembolso, 'Indica cómo se devuelve el dinero'),
+    notas: vacioANulo(entrada.notas),
+    lineas: exigirLineas(entrada.lineas, 'devolución').map((linea) => {
+      const venta_linea_id = linea.venta_linea_id ?? 0
+      const cantidad = linea.cantidad ?? 0
+      if (venta_linea_id === 0) invalido('Indica qué línea de la venta se devuelve')
+      if (cantidad <= 0) invalido('La cantidad debe ser mayor que 0')
+      return { venta_linea_id, cantidad, reingresa: linea.reingresa ?? true }
+    }),
+  }
+}
+
+export function normalizarCierre(entrada: typeof cierreEntrada.static, hoy: Date) {
+  const fondo_inicial = entrada.fondo_inicial ?? 0
+  const efectivo_contado = entrada.efectivo_contado ?? null
+  if (fondo_inicial < 0) invalido('El fondo de caja no puede ser negativo')
+  if (efectivo_contado === null) invalido('Indica el efectivo contado')
+  if (efectivo_contado < 0) invalido('El efectivo contado no puede ser negativo')
+  return {
+    fecha: normalizarDia(entrada.fecha, { hoy, margen: 0 }),
+    fondo_inicial,
+    efectivo_contado,
+    notas: vacioANulo(entrada.notas),
+  }
+}
+
+function textoLimpio(valor: string | null | undefined): string {
+  return vacioANulo(valor)?.trim() ?? ''
+}
+
+export function normalizarAjustes(entrada: typeof ajustesEntrada.static) {
+  return {
+    tienda_nombre: textoLimpio(entrada.tienda_nombre),
+    tienda_nif: textoLimpio(entrada.tienda_nif),
+    tienda_direccion: textoLimpio(entrada.tienda_direccion),
+    tienda_telefono: textoLimpio(entrada.tienda_telefono),
+    ticket_pie: textoLimpio(entrada.ticket_pie),
   }
 }
 
@@ -239,4 +356,8 @@ export type ProductoDatos = ReturnType<typeof normalizarProducto>
 export type ProveedorDatos = ReturnType<typeof normalizarProveedor>
 export type CompraDatos = ReturnType<typeof normalizarCompra>
 export type VentaDatos = ReturnType<typeof normalizarVenta>
+export type CorreccionVentaDatos = ReturnType<typeof normalizarCorreccionVenta>
+export type DevolucionDatos = ReturnType<typeof normalizarDevolucion>
+export type CierreDatos = ReturnType<typeof normalizarCierre>
+export type AjustesDatos = ReturnType<typeof normalizarAjustes>
 export type MermaDatos = ReturnType<typeof normalizarMerma>

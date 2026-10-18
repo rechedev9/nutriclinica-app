@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type { CompraInput, MermaInput, ProductoInput, ProveedorInput, VentaInput } from '@/types'
+import type { CompraInput, MermaInput, ProductoInput, ProveedorInput } from '@/types'
 
 const invalidate = (qc: ReturnType<typeof useQueryClient>, keys: ReadonlyArray<readonly unknown[]>) =>
   keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
@@ -167,34 +167,6 @@ export function useDeleteCompra() {
     onSuccess: () => {
       invalidate(qc, [qk.stock.compras, qk.stock.almacen])
       toast.success('Compra eliminada')
-    },
-    onError: (e) => toast.error(mensajeError(e)),
-  })
-}
-
-// --- Ventas ---
-export const useVentas = () =>
-  useQuery({ queryKey: qk.stock.ventas, queryFn: () => pedir(servidor.stock.ventas.get()) })
-
-export function useCreateVenta() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (b: VentaInput) => pedir(servidor.stock.ventas.post(b)),
-    onSuccess: () => {
-      invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
-      toast.success('Venta registrada')
-    },
-    onError: (e) => toast.error(mensajeError(e)),
-  })
-}
-
-export function useDeleteVenta() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => pedir(servidor.stock.ventas({ id }).delete()),
-    onSuccess: () => {
-      invalidate(qc, [qk.stock.ventas, qk.stock.almacen])
-      toast.success('Venta eliminada')
     },
     onError: (e) => toast.error(mensajeError(e)),
   })

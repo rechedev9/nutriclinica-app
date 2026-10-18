@@ -65,7 +65,7 @@ describe('catálogo', () => {
 
     await api.stock.productos({ id }).delete()
     expect(await stockDe(id)).toBeUndefined()
-    const fantasma = await api.stock.ventas.post({ lineas: [{ producto_id: id, cantidad: 1 }] })
+    const fantasma = await api.ventas.post({ lineas: [{ producto_id: id, cantidad: 1 }] })
     expect(fantasma.status).toBe(400)
     expect(mensajeDe(fantasma)).toEqual({ error: 'El producto no existe o está dado de baja' })
   })
@@ -92,32 +92,35 @@ describe('catálogo', () => {
 })
 
 describe('reglas de stock', () => {
-  test('el stock es compras menos ventas menos mermas', async () => {
+  test('el stock es compras menos ventas no anuladas menos mermas', async () => {
     const id = await nuevoProducto('Barrita')
     expect(await stockDe(id)).toBe(0)
     await comprar(id, 10)
-    const venta = await api.stock.ventas.post({ lineas: [{ producto_id: id, cantidad: 3, precio_unitario: 2.5 }] })
+    const venta = await api.ventas.post({
+      lineas: [{ producto_id: id, cantidad: 3, precio_unitario: 2.5 }],
+      pagos: [{ metodo: 'efectivo', importe: 7.5 }],
+    })
     expect(venta.status).toBe(201)
     await api.stock.mermas.post({ producto_id: id, cantidad: 2, motivo: 'caducidad' })
     expect(await stockDe(id)).toBe(5)
 
-    const ventas = (await api.stock.ventas.get()).data ?? []
+    const ventas = (await api.ventas.get()).data ?? []
     const registrada = ventas.find((v) => v.id === venta.data?.id)
     expect(registrada?.total).toBe(7.5)
     expect(registrada?.lineas).toHaveLength(1)
 
-    await api.stock.ventas({ id: venta.data?.id ?? 0 }).delete()
+    await api.ventas({ id: venta.data?.id ?? 0 }).anular.post({ motivo: 'Error al cobrar' })
     expect(await stockDe(id)).toBe(8)
   })
 
   test('una venta o una merma no pueden superar las existencias', async () => {
     const id = await nuevoProducto('Isotónica')
     await comprar(id, 4)
-    const venta = await api.stock.ventas.post({ lineas: [{ producto_id: id, cantidad: 5 }] })
+    const venta = await api.ventas.post({ lineas: [{ producto_id: id, cantidad: 5 }] })
     expect(venta.status).toBe(409)
     expect(mensajeDe(venta)).toEqual({ error: 'Stock insuficiente de «Isotónica»: quedan 4' })
     // Dos líneas del mismo producto cuentan juntas.
-    const partida = await api.stock.ventas.post({
+    const partida = await api.ventas.post({
       lineas: [
         { producto_id: id, cantidad: 3 },
         { producto_id: id, cantidad: 2 },
@@ -132,7 +135,7 @@ describe('reglas de stock', () => {
   test('borrar o reducir una compra no puede dejar el stock en negativo', async () => {
     const id = await nuevoProducto('Magnesio')
     const compra = await comprar(id, 6)
-    await api.stock.ventas.post({ lineas: [{ producto_id: id, cantidad: 4 }] })
+    await api.ventas.post({ lineas: [{ producto_id: id, cantidad: 4 }] })
 
     const borrada = await api.stock.compras({ id: compra }).delete()
     expect(borrada.status).toBe(409)
@@ -163,7 +166,7 @@ describe('reglas de stock', () => {
       expect(respuesta.status).toBe(400)
       expect(mensajeDe(respuesta)).toEqual({ error: mensaje })
     }
-    const sinLineas = await api.stock.ventas.post({})
+    const sinLineas = await api.ventas.post({})
     expect(mensajeDe(sinLineas)).toEqual({ error: 'La venta debe tener al menos una línea' })
     const motivo = await api.stock.mermas.post({ producto_id: id, cantidad: 1, motivo: 'porque sí' })
     expect(mensajeDe(motivo)).toEqual({ error: 'El motivo de la merma no es válido' })

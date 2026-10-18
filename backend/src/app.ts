@@ -9,6 +9,7 @@ import { moduloFotos } from './modulos/fotos'
 import { moduloPacientes } from './modulos/pacientes'
 import { moduloStock } from './modulos/stock'
 import { moduloUsuarios } from './modulos/usuarios'
+import { moduloVentas } from './modulos/ventas'
 
 const CABECERAS_SEGURIDAD = {
   'x-content-type-options': 'nosniff',
@@ -105,6 +106,7 @@ export function crearApp(ctx: Contexto) {
     .use(moduloExportar(ctx))
     .use(moduloStock(ctx))
     .use(moduloUsuarios(ctx))
+    .use(moduloVentas(ctx))
     .get('/', () => servirSpa(ctx, ''))
     .get('/*', ({ params }) => servirSpa(ctx, params['*']))
 }

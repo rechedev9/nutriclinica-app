@@ -5,7 +5,6 @@ const tabs = [
   { to: '/stock/categorias', label: 'Categorías' },
   { to: '/stock/proveedores', label: 'Proveedores' },
   { to: '/stock/compras', label: 'Compras' },
-  { to: '/stock/ventas', label: 'Ventas' },
   { to: '/stock/mermas', label: 'Mermas' },
   { to: '/stock/analisis', label: 'Análisis' },
 ] as const
