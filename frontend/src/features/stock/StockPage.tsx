@@ -6,6 +6,7 @@ const tabs = [
   { to: '/stock/proveedores', label: 'Proveedores' },
   { to: '/stock/compras', label: 'Compras' },
   { to: '/stock/mermas', label: 'Mermas' },
+  { to: '/stock/recuentos', label: 'Recuentos' },
   { to: '/stock/analisis', label: 'Análisis' },
 ] as const
 

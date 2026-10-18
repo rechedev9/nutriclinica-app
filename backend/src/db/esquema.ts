@@ -288,6 +288,41 @@ export const stock_mermas = sqliteTable(
   ],
 )
 
+// Recuento de inventario: unidades contadas a mano. Cada línea guarda lo que había según el
+// sistema (esperado) y la diferencia, que entra en la fórmula del stock como ajuste.
+export const stock_recuentos = sqliteTable(
+  'stock_recuentos',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    fecha: text().notNull(),
+    creado: text().notNull(),
+    usuario: text(),
+    motivo: text().notNull(),
+    notas: text(),
+  },
+  (t) => [index('idx_recuentos_fecha').on(t.fecha)],
+)
+
+export const stock_recuentos_lineas = sqliteTable(
+  'stock_recuentos_lineas',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    recuento_id: integer()
+      .notNull()
+      .references(() => stock_recuentos.id),
+    producto_id: integer()
+      .notNull()
+      .references(() => stock_productos.id),
+    esperado: real().notNull(),
+    contado: real().notNull(),
+    diferencia: real().notNull(),
+  },
+  (t) => [
+    index('idx_recuentos_lineas_recuento').on(t.recuento_id),
+    index('idx_recuentos_lineas_producto').on(t.producto_id),
+  ],
+)
+
 export const usuarios = sqliteTable('usuarios', {
   id: integer().primaryKey({ autoIncrement: true }),
   usuario: text().notNull().unique(),

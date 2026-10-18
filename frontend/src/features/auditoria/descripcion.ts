@@ -51,6 +51,7 @@ const REGLAS: Regla[] = [
   [/^\/api\/stock\/compras(?:\/(\d+))?$/, 'Compra', 'propio'],
   [/^\/api\/stock\/ventas(?:\/(\d+))?$/, 'Venta', 'propio'],
   [/^\/api\/stock\/mermas(?:\/(\d+))?$/, 'Merma', 'propio'],
+  [/^\/api\/stock\/recuentos$/, 'Recuento de inventario'],
   [/^\/api\/ventas\/(\d+)\/anular$/, 'Anulación de la venta', 'propio'],
   [/^\/api\/ventas\/(\d+)\/devoluciones$/, 'Devolución de la venta', 'propio'],
   [/^\/api\/ventas(?:\/(\d+))?$/, 'Venta', 'propio'],
