@@ -167,7 +167,28 @@ async function ejecutar(nombre: string): Promise<void> {
   }
   if (nombre === 'screenshot') {
     const destino = rutaEvidencia(obligatorio('path'))
-    const captura = await enviar('Page.captureScreenshot', { format: 'png' })
+    const ancho = Number(opcion('width') ?? '')
+    const alto = Number(opcion('height') ?? '')
+    const conTamano = Number.isInteger(ancho) && Number.isInteger(alto) && ancho >= 200 && alto >= 200
+    if ((opcion('width') !== undefined || opcion('height') !== undefined) && !conTamano) {
+      throw new Error('screenshot --width y --height tienen que ser enteros de al menos 200')
+    }
+    if (conTamano) {
+      await enviar('Emulation.setDeviceMetricsOverride', {
+        width: ancho,
+        height: alto,
+        deviceScaleFactor: 1,
+        mobile: false,
+      })
+    }
+    const desplazar = opcion('scroll')
+    if (desplazar !== undefined) {
+      exigirOk(await evaluar(expresionScroll(desplazar)), 'no se pudo desplazar')
+    }
+    const captura = await enviar('Page.captureScreenshot', {
+      format: 'png',
+      ...(conTamano ? { clip: { x: 0, y: 0, width: ancho, height: alto, scale: 1 }, captureBeyondViewport: true } : {}),
+    })
     const datos = esRegistro(captura) && typeof captura.data === 'string' ? captura.data : ''
     if (datos === '') throw new Error('la captura llegó vacía')
     mkdirSync(dirname(destino), { recursive: true })

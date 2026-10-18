@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useCambiarEstadoPedido, useDeletePedido, usePedidos } from '../hooks/useStock'
 import { PedidoModal } from '../components/PedidoModal'
 import { RecepcionModal } from '../components/RecepcionModal'
 import { CompraModal } from '../components/CompraModal'
-import { SITUACION, filtrarPedidos, pendienteDe, porRecibir, retrasado } from '../pedidos'
+import { SITUACION, fechaUltimaRecepcion, filtrarPedidos, pendienteDe, porRecibir, retrasado } from '../pedidos'
 import type { FiltroPedidos } from '../pedidos'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
@@ -17,6 +18,12 @@ import { resumenLineas } from '@/lib/format/texto'
 import { intentar } from '@/lib/api/intentar'
 import { cn } from '@/lib/cn'
 import type { Pedido, SituacionPedido } from '@/types'
+
+type AperturaPedido =
+  | { tipo: 'cerrado' }
+  | { tipo: 'nuevo' }
+  | { tipo: 'editar'; pedido: Pedido }
+  | { tipo: 'reponer'; proveedorId: number }
 
 const FILTROS: { valor: FiltroPedidos; etiqueta: string }[] = [
   { valor: 'por_recibir', etiqueta: 'Por recibir' },
@@ -102,16 +109,25 @@ function Detalle({ pedido }: { pedido: Pedido }) {
 }
 
 export function PedidosTab() {
+  const { reponer } = useSearch({ from: '/_sesion/_app/stock/pedidos' })
+  const navigate = useNavigate()
   const { data: pedidos, isLoading, isError, error, refetch, isFetching } = usePedidos()
   const del = useDeletePedido()
   const estado = useCambiarEstadoPedido()
   const confirm = useConfirm()
   const [filtro, setFiltro] = useState<FiltroPedidos>('por_recibir')
+  const [recibidosAhora, setRecibidosAhora] = useState<ReadonlySet<number>>(() => new Set())
   const [expanded, setExpanded] = useState<number | null>(null)
-  const [modalPedido, setModalPedido] = useState(false)
-  const [editando, setEditando] = useState<Pedido | undefined>()
+  const [apertura, setApertura] = useState<AperturaPedido>(() =>
+    reponer != null ? { tipo: 'reponer', proveedorId: reponer } : { tipo: 'cerrado' },
+  )
   const [recibiendo, setRecibiendo] = useState<Pedido | null>(null)
   const [compraSuelta, setCompraSuelta] = useState(false)
+
+  useEffect(() => {
+    if (reponer == null) return
+    setApertura({ tipo: 'reponer', proveedorId: reponer })
+  }, [reponer])
 
   if (isLoading) return <CenteredSpinner />
   if (isError)
@@ -119,7 +135,7 @@ export function PedidosTab() {
 
   const hoy = hoyLocal()
   const todos = pedidos ?? []
-  const filas = filtrarPedidos(todos, filtro)
+  const filas = filtrarPedidos(todos, filtro, recibidosAhora)
   const abiertos = todos.filter(porRecibir)
   const retrasados = abiertos.filter((p) => retrasado(p, hoy)).length
   const importePendiente = abiertos.reduce(
@@ -127,9 +143,19 @@ export function PedidosTab() {
     0,
   )
 
+  function quitarReponer() {
+    if (reponer == null) return
+    void navigate({ to: '/stock/pedidos', search: {}, replace: true })
+  }
+
   function nuevo() {
-    setEditando(undefined)
-    setModalPedido(true)
+    setApertura({ tipo: 'nuevo' })
+    quitarReponer()
+  }
+
+  function cerrarPedido() {
+    setApertura({ tipo: 'cerrado' })
+    quitarReponer()
   }
 
   async function cerrar(p: Pedido) {
@@ -205,6 +231,10 @@ export function PedidosTab() {
           const abierto = expanded === p.id
           const puedeRecibir = porRecibir(p)
           const tarde = retrasado(p, hoy)
+          const llegada =
+            p.situacion === 'recibido'
+              ? fechaUltimaRecepcion(p.recepciones.flatMap((r) => (r.fecha === null ? [] : [r.fecha])))
+              : null
           return (
             <div key={p.id} className="rounded-card bg-surface shadow-card">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-4">
@@ -224,9 +254,12 @@ export function PedidosTab() {
                       )}
                     </div>
                     <div className="truncate text-[13px] text-ink-muted">
-                      {p.numero} · {fmtFecha(p.fecha)}
-                      {p.fecha_prevista && ` · entrega prevista ${fmtFecha(p.fecha_prevista)}`} ·{' '}
-                      {resumenLineas(p.lineas)}
+                      {p.numero}
+                      {llegada !== null ? ` · recibido el ${fmtFecha(llegada)}` : ` · ${fmtFecha(p.fecha)}`}
+                      {llegada === null && p.fecha_prevista
+                        ? ` · entrega prevista ${fmtFecha(p.fecha_prevista)}`
+                        : ''}{' '}
+                      · {resumenLineas(p.lineas)}
                     </div>
                   </div>
                   <div className="whitespace-nowrap font-bold tabular-nums">{fmtMoneda(p.total)}</div>
@@ -239,14 +272,7 @@ export function PedidosTab() {
                     </Button>
                   )}
                   {puedeRecibir && p.recepciones.length === 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditando(p)
-                        setModalPedido(true)
-                      }}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setApertura({ tipo: 'editar', pedido: p })}>
                       Editar
                     </Button>
                   )}
@@ -281,8 +307,20 @@ export function PedidosTab() {
         Cada albarán entrado suma el stock y aparece también en la pestaña Compras.
       </p>
 
-      <PedidoModal open={modalPedido} onClose={() => setModalPedido(false)} pedido={editando} />
-      <RecepcionModal pedido={recibiendo} onClose={() => setRecibiendo(null)} />
+      <PedidoModal
+        open={apertura.tipo !== 'cerrado'}
+        onClose={cerrarPedido}
+        pedido={apertura.tipo === 'editar' ? apertura.pedido : undefined}
+        reponer={apertura.tipo === 'reponer' ? apertura.proveedorId : undefined}
+      />
+      <RecepcionModal
+        pedido={recibiendo}
+        onClose={() => setRecibiendo(null)}
+        onRecibido={(id) => {
+          setRecibidosAhora((actual) => new Set(actual).add(id))
+          setExpanded(id)
+        }}
+      />
       <CompraModal open={compraSuelta} onClose={() => setCompraSuelta(false)} />
     </div>
   )

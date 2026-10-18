@@ -8,6 +8,7 @@ Inicio is the screen after sign-in. It shows the day's workload, the till pulse,
 - `inicio-pulso` shows `Pulso de la tienda` with today, this week, and this month.
 - `inicio-agenda` shows `Agenda de clientes` for the seeded fictional clients.
 - `inicio-atajos` offers `+ Nueva venta` and `+ Nuevo cliente`.
+- `inicio-reponer` lists products at or under the minimum. A row with a supplier is a link labelled `Pedir`. It opens `/stock/pedidos?reponer=<supplier id>` with the new-order dialog already filled. A row without a supplier still opens Almacén. `+ Registrar compra` still opens Compras.
 
 ## How to get to it (user POV)
 

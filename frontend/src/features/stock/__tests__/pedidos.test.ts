@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   enCamino,
   errorRecepcion,
+  fechaUltimaRecepcion,
   filtrarPedidos,
   lineasRecepcion,
   pendienteDe,
@@ -60,6 +61,18 @@ describe('filtros y retrasos', () => {
     expect(filtrarPedidos(pedidos, 'todos')).toHaveLength(4)
   })
 
+  test('un pedido recién recibido sigue en Por recibir y uno anterior no', () => {
+    expect(filtrarPedidos(pedidos, 'por_recibir', new Set([3])).map((p) => p.id)).toEqual([1, 2, 3])
+    expect(filtrarPedidos(pedidos, 'por_recibir', new Set()).map((p) => p.id)).toEqual([1, 2])
+    expect(filtrarPedidos(pedidos, 'por_recibir', new Set([4])).map((p) => p.id)).toEqual([1, 2])
+    expect(filtrarPedidos(pedidos, 'cerrados', new Set([3])).map((p) => p.id)).toEqual([3, 4])
+  })
+
+  test('la fecha de llegada es la del último albarán', () => {
+    expect(fechaUltimaRecepcion(['2026-10-01', '2026-10-18', '2026-10-10'])).toBe('2026-10-18')
+    expect(fechaUltimaRecepcion([])).toBeNull()
+  })
+
   test('solo se retrasa un pedido por recibir con la fecha prevista pasada', () => {
     expect(pedidos.map((p) => retrasado(p, '2026-10-18'))).toEqual([true, false, false, false])
     expect(retrasado({ situacion: 'pendiente', fecha_prevista: '2026-10-18' }, '2026-10-18')).toBe(false)
@@ -74,6 +87,25 @@ describe('reposición', () => {
       { situacion: 'cancelado', lineas: [linea(3, 9, 0)] },
     ])
     expect([...camino]).toEqual([[1, 8]])
+  })
+
+  test('desde la alerta reúne a todos los productos en alerta de ese proveedor', () => {
+    const almacen = [
+      producto(1, { actual: 0, minimo: 3, proveedor: 7 }),
+      producto(2, { actual: 1, minimo: 4, proveedor: 7 }),
+      producto(3, { actual: 0, minimo: 2, proveedor: 8 }),
+      producto(4, { actual: 10, minimo: 2, proveedor: 7 }),
+    ]
+    const lineas = sugerenciasReposicion({
+      almacen,
+      proveedorId: 7,
+      enCamino: new Map(),
+      excluir: new Set(),
+    })
+    expect(lineas).toEqual([
+      { producto_id: 1, cantidad: 6, precio_unitario: 3 },
+      { producto_id: 2, cantidad: 7, precio_unitario: 3 },
+    ])
   })
 
   test('propone hasta el doble del mínimo del proveedor, sin lo que ya viene ni lo ya elegido', () => {

@@ -13,6 +13,7 @@ import { calcIMC, calcGrasaDW, clasificarGrasa, pesoGraso, pesoMagro, calcTMB } 
 import { buildMonthMultiData } from '@/lib/chart/buildMonthData'
 import { ALL_MEDIDAS, PLIEGUES } from '@/types'
 import type { Revision } from '@/types'
+import { PERIMETROS_SERIE_INICIAL, PLIEGUES_GRASA } from '../../medidas-analisis'
 import { ChartPesoGrasa } from './charts/ChartPesoGrasa'
 import { ChartPerimetros, type Serie } from './charts/ChartPerimetros'
 import { ChartPliegues } from './charts/ChartPliegues'
@@ -20,7 +21,6 @@ import { PerfilCorporal } from './PerfilCorporal'
 import { ComposicionPanel } from './ComposicionPanel'
 import { TablaEvolucion, type FilaEvolucion } from './TablaEvolucion'
 import { esDeLaUltimaRevision, resumirSerie, ultimoDato, type Punto } from './ultimo-dato'
-import { useCountUp } from '@/lib/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 
 function SparkLine({ data }: { data: (number | null)[] }) {
@@ -94,7 +94,6 @@ function KpiCard({
   // Fecha de la revisión de origen cuando el dato no es de la última.
   notaFecha?: string | null
 }) {
-  const animated = useCountUp(rawValue, decimals)
   const spark = sparklineData != null && sparklineData.filter((v) => v != null).length >= 2 ? sparklineData : null
   return (
     <div className="min-w-0 rounded-card bg-surface p-4 shadow-card">
@@ -112,7 +111,7 @@ function KpiCard({
         <>
           <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
             <div className="shrink-0 text-2xl font-extrabold tabular-nums">
-              {animated}
+              {rawValue.toFixed(decimals)}
               {unit && <span className="ml-1 text-base font-semibold text-ink-muted">{unit}</span>}
             </div>
             {spark && (
@@ -134,7 +133,7 @@ export function AnalisisTab() {
   const { data: revs, isLoading, isError, error, refetch, isFetching } = useRevisiones(p.id)
   const edad = calcEdad(p.fecha_nac)
   const sexo = p.sexo
-  const [activas, setActivas] = useState<Set<string>>(new Set(['per_cintura', 'per_caderas', 'per_muslo', 'per_pecho']))
+  const [activas, setActivas] = useState<Set<string>>(new Set(PERIMETROS_SERIE_INICIAL))
 
   const grasaFn = useMemo(
     () => (r: Revision) =>
@@ -219,9 +218,7 @@ export function AnalisisTab() {
   })
   const clase = clasificarGrasa(grasaD?.valor ?? null, sexo)
 
-  const hayPliegues = asc.some(
-    (r) => r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null,
-  )
+  const hayPliegues = asc.some((r) => PLIEGUES_GRASA.every((clave) => r[clave] != null))
   const vacioPeso = 'Sin peso registrado'
   const vacioGrasa = hayPliegues ? 'Requiere sexo y edad' : 'Sin pliegues registrados'
   // Con peso y % de grasa en revisiones distintas no se puede repartir el peso.

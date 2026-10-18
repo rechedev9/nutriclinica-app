@@ -97,59 +97,6 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
         <Field label="Nombre *" error={formState.errors.nombre?.message}>
           <Input autoFocus {...register('nombre')} />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Fecha de nacimiento" error={formState.errors.fecha_nac?.message}>
-            <Input type="date" {...register('fecha_nac')} />
-          </Field>
-          <Field label="Sexo">
-            <Select {...register('sexo')}>
-              <option value="">Sin especificar</option>
-              <option value="Hombre">Hombre</option>
-              <option value="Mujer">Mujer</option>
-              <option value="Otro">Otro</option>
-            </Select>
-          </Field>
-          <Field label="DNI / NIF">
-            <Input {...register('dni')} />
-          </Field>
-          <Field label="Grupo sanguíneo">
-            <Select {...register('grupo_sanguineo')}>
-              <option value="">Sin especificar</option>
-              {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Teléfono">
-            <Input {...register('telefono')} />
-          </Field>
-          <Field label="Email">
-            <Input type="email" {...register('email')} />
-          </Field>
-          <Field label="Peso inicial (kg)" error={formState.errors.peso?.message}>
-            <Input type="number" step="0.1" {...register('peso')} />
-          </Field>
-          <Field label="Talla (cm)" error={formState.errors.talla?.message}>
-            <Input type="number" step="0.1" {...register('talla')} />
-          </Field>
-          <Field label="Objetivo">
-            <Input {...register('objetivo')} />
-          </Field>
-          <Field label="Actividad física">
-            <Input {...register('actividad_fisica')} />
-          </Field>
-        </div>
-        <Field label="Intolerancias / alergias">
-          <Textarea {...register('intolerancias')} />
-        </Field>
-        <Field label="Patologías">
-          <Textarea {...register('patologias')} />
-        </Field>
-        <Field label="Notas / observaciones">
-          <Textarea {...register('notas')} />
-        </Field>
         <label className="flex items-start gap-2.5 rounded-lg border border-border bg-app p-3 text-sm">
           <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-primary" {...register('consentimiento')} />
           <span className="text-ink-muted">
@@ -164,6 +111,62 @@ export function PacienteModal({ open, onClose, paciente }: Props) {
           <Button type="submit" isLoading={create.isPending || update.isPending}>
             {isEdit ? 'Guardar cambios' : 'Crear cliente'}
           </Button>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-border pt-3">
+          <h3 className="text-sm font-semibold text-ink-muted">Datos opcionales</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Fecha de nacimiento" error={formState.errors.fecha_nac?.message}>
+              <Input type="date" {...register('fecha_nac')} />
+            </Field>
+            <Field label="Sexo">
+              <Select {...register('sexo')}>
+                <option value="">Sin especificar</option>
+                <option value="Hombre">Hombre</option>
+                <option value="Mujer">Mujer</option>
+                <option value="Otro">Otro</option>
+              </Select>
+            </Field>
+            <Field label="DNI / NIF">
+              <Input {...register('dni')} />
+            </Field>
+            <Field label="Grupo sanguíneo">
+              <Select {...register('grupo_sanguineo')}>
+                <option value="">Sin especificar</option>
+                {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Teléfono">
+              <Input {...register('telefono')} />
+            </Field>
+            <Field label="Email">
+              <Input type="email" {...register('email')} />
+            </Field>
+            <Field label="Peso inicial (kg)" error={formState.errors.peso?.message}>
+              <Input type="number" step="0.1" {...register('peso')} />
+            </Field>
+            <Field label="Talla (cm)" error={formState.errors.talla?.message}>
+              <Input type="number" step="0.1" {...register('talla')} />
+            </Field>
+            <Field label="Objetivo">
+              <Input {...register('objetivo')} />
+            </Field>
+            <Field label="Actividad física">
+              <Input {...register('actividad_fisica')} />
+            </Field>
+          </div>
+          <Field label="Intolerancias / alergias">
+            <Textarea {...register('intolerancias')} />
+          </Field>
+          <Field label="Patologías">
+            <Textarea {...register('patologias')} />
+          </Field>
+          <Field label="Notas / observaciones">
+            <Textarea {...register('notas')} />
+          </Field>
         </div>
       </form>
     </Modal>

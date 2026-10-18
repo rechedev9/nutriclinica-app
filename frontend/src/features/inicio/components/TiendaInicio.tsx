@@ -4,12 +4,52 @@ import { useAlmacen } from '@/features/stock/hooks/useStock'
 import { cn } from '@/lib/cn'
 import { haceCuanto } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
+import type { AlmacenRow } from '@/types'
 import { useResumenInicio } from '../hooks/useResumenInicio'
 import { DIAS_SIN_MOVIMIENTO, productosSinMovimiento, valorParado } from '../sin-movimiento'
 import { SinDatos, Tarjeta, Vacio, enlaceSutil, filaEnlace } from './Tarjeta'
 
 const MAX_REPONER = 5
 const MAX_PARADOS = 4
+
+function FilaReponer({ producto }: { producto: AlmacenRow }) {
+  const agotado = estadoDe(producto.stock_actual, producto.stock_minimo) === 'agotado'
+  const proveedorId = producto.proveedor_id
+  const cuerpo = (
+    <>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-semibold">{producto.nombre}</span>
+        <span className="block text-[13px] tabular-nums text-ink-muted">
+          {producto.stock_actual} en stock · mínimo {producto.stock_minimo}
+          {producto.proveedor_nombre ? ` · ${producto.proveedor_nombre}` : ''}
+        </span>
+      </span>
+      <span
+        className={cn(
+          'shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold',
+          agotado ? 'bg-danger/10 text-danger' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+        )}
+      >
+        {agotado ? 'Agotado' : 'Bajo mínimo'}
+      </span>
+      {proveedorId != null && <span className="shrink-0 text-[13px] font-semibold text-primary">Pedir</span>}
+    </>
+  )
+
+  return (
+    <li>
+      {proveedorId != null ? (
+        <Link to="/stock/pedidos" search={{ reponer: proveedorId }} className={filaEnlace}>
+          {cuerpo}
+        </Link>
+      ) : (
+        <Link to="/stock/almacen" className={filaEnlace}>
+          {cuerpo}
+        </Link>
+      )}
+    </li>
+  )
+}
 
 export function PorReponer() {
   const almacen = useAlmacen()
@@ -35,30 +75,9 @@ export function PorReponer() {
       ) : (
         <>
           <ul className="flex flex-col">
-            {visibles.map((p) => {
-              const agotado = estadoDe(p.stock_actual, p.stock_minimo) === 'agotado'
-              return (
-                <li key={p.id}>
-                  <Link to="/stock/almacen" className={filaEnlace}>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{p.nombre}</span>
-                      <span className="block text-[13px] tabular-nums text-ink-muted">
-                        {p.stock_actual} en stock · mínimo {p.stock_minimo}
-                        {p.proveedor_nombre ? ` · ${p.proveedor_nombre}` : ''}
-                      </span>
-                    </span>
-                    <span
-                      className={cn(
-                        'shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold',
-                        agotado ? 'bg-danger/10 text-danger' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-                      )}
-                    >
-                      {agotado ? 'Agotado' : 'Bajo mínimo'}
-                    </span>
-                  </Link>
-                </li>
-              )
-            })}
+            {visibles.map((p) => (
+              <FilaReponer key={p.id} producto={p} />
+            ))}
           </ul>
           {restantes > 0 && (
             <Link to="/stock/almacen" className={cn(enlaceSutil, 'mt-2 self-start px-2')}>

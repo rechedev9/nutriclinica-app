@@ -5,13 +5,12 @@ import { Field, Input } from '@/components/ui/Field'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { cn } from '@/lib/cn'
 import { cambio, efectivoDe, entregasRapidas, errorPagos, importeEditable, leerImporte } from '../carrito'
+import type { ModoCobro } from '../ultimo-cobro'
 import { PagosEditor, pagosDe } from './PagosEditor'
 import type { PagoEditable } from './PagosEditor'
 import type { PagoInput } from '@/types'
 
-type Modo = 'efectivo' | 'tarjeta' | 'bizum' | 'mixto'
-
-const MODOS: { valor: Modo; etiqueta: string }[] = [
+const MODOS: { valor: ModoCobro; etiqueta: string }[] = [
   { valor: 'efectivo', etiqueta: 'Efectivo' },
   { valor: 'tarjeta', etiqueta: 'Tarjeta' },
   { valor: 'bizum', etiqueta: 'Bizum' },
@@ -20,14 +19,14 @@ const MODOS: { valor: Modo; etiqueta: string }[] = [
 
 interface Props {
   total: number
+  modoInicial: ModoCobro
   isLoading: boolean
   onClose: () => void
-  onCobrar: (cobro: { pagos: PagoInput[]; entregado: number | null }) => void
+  onCobrar: (cobro: { pagos: PagoInput[]; entregado: number | null; modo: ModoCobro }) => void
 }
 
-// Se monta al abrir: cada cobro empieza en efectivo y sin importe entregado.
-export function CobroModal({ total, isLoading, onClose, onCobrar }: Props) {
-  const [modo, setModo] = useState<Modo>('efectivo')
+export function CobroModal({ total, modoInicial, isLoading, onClose, onCobrar }: Props) {
+  const [modo, setModo] = useState<ModoCobro>(modoInicial)
   const [entregadoTexto, setEntregadoTexto] = useState('')
   const [filas, setFilas] = useState<PagoEditable[]>([
     { metodo: 'efectivo', importe: '' },
@@ -47,7 +46,7 @@ export function CobroModal({ total, isLoading, onClose, onCobrar }: Props) {
 
   function cobrar() {
     if (error !== null) return
-    onCobrar({ pagos: total === 0 ? [] : pagos, entregado: efectivo > 0 ? entregado : null })
+    onCobrar({ pagos: total === 0 ? [] : pagos, entregado: efectivo > 0 ? entregado : null, modo })
   }
 
   return (
