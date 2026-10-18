@@ -8,6 +8,8 @@ export type ProductoBase = Treaty.Data<typeof servidor.stock.productos.post>
 export type Categoria = Treaty.Data<typeof servidor.stock.categorias.get>[number]
 export type Proveedor = Treaty.Data<typeof servidor.stock.proveedores.get>[number]
 export type Compra = Treaty.Data<typeof servidor.stock.compras.get>[number]
+export type Pedido = Treaty.Data<typeof servidor.stock.pedidos.get>[number]
+export type SituacionPedido = Pedido['situacion']
 type Merma = Treaty.Data<typeof servidor.stock.mermas.get>[number]
 export type MotivoMerma = Merma['motivo']
 export type Recuento = Treaty.Data<typeof servidor.stock.recuentos.get>[number]
@@ -44,6 +46,23 @@ export interface CompraInput {
   fecha?: string | null
   proveedor_id?: number | null
   notas?: string | null
+  albaran?: string | null
+  lineas: LineaInput[]
+}
+
+export interface PedidoInput {
+  fecha?: string | null
+  proveedor_id: number | null
+  fecha_prevista?: string | null
+  notas?: string | null
+  lineas: LineaInput[]
+}
+
+export interface RecepcionInput {
+  fecha?: string | null
+  albaran?: string | null
+  notas?: string | null
+  cerrar?: boolean
   lineas: LineaInput[]
 }
 

@@ -49,6 +49,10 @@ const REGLAS: Regla[] = [
   [/^\/api\/stock\/categorias(?:\/(\d+))?$/, 'Categoría', 'propio'],
   [/^\/api\/stock\/proveedores(?:\/(\d+))?$/, 'Proveedor', 'propio'],
   [/^\/api\/stock\/compras(?:\/(\d+))?$/, 'Compra', 'propio'],
+  [/^\/api\/stock\/pedidos\/(\d+)\/recepciones$/, 'Albarán del pedido', 'propio'],
+  [/^\/api\/stock\/pedidos\/(\d+)\/cerrar$/, 'Cierre del pedido', 'propio'],
+  [/^\/api\/stock\/pedidos\/(\d+)\/reabrir$/, 'Reapertura del pedido', 'propio'],
+  [/^\/api\/stock\/pedidos(?:\/(\d+))?$/, 'Pedido', 'propio'],
   [/^\/api\/stock\/ventas(?:\/(\d+))?$/, 'Venta', 'propio'],
   [/^\/api\/stock\/mermas(?:\/(\d+))?$/, 'Merma', 'propio'],
   [/^\/api\/stock\/recuentos$/, 'Recuento de inventario'],
@@ -66,6 +70,8 @@ export function tipoAccion(metodo: string, ruta: string): TipoAccion | null {
   if (metodo === 'POST' && ruta.endsWith('/password')) return 'edicion'
   // Anular una venta llega como POST, pero la deja sin efecto.
   if (metodo === 'POST' && ruta.endsWith('/anular')) return 'borrado'
+  // Cerrar o reabrir un pedido cambia su estado.
+  if (metodo === 'POST' && /\/pedidos\/\d+\/(?:cerrar|reabrir)$/.test(ruta)) return 'edicion'
   return TIPOS[metodo] ?? null
 }
 

@@ -14,6 +14,7 @@ export const qk = {
     categorias: ['stock', 'categorias'] as const,
     proveedores: ['stock', 'proveedores'] as const,
     compras: ['stock', 'compras'] as const,
+    pedidos: ['stock', 'pedidos'] as const,
     mermas: ['stock', 'mermas'] as const,
     recuentos: ['stock', 'recuentos'] as const,
     // Cuelga del almacén: lo que invalida las existencias (compras, ventas, mermas) también lo alcanza.

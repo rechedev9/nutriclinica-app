@@ -29,6 +29,13 @@
       "when": 1792327050116,
       "tag": "0003_control_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792335293166,
+      "tag": "0004_pedidos_proveedor",
+      "breakpoints": true
     }
   ]
 }

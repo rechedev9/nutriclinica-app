@@ -143,6 +143,7 @@ function deCompras(db: BD, productoId: number): Movimiento[] {
       id: stock_compras.id,
       fecha: stock_compras.fecha,
       proveedor: stock_proveedores.nombre,
+      albaran: stock_compras.albaran,
       cantidad: sql<number>`sum(${stock_compras_lineas.cantidad})`.mapWith(Number),
     })
     .from(stock_compras_lineas)
@@ -160,7 +161,8 @@ function deCompras(db: BD, productoId: number): Movimiento[] {
         cantidad: c.cantidad,
         referencia_id: c.id,
         ticket: null,
-        detalle: c.proveedor,
+        detalle:
+          c.albaran === null ? c.proveedor : `Albarán ${c.albaran}${c.proveedor === null ? '' : ` · ${c.proveedor}`}`,
         usuario: null,
         contado: null,
       }

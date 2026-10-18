@@ -5,6 +5,7 @@ import {
   stock_compras,
   stock_compras_lineas,
   stock_mermas,
+  stock_pedidos,
   stock_productos,
   stock_proveedores,
 } from '../db/esquema'
@@ -45,6 +46,7 @@ export function listarAlmacen(db: BD) {
       codigo_barras: stock_productos.codigo_barras,
       iva: stock_productos.iva,
       categoria: stock_categorias.nombre,
+      proveedor_id: stock_productos.proveedor_id,
       proveedor_nombre: stock_proveedores.nombre,
       stock_actual: stockActual,
       creado: stock_productos.creado,
@@ -179,13 +181,14 @@ function proveedorEnUso(tx: Ejecutor, id: number): boolean {
     .get()
   const compra = tx.select({ id: stock_compras.id }).from(stock_compras).where(eq(stock_compras.proveedor_id, id)).get()
   const merma = tx.select({ id: stock_mermas.id }).from(stock_mermas).where(eq(stock_mermas.proveedor_id, id)).get()
-  return producto !== undefined || compra !== undefined || merma !== undefined
+  const pedido = tx.select({ id: stock_pedidos.id }).from(stock_pedidos).where(eq(stock_pedidos.proveedor_id, id)).get()
+  return producto !== undefined || compra !== undefined || merma !== undefined || pedido !== undefined
 }
 
 export function eliminarProveedor(db: BD, id: number): void {
   db.transaction((tx) => {
     if (proveedorEnUso(tx, id)) {
-      throw new ErrorHttp(409, 'No se puede eliminar: hay productos o compras de este proveedor')
+      throw new ErrorHttp(409, 'No se puede eliminar: hay productos, compras o pedidos de este proveedor')
     }
     // Los productos que quedan apuntando al proveedor están dados de baja.
     tx.update(stock_productos).set({ proveedor_id: null }).where(eq(stock_productos.proveedor_id, id)).run()
@@ -195,7 +198,7 @@ export function eliminarProveedor(db: BD, id: number): void {
 
 // --- Reglas de stock ---
 
-function totalDe(lineas: LineaDatos[]): number {
+export function totalDe(lineas: LineaDatos[]): number {
   return lineas.reduce((suma, l) => suma + l.cantidad * l.precio_unitario, 0)
 }
 
@@ -263,6 +266,30 @@ export function agrupar<L extends { padre: number }>(ids: number[], lineas: L[])
 
 // --- Compras ---
 
+export function numeroPedido(id: number): string {
+  return `P-${String(id).padStart(6, '0')}`
+}
+
+// Un mismo albarán de un proveedor no se puede entrar dos veces.
+export function comprobarAlbaranLibre(
+  tx: Ejecutor,
+  albaran: { numero: string | null; proveedor_id: number | null; excepto: number },
+): void {
+  if (albaran.numero === null || albaran.proveedor_id === null) return
+  const repetido = tx
+    .select({ id: stock_compras.id })
+    .from(stock_compras)
+    .where(
+      and(
+        eq(stock_compras.proveedor_id, albaran.proveedor_id),
+        sql`lower(${stock_compras.albaran}) = lower(${albaran.numero})`,
+        ne(stock_compras.id, albaran.excepto),
+      ),
+    )
+    .get()
+  if (repetido !== undefined) throw new ErrorHttp(409, `El albarán ${albaran.numero} de este proveedor ya está entrado`)
+}
+
 function productosDeCompra(tx: Ejecutor, compraId: number) {
   return tx
     .select({ producto_id: stock_compras_lineas.producto_id })
@@ -295,13 +322,18 @@ export function listarCompras(db: BD) {
     .orderBy(stock_compras_lineas.id)
     .all()
   const porCompra = agrupar(ids, lineas)
-  return compras.map((c) => ({ ...c, lineas: porCompra.get(c.id) ?? [] }))
+  return compras.map((c) => ({
+    ...c,
+    pedido_numero: c.pedido_id === null ? null : numeroPedido(c.pedido_id),
+    lineas: porCompra.get(c.id) ?? [],
+  }))
 }
 
 export function crearCompra(db: BD, datos: CompraDatos): number {
   const { lineas, ...cabecera } = datos
   return db.transaction((tx) => {
     comprobarProductosExisten(tx, lineas)
+    comprobarAlbaranLibre(tx, { numero: cabecera.albaran, proveedor_id: cabecera.proveedor_id, excepto: 0 })
     const { id } = tx
       .insert(stock_compras)
       .values({ ...cabecera, fecha: cabecera.fecha ?? fechaLocal(new Date()), total: totalDe(lineas) })
@@ -314,19 +346,26 @@ export function crearCompra(db: BD, datos: CompraDatos): number {
   }, INMEDIATA)
 }
 
-// actualizarCompra reemplaza los datos y las líneas de una compra.
+// actualizarCompra reemplaza los datos y las líneas de una compra. La de un pedido
+// sigue siendo de su proveedor.
 export function actualizarCompra(db: BD, id: number, datos: CompraDatos): void {
-  const { lineas, ...cabecera } = datos
+  const { lineas, ...entrada } = datos
   db.transaction((tx) => {
+    const actual = tx
+      .select({ proveedor_id: stock_pedidos.proveedor_id })
+      .from(stock_compras)
+      .leftJoin(stock_pedidos, eq(stock_pedidos.id, stock_compras.pedido_id))
+      .where(eq(stock_compras.id, id))
+      .get()
+    if (actual === undefined) throw new ErrorHttp(404, 'Compra no encontrada')
+    const cabecera = { ...entrada, proveedor_id: actual.proveedor_id ?? entrada.proveedor_id }
     const afectados = idsDe([...productosDeCompra(tx, id), ...lineas])
     comprobarProductosExisten(tx, lineas)
-    const cambiadas = tx
-      .update(stock_compras)
+    comprobarAlbaranLibre(tx, { numero: cabecera.albaran, proveedor_id: cabecera.proveedor_id, excepto: id })
+    tx.update(stock_compras)
       .set({ ...cabecera, total: totalDe(lineas) })
       .where(eq(stock_compras.id, id))
-      .returning({ id: stock_compras.id })
-      .all()
-    if (cambiadas.length === 0) throw new ErrorHttp(404, 'Compra no encontrada')
+      .run()
     tx.delete(stock_compras_lineas).where(eq(stock_compras_lineas.compra_id, id)).run()
     tx.insert(stock_compras_lineas)
       .values(lineas.map((l) => ({ ...l, compra_id: id })))

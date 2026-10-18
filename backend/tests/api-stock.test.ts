@@ -79,7 +79,9 @@ describe('catálogo', () => {
 
     const enUso = await api.stock.proveedores({ id: proveedor_id }).delete()
     expect(enUso.status).toBe(409)
-    expect(mensajeDe(enUso)).toEqual({ error: 'No se puede eliminar: hay productos o compras de este proveedor' })
+    expect(mensajeDe(enUso)).toEqual({
+      error: 'No se puede eliminar: hay productos, compras o pedidos de este proveedor',
+    })
     expect((await api.stock.proveedores({ id: 9999 }).put({ nombre: 'Nadie' })).status).toBe(404)
 
     const otro = await api.stock.proveedores.post({ nombre: 'Amix' })
