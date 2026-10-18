@@ -42,12 +42,15 @@ function tareaDe<T extends ClienteAgenda>(cliente: T, ultimaCompra: string | nul
     return { cliente, motivo: 'baja', dias: inactivo, sinConsentimiento }
   }
   const seg = seguimiento(cliente, hoy)
-  if (seg.dias === null) {
-    return { cliente, motivo: 'primera', dias: diasDesde(cliente.creado, hoy), sinConsentimiento }
+  switch (seg.estado) {
+    case 'sin':
+      return { cliente, motivo: 'primera', dias: diasDesde(cliente.creado, hoy), sinConsentimiento }
+    case 'vencida':
+      return { cliente, motivo: 'vencida', dias: seg.dias, sinConsentimiento }
+    case 'al_dia':
+      if (sinConsentimiento) return { cliente, motivo: 'consentimiento', dias: null, sinConsentimiento }
+      return null
   }
-  if (seg.pendiente) return { cliente, motivo: 'vencida', dias: seg.dias, sinConsentimiento }
-  if (sinConsentimiento) return { cliente, motivo: 'consentimiento', dias: null, sinConsentimiento }
-  return null
 }
 
 // Lo que hay que hacer con cada cliente, por urgencia. Las vencidas y las primeras

@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { usePacientes } from './hooks/usePacientes'
 import { PacienteModal } from './components/PacienteModal'
 import { seguimiento } from './seguimiento'
@@ -43,11 +43,11 @@ function Listado({ onNew }: { onNew: () => void }) {
     void navigate({ to: '/pacientes', search: activo ? { pendientes: 1 } : {}, replace: true })
   const deferredQ = useDeferredValue(q)
 
-  const pendientes = useMemo(() => pacientes.filter((p) => seguimiento(p).pendiente).length, [pacientes])
+  const pendientes = useMemo(() => pacientes.filter((p) => seguimiento(p).estado !== 'al_dia').length, [pacientes])
   const filtrados = useMemo(() => {
     const term = normaliza(deferredQ)
     return pacientes.filter(
-      (p) => (!term || normaliza(p.nombre).includes(term)) && (!soloPendientes || seguimiento(p).pendiente),
+      (p) => (!term || normaliza(p.nombre).includes(term)) && (!soloPendientes || seguimiento(p).estado !== 'al_dia'),
     )
   }, [pacientes, deferredQ, soloPendientes])
 
@@ -103,43 +103,61 @@ function Listado({ onNew }: { onNew: () => void }) {
             const imc = calcIMC(p.peso, p.talla)
             const seg = seguimiento(p)
             return (
-              <button
+              <article
                 key={p.id}
-                onClick={() => void navigate({ to: '/pacientes/$id', params: { id: String(p.id) } })}
-                className="flex flex-col gap-2.5 rounded-card border border-border bg-surface p-4 text-left shadow-card transition-[border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.99] [@media(hover:hover)]:hover:border-primary/40 [@media(hover:hover)]:hover:shadow-md"
+                className="flex h-full flex-col gap-2.5 rounded-card border border-border bg-surface p-4 text-left shadow-card transition-[border-color,box-shadow] duration-150 ease-out [@media(hover:hover)]:hover:border-primary/40 [@media(hover:hover)]:hover:shadow-md"
               >
-                <div className="flex items-center gap-3">
-                  <Avatar nombre={p.nombre} className="h-11 w-11 text-base" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">{p.nombre}</div>
-                    <div className="truncate text-[13px] text-ink-muted">{meta(p)}</div>
+                <button
+                  type="button"
+                  onClick={() => void navigate({ to: '/pacientes/$id', params: { id: String(p.id) } })}
+                  className="flex w-full min-w-0 flex-col gap-2.5 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar nombre={p.nombre} className="h-11 w-11 text-base" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold">{p.nombre}</div>
+                      <div className="truncate text-[13px] text-ink-muted">{meta(p)}</div>
+                    </div>
+                    {imc && (
+                      <ImcBadge
+                        clase={imc.cls}
+                        className="shrink-0 rounded-full px-2 text-[12px] font-semibold"
+                      >{`IMC ${imc.val}`}</ImcBadge>
+                    )}
                   </div>
-                  {imc && (
-                    <ImcBadge
-                      clase={imc.cls}
-                      className="shrink-0 rounded-full px-2 text-[12px] font-semibold"
-                    >{`IMC ${imc.val}`}</ImcBadge>
+                  {p.objetivo && (
+                    <div className="truncate text-[13px] text-ink-muted">
+                      <span className="text-ink-muted/70">Objetivo:</span> {p.objetivo}
+                    </div>
                   )}
-                </div>
-                {p.objetivo && (
-                  <div className="truncate text-[13px] text-ink-muted">
-                    <span className="text-ink-muted/70">Objetivo:</span> {p.objetivo}
-                  </div>
-                )}
-                <div className="mt-auto flex w-full items-center justify-between gap-2 border-t border-border pt-2.5 text-[13px] text-ink-muted">
-                  <span>{p.num_revisiones === 1 ? '1 revisión' : `${p.num_revisiones} revisiones`}</span>
+                </button>
+                <div className="mt-auto flex w-full items-center gap-2 border-t border-border pt-2.5 text-[13px] text-ink-muted">
+                  <span className="shrink-0">
+                    {p.num_revisiones === 1 ? '1 revisión' : `${p.num_revisiones} revisiones`}
+                  </span>
                   <span
                     title={p.ultima_revision ? fmtFecha(p.ultima_revision) : undefined}
                     className={cn(
-                      'inline-flex items-center gap-1.5',
-                      seg.pendiente && 'font-semibold text-amber-600 dark:text-amber-400',
+                      'ml-auto inline-flex min-w-0 items-center gap-1.5',
+                      seg.estado !== 'al_dia' && 'font-semibold text-amber-600 dark:text-amber-400',
                     )}
                   >
-                    {seg.pendiente && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />}
-                    {seg.texto}
+                    {seg.estado !== 'al_dia' && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
+                    )}
+                    <span className="truncate">{seg.texto}</span>
                   </span>
+                  {seg.estado === 'vencida' && (
+                    <Link
+                      to="/pacientes/$id/revisiones"
+                      params={{ id: String(p.id) }}
+                      className="shrink-0 font-semibold text-primary [@media(hover:hover)]:hover:underline"
+                    >
+                      Revisión
+                    </Link>
+                  )}
                 </div>
-              </button>
+              </article>
             )
           })}
         </div>
