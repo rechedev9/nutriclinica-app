@@ -46,6 +46,18 @@ export function filtrarVentas(ventas: readonly Venta[], filtro: FiltroVentas): V
   })
 }
 
+// Ventas consecutivas del mismo día juntas, en el orden en que llegan (de la más reciente a la más antigua).
+export function agruparPorDia(ventas: readonly Venta[]): { fecha: string; ventas: Venta[] }[] {
+  const grupos: { fecha: string; ventas: Venta[] }[] = []
+  for (const v of ventas) {
+    const fecha = v.fecha ?? ''
+    const ultimo = grupos.at(-1)
+    if (ultimo?.fecha === fecha) ultimo.ventas.push(v)
+    else grupos.push({ fecha, ventas: [v] })
+  }
+  return grupos
+}
+
 // Cifras de un conjunto de ventas: las anuladas no suman y lo devuelto se resta.
 export function resumenVentas(ventas: readonly Venta[]) {
   const validas = ventas.filter((v) => v.estado !== 'anulada')

@@ -9,9 +9,14 @@ import { intentar } from '@/lib/api/intentar'
 import { fmtFecha, hoyLocal } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { cn } from '@/lib/cn'
-import { leerImporte, sumarImportes } from '../carrito'
-import { useCerrarCaja, useCierres, useReabrirCaja, useResumenCaja } from '../hooks/useVentas'
+import { importeEditable, leerImporte, sumarImportes } from '../carrito'
+import { diasSinCerrar } from '../cierre'
+import { InformeCajaImprimible } from '../components/InformeCaja'
+import { imprimirTicket } from '../components/Ticket'
+import { useCerrarCaja, useCierres, useReabrirCaja, useResumenCaja, useTienda, useVentas } from '../hooks/useVentas'
 import type { Cierre, ResumenCaja } from '@/types'
+
+const MAX_DIAS_AVISO = 7
 
 function Linea({ etiqueta, valor, fuerte }: { etiqueta: string; valor: number; fuerte?: boolean }) {
   return (
@@ -73,10 +78,11 @@ function Movimientos({ resumen }: { resumen: ResumenCaja }) {
   )
 }
 
-function FormularioCierre({ resumen }: { resumen: ResumenCaja }) {
+// El fondo arranca con el del último cierre: casi siempre se deja el mismo cambio en el cajón.
+function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fondoSugerido: number | null }) {
   const cerrar = useCerrarCaja()
   const confirm = useConfirm()
-  const [fondo, setFondo] = useState('')
+  const [fondo, setFondo] = useState(() => (fondoSugerido === null ? '' : importeEditable(fondoSugerido)))
   const [contado, setContado] = useState('')
   const [notas, setNotas] = useState('')
   const fondoInicial = leerImporte(fondo) ?? 0
@@ -191,8 +197,30 @@ function CierreHecho({ cierre }: { cierre: Cierre }) {
   )
 }
 
-function Historico({ onElegir }: { onElegir: (fecha: string) => void }) {
-  const { data: cierres = [] } = useCierres()
+function DiasSinCerrar({ dias, onElegir }: { dias: string[]; onElegir: (fecha: string) => void }) {
+  if (dias.length === 0) return null
+  const resto = dias.length - MAX_DIAS_AVISO
+  return (
+    <div role="status" className="rounded-card border border-amber-500/30 bg-amber-500/10 p-4 text-sm lg:col-span-2">
+      <p>
+        <span className="font-semibold">
+          {dias.length === 1 ? 'Hay 1 día con ventas sin cerrar' : `Hay ${dias.length} días con ventas sin cerrar`}.
+        </span>{' '}
+        Elige uno para hacer su arqueo.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {dias.slice(0, MAX_DIAS_AVISO).map((d) => (
+          <Button key={d} variant="outline" size="sm" onClick={() => onElegir(d)}>
+            {fmtFecha(d)}
+          </Button>
+        ))}
+        {resto > 0 && <span className="text-ink-muted">y {resto} más</span>}
+      </div>
+    </div>
+  )
+}
+
+function Historico({ cierres, onElegir }: { cierres: Cierre[]; onElegir: (fecha: string) => void }) {
   if (cierres.length === 0) return null
   return (
     <section className="rounded-card bg-surface p-4 text-sm shadow-card lg:col-span-2">
@@ -235,6 +263,10 @@ export function CierreTab() {
   const [hoy] = useState(() => hoyLocal())
   const [fecha, setFecha] = useState(hoy)
   const { data: resumen, isLoading, isError, error, refetch, isFetching } = useResumenCaja(fecha)
+  const { data: cierres = [], isLoading: cargandoCierres } = useCierres()
+  const { data: ventas = [] } = useVentas()
+  const { data: tienda } = useTienda()
+  const pendientes = diasSinCerrar({ ventas, cerrados: cierres.map((c) => c.fecha), hoy })
 
   return (
     <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-2">
@@ -253,8 +285,14 @@ export function CierreTab() {
             Volver a hoy
           </Button>
         )}
+        {resumen && (
+          <Button variant="outline" size="sm" className="ml-auto" onClick={imprimirTicket}>
+            {resumen.cierre === null ? 'Imprimir avance' : 'Imprimir cierre'}
+          </Button>
+        )}
       </div>
-      {isLoading ? (
+      <DiasSinCerrar dias={pendientes.filter((d) => d !== fecha)} onElegir={setFecha} />
+      {isLoading || cargandoCierres ? (
         <CenteredSpinner />
       ) : isError || !resumen ? (
         <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="la caja" />
@@ -262,13 +300,14 @@ export function CierreTab() {
         <>
           <Movimientos resumen={resumen} />
           {resumen.cierre === null ? (
-            <FormularioCierre key={fecha} resumen={resumen} />
+            <FormularioCierre key={fecha} resumen={resumen} fondoSugerido={cierres[0]?.fondo_inicial ?? null} />
           ) : (
             <CierreHecho cierre={resumen.cierre} />
           )}
+          <InformeCajaImprimible resumen={resumen} tienda={tienda} />
         </>
       )}
-      <Historico onElegir={setFecha} />
+      <Historico cierres={cierres} onElegir={setFecha} />
     </div>
   )
 }
