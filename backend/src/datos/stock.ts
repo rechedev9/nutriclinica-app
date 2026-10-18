@@ -18,7 +18,7 @@ type LineaDatos = CompraDatos['lineas'][number]
 const INMEDIATA = { behavior: 'immediate' } as const
 
 // Existencias de un producto: compras - ventas no anuladas + devoluciones que vuelven al
-// almacén - mermas. No se guarda, siempre se deriva.
+// almacén - mermas + ajustes de los recuentos. No se guarda, siempre se deriva.
 // La columna exterior va calificada a mano (Drizzle no lo hace en un select de una tabla).
 const stockActual = sql`(
   coalesce((select sum(cantidad) from stock_compras_lineas where producto_id = ${stock_productos}.id), 0)
@@ -27,6 +27,7 @@ const stockActual = sql`(
   + coalesce((select sum(cantidad) from stock_devoluciones_lineas
       where producto_id = ${stock_productos}.id and reingresa = 1), 0)
   - coalesce((select sum(cantidad) from stock_mermas where producto_id = ${stock_productos}.id), 0)
+  + coalesce((select sum(diferencia) from stock_recuentos_lineas where producto_id = ${stock_productos}.id), 0)
 )`.mapWith(Number)
 
 // --- Almacén y productos ---
@@ -202,9 +203,15 @@ export function idsDe(lineas: { producto_id: number }[]): number[] {
   return [...new Set(lineas.map((l) => l.producto_id))].toSorted((a, b) => a - b)
 }
 
-function productoConStock(tx: Ejecutor, id: number) {
+export function productoConStock(tx: Ejecutor, id: number) {
   return tx
-    .select({ nombre: stock_productos.nombre, activo: stock_productos.activo, stock: stockActual })
+    .select({
+      nombre: stock_productos.nombre,
+      unidad: stock_productos.unidad,
+      stock_minimo: stock_productos.stock_minimo,
+      activo: stock_productos.activo,
+      stock: stockActual,
+    })
     .from(stock_productos)
     .where(eq(stock_productos.id, id))
     .get()

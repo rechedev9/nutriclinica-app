@@ -10,6 +10,10 @@ export type Proveedor = Treaty.Data<typeof servidor.stock.proveedores.get>[numbe
 export type Compra = Treaty.Data<typeof servidor.stock.compras.get>[number]
 type Merma = Treaty.Data<typeof servidor.stock.mermas.get>[number]
 export type MotivoMerma = Merma['motivo']
+export type Recuento = Treaty.Data<typeof servidor.stock.recuentos.get>[number]
+type Kardex = Treaty.Data<ReturnType<typeof servidor.stock.productos>['movimientos']['get']>
+export type Movimiento = Kardex['movimientos'][number]
+export type TipoMovimiento = Movimiento['tipo']
 
 export interface ProductoInput {
   nombre: string
@@ -50,4 +54,10 @@ export interface MermaInput {
   motivo: MotivoMerma
   fecha?: string | null
   notas?: string | null
+}
+
+export interface RecuentoInput {
+  motivo: string
+  notas?: string | null
+  lineas: { producto_id: number; contado: number }[]
 }

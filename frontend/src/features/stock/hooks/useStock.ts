@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { mensajeError, pedir, servidor } from '@/lib/api/client'
 import { qk } from '@/lib/api/queryKeys'
 import { toast } from 'sonner'
-import type { CompraInput, MermaInput, ProductoInput, ProveedorInput } from '@/types'
+import type { CompraInput, MermaInput, ProductoInput, ProveedorInput, RecuentoInput } from '@/types'
 
 const invalidate = (qc: ReturnType<typeof useQueryClient>, keys: ReadonlyArray<readonly unknown[]>) =>
   keys.forEach((k) => qc.invalidateQueries({ queryKey: k }))
@@ -195,6 +195,29 @@ export function useDeleteMerma() {
     onSuccess: () => {
       invalidate(qc, [qk.stock.mermas, qk.stock.almacen])
       toast.success('Merma eliminada')
+    },
+    onError: (e) => toast.error(mensajeError(e)),
+  })
+}
+
+// --- Recuentos y movimientos ---
+export const useRecuentos = () =>
+  useQuery({ queryKey: qk.stock.recuentos, queryFn: () => pedir(servidor.stock.recuentos.get()) })
+
+export const useMovimientos = (id: number) =>
+  useQuery({
+    queryKey: qk.stock.movimientos(id),
+    queryFn: () => pedir(servidor.stock.productos({ id }).movimientos.get()),
+  })
+
+export function useCreateRecuento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (b: RecuentoInput) => pedir(servidor.stock.recuentos.post(b)),
+    onSuccess: (r) => {
+      invalidate(qc, [qk.stock.recuentos, qk.stock.almacen])
+      const ajustes = r.lineas.filter((l) => l.diferencia !== 0).length
+      toast.success(ajustes === 0 ? 'Recuento registrado: todo cuadra' : `Recuento registrado: ${ajustes} ajuste(s)`)
     },
     onError: (e) => toast.error(mensajeError(e)),
   })

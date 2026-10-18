@@ -17,6 +17,7 @@ import type {
   periodoQuery,
   productoEntrada,
   proveedorEntrada,
+  recuentoEntrada,
   revisionEntrada,
   ventaEntrada,
 } from './modelos'
@@ -361,6 +362,28 @@ export function normalizarMerma(entrada: typeof mermaEntrada.static) {
   }
 }
 
+// Un recuento puede dejar un producto a 0, pero no contar dos veces el mismo.
+export function normalizarRecuento(entrada: typeof recuentoEntrada.static) {
+  const lineas = entrada.lineas ?? []
+  if (lineas.length === 0) invalido('El recuento debe tener al menos un producto')
+  const normalizadas = lineas.map((linea) => {
+    const producto_id = linea.producto_id ?? 0
+    const contado = linea.contado ?? null
+    if (producto_id === 0) invalido('El producto es obligatorio')
+    if (contado === null) invalido('Indica las unidades contadas')
+    if (contado < 0) invalido('Las unidades contadas no pueden ser negativas')
+    return { producto_id, contado }
+  })
+  if (new Set(normalizadas.map((l) => l.producto_id)).size !== normalizadas.length) {
+    invalido('Un producto aparece dos veces en el recuento')
+  }
+  return {
+    motivo: motivoObligatorio(entrada.motivo, 'Indica el motivo del recuento'),
+    notas: vacioANulo(entrada.notas),
+    lineas: normalizadas,
+  }
+}
+
 export type PacienteDatos = ReturnType<typeof normalizarPaciente>
 export type RevisionDatos = ReturnType<typeof normalizarRevision>
 export type ProductoDatos = ReturnType<typeof normalizarProducto>
@@ -372,3 +395,4 @@ export type DevolucionDatos = ReturnType<typeof normalizarDevolucion>
 export type CierreDatos = ReturnType<typeof normalizarCierre>
 export type AjustesDatos = ReturnType<typeof normalizarAjustes>
 export type MermaDatos = ReturnType<typeof normalizarMerma>
+export type RecuentoDatos = ReturnType<typeof normalizarRecuento>

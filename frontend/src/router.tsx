@@ -113,6 +113,11 @@ const mermas = createRoute({
   path: 'mermas',
   component: lazyRouteComponent(() => import('@/features/stock/tabs/MermasTab'), 'MermasTab'),
 })
+const recuentos = createRoute({
+  getParentRoute: () => stock,
+  path: 'recuentos',
+  component: lazyRouteComponent(() => import('@/features/stock/tabs/RecuentosTab'), 'RecuentosTab'),
+})
 const analisisStock = createRoute({
   getParentRoute: () => stock,
   path: 'analisis',
@@ -192,7 +197,17 @@ const arbol = raiz.addChildren([
         pacientesInicio,
         paciente.addChildren([pacienteInicio, ficha, revisiones, fotos, analisis, comprasCliente, historial]),
       ]),
-      stock.addChildren([stockInicio, almacen, compras, stockVentas, proveedores, categorias, mermas, analisisStock]),
+      stock.addChildren([
+        stockInicio,
+        almacen,
+        compras,
+        stockVentas,
+        proveedores,
+        categorias,
+        mermas,
+        recuentos,
+        analisisStock,
+      ]),
       ventas.addChildren([ventasInicio, caja, historialVentas, cierreCaja, estadisticasVentas, datosTicket]),
       soloAdmin.addChildren([usuarios, auditoria]),
     ]),

@@ -323,7 +323,9 @@ describe('corrección', () => {
     expect(compras.map((c) => c.id)).toEqual([ventaId])
 
     await Bun.sleep(20)
-    const [ultima] = (await api.pacientes({ id: clienteId }).historial.get()).data ?? []
+    const auditoria = (await api.auditoria.get({ query: {} })).data ?? []
+    const ultima = auditoria.find((e) => e.metodo === 'PUT' && e.ruta === `/api/ventas/${ventaId}`)
+    expect(ultima?.paciente_id).toBe(clienteId)
     expect(ultima?.detalle?.cambios).toEqual([
       { campo: 'paciente_id', antes: null, despues: clienteId },
       { campo: 'notas', antes: null, despues: 'Pagó con tarjeta' },
@@ -341,6 +343,43 @@ describe('corrección', () => {
     entorno.db.delete(stock_ventas_pagos).where(eq(stock_ventas_pagos.venta_id, ventaId)).run()
     expect((await api.ventas({ id: ventaId }).put({ notas: 'Antigua' })).data).toEqual({ ok: true })
     expect((await venta(ventaId)).pagos).toEqual([])
+  })
+})
+
+describe('traza de las ventas de un cliente', () => {
+  test('quedan en la auditoría general con su cliente y no en su historial', async () => {
+    const id = await productoConStock({ nombre: 'Glutamina', precio: 15, unidades: 5 })
+    const clienteId = (await api.pacientes.post({ nombre: 'Lucía Prado' })).data?.id ?? 0
+    const linea = [{ producto_id: id, cantidad: 1, precio_unitario: 15 }]
+    const pago = [{ metodo: 'efectivo' as const, importe: 15 }]
+    const devuelta = await vender({ paciente_id: clienteId, lineas: linea, pagos: pago })
+    const corregida = await api.ventas({ id: devuelta }).put({ paciente_id: clienteId, notas: 'Revisada', pagos: pago })
+    expect(corregida.data).toEqual({ ok: true })
+    const lineaId = (await venta(devuelta)).lineas[0]?.id ?? 0
+    await api.ventas({ id: devuelta }).devoluciones.post({
+      motivo: 'Caducada',
+      metodo_reembolso: 'efectivo',
+      lineas: [{ venta_linea_id: lineaId, cantidad: 1 }],
+    })
+    const anulada = await vender({ paciente_id: clienteId, lineas: linea, pagos: pago })
+    await api.ventas({ id: anulada }).anular.post({ motivo: 'Cobro duplicado' })
+    await api.pacientes({ id: clienteId }).put({ nombre: 'Lucía Prado', telefono: '611' })
+    await Bun.sleep(20)
+
+    const historial = (await api.pacientes({ id: clienteId }).historial.get()).data ?? []
+    expect(historial.map((e) => `${e.metodo} ${e.ruta}`)).toEqual([
+      `PUT /api/pacientes/${clienteId}`,
+      'POST /api/pacientes',
+    ])
+    const auditoria = (await api.auditoria.get({ query: {} })).data ?? []
+    const deVentas = auditoria.filter((e) => e.paciente_id === clienteId && e.ruta.startsWith('/api/ventas'))
+    expect(deVentas.map((e) => `${e.metodo} ${e.ruta}`)).toEqual([
+      `POST /api/ventas/${anulada}/anular`,
+      'POST /api/ventas',
+      `POST /api/ventas/${devuelta}/devoluciones`,
+      `PUT /api/ventas/${devuelta}`,
+      'POST /api/ventas',
+    ])
   })
 })
 

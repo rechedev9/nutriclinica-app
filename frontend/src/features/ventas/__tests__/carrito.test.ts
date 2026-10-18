@@ -88,6 +88,13 @@ describe('anadirProducto', () => {
     expect(dos[0]?.cantidad).toBe(2)
     expect(anadirProducto(dos, { ...base, precio_unitario: 25 })).toHaveLength(2)
   })
+
+  test('añade varias unidades de golpe', () => {
+    const base = { producto_id: 1, nombre: 'Barrita', unidad: 'ud', precio_unitario: 2.5, stock: 40 }
+    const tres = anadirProducto([], { ...base, cantidad: 3 })
+    expect(tres[0]?.cantidad).toBe(3)
+    expect(anadirProducto(tres, { ...base, cantidad: 6 })[0]?.cantidad).toBe(9)
+  })
 })
 
 describe('cobro', () => {

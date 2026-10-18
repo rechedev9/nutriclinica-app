@@ -30,6 +30,10 @@ describe('describirRuta', () => {
     expect(describirRuta('/api/tienda').recurso).toBe('Datos del ticket')
   })
 
+  test('describe el recuento de inventario', () => {
+    expect(describirRuta('/api/stock/recuentos')).toEqual({ recurso: 'Recuento de inventario', pacienteId: null })
+  })
+
   test('deja la ruta tal cual si no la conoce', () => {
     expect(describirRuta('/api/otra-cosa')).toEqual({ recurso: '/api/otra-cosa', pacienteId: null })
   })

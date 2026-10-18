@@ -95,11 +95,15 @@ export function errorCarrito(lineas: LineaCarrito[], descuentoTotal: Descuento):
   return null
 }
 
-// Añade una unidad del producto: si ya hay una línea suya al mismo precio, suma a esa línea.
-export function anadirProducto(lineas: LineaCarrito[], nueva: Omit<LineaCarrito, 'cantidad' | 'descuento'>) {
+// Añade el producto (una unidad si no se indica): si ya hay una línea suya al mismo precio, suma a esa línea.
+export function anadirProducto(
+  lineas: LineaCarrito[],
+  nueva: Omit<LineaCarrito, 'cantidad' | 'descuento'> & { cantidad?: number },
+) {
+  const cantidad = nueva.cantidad ?? 1
   const i = lineas.findIndex((l) => l.producto_id === nueva.producto_id && l.precio_unitario === nueva.precio_unitario)
-  if (i === -1) return [...lineas, { ...nueva, cantidad: 1, descuento: SIN_DESCUENTO }]
-  return lineas.map((l, j) => (j === i ? { ...l, cantidad: l.cantidad + 1 } : l))
+  if (i === -1) return [...lineas, { ...nueva, cantidad, descuento: SIN_DESCUENTO }]
+  return lineas.map((l, j) => (j === i ? { ...l, cantidad: l.cantidad + cantidad } : l))
 }
 
 export function sumaPagos(pagos: PagoInput[]): number {

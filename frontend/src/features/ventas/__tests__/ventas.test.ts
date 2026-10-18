@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { SIN_FILTRO, filtrarVentas, resumenVentas } from '../filtros'
+import { leerEscaneo, lineasParaRepetir, masVendidos, ultimaCompra } from '../caja-rapida'
+import { diasSinCerrar } from '../cierre'
+import { SIN_FILTRO, agruparPorDia, filtrarVentas, resumenVentas } from '../filtros'
 import { ventasNetas } from '../netas'
-import type { LineaVenta, Venta } from '@/types'
+import type { AlmacenRow, LineaVenta, Venta } from '@/types'
 
 const LINEA: LineaVenta = {
   id: 1,
@@ -108,5 +110,122 @@ describe('resumenVentas', () => {
       venta({ id: 3, estado: 'anulada', situacion: 'anulada' }),
     ])
     expect(r).toEqual({ num_ventas: 2, vendido: 60, devuelto: 10, neto: 50, num_anuladas: 1 })
+  })
+})
+
+describe('agruparPorDia', () => {
+  test('junta las ventas seguidas del mismo día', () => {
+    const grupos = agruparPorDia([venta({ id: 3 }), venta({ id: 2 }), venta({ id: 1, fecha: '2026-10-17' })])
+    expect(grupos.map((g) => [g.fecha, g.ventas.map((v) => v.id)])).toEqual([
+      ['2026-10-18', [3, 2]],
+      ['2026-10-17', [1]],
+    ])
+    expect(agruparPorDia([])).toEqual([])
+  })
+})
+
+describe('diasSinCerrar', () => {
+  test('días pasados con movimientos y sin cierre, del más reciente al más antiguo', () => {
+    const ventas = [
+      venta({ id: 5, fecha: '2026-10-18' }),
+      venta({ id: 4, fecha: '2026-10-16' }),
+      venta({ id: 3, fecha: '2026-10-15', estado: 'anulada', situacion: 'anulada' }),
+      venta({ id: 2, fecha: '2026-10-14' }),
+      venta({ id: 1, fecha: '2026-10-10', devoluciones: [{ ...devolucion, fecha: '2026-10-17' }] }),
+    ]
+    expect(diasSinCerrar({ ventas, cerrados: ['2026-10-14'], hoy: '2026-10-18' })).toEqual([
+      '2026-10-17',
+      '2026-10-16',
+      '2026-10-10',
+    ])
+  })
+})
+
+describe('leerEscaneo', () => {
+  test('«N*» delante del código multiplica las unidades', () => {
+    expect(leerEscaneo('3*8410001000042')).toEqual({ cantidad: 3, buscado: '8410001000042' })
+    expect(leerEscaneo(' 12 * barrita ')).toEqual({ cantidad: 12, buscado: 'barrita' })
+    expect(leerEscaneo('3*')).toEqual({ cantidad: 3, buscado: '' })
+  })
+
+  test('sin multiplicador válido busca el texto tal cual', () => {
+    expect(leerEscaneo('8410001000042')).toEqual({ cantidad: 1, buscado: '8410001000042' })
+    expect(leerEscaneo('0*barrita')).toEqual({ cantidad: 1, buscado: '0*barrita' })
+    expect(leerEscaneo('5000*barrita')).toEqual({ cantidad: 1, buscado: '5000*barrita' })
+    expect(leerEscaneo('whey 2*1kg')).toEqual({ cantidad: 1, buscado: 'whey 2*1kg' })
+  })
+})
+
+function linea(producto_id: number, cantidad: number, devuelto = 0): LineaVenta {
+  return { ...LINEA, producto_id, cantidad, devuelto }
+}
+
+function producto(cambios: Partial<AlmacenRow>): AlmacenRow {
+  return {
+    id: 5,
+    nombre: 'Creatina',
+    unidad: 'bote',
+    precio_coste: 5,
+    precio_venta: 12,
+    stock_minimo: 0,
+    codigo_barras: null,
+    iva: 10,
+    categoria: null,
+    proveedor_nombre: null,
+    stock_actual: 10,
+    creado: null,
+    ...cambios,
+  }
+}
+
+describe('masVendidos', () => {
+  test('ordena por unidades netas y deja fuera anuladas y ventas antiguas', () => {
+    const ventas = [
+      venta({ id: 1, lineas: [linea(1, 2), linea(2, 5, 4)] }),
+      venta({ id: 2, lineas: [linea(3, 3)] }),
+      venta({ id: 3, estado: 'anulada', situacion: 'anulada', lineas: [linea(2, 50)] }),
+      venta({ id: 4, fecha: '2026-08-01', lineas: [linea(4, 99)] }),
+      venta({ id: 5, lineas: [linea(5, 1, 1)] }),
+    ]
+    expect(masVendidos(ventas, { desde: '2026-10-01', limite: 8 })).toEqual([3, 1, 2])
+    expect(masVendidos(ventas, { desde: '2026-10-01', limite: 2 })).toEqual([3, 1])
+  })
+})
+
+describe('repetir una compra', () => {
+  test('ultimaCompra salta las anuladas y las devueltas enteras', () => {
+    const ventas = [
+      venta({ id: 4, paciente_id: 7, situacion: 'devuelta' }),
+      venta({ id: 3, paciente_id: 7, estado: 'anulada', situacion: 'anulada' }),
+      venta({ id: 2, paciente_id: 8 }),
+      venta({ id: 1, paciente_id: 7, situacion: 'devuelta_parcial' }),
+    ]
+    expect(ultimaCompra(ventas, 7)?.id).toBe(1)
+    expect(ultimaCompra(ventas, 9)).toBeUndefined()
+  })
+
+  test('usa el precio de hoy, quita lo devuelto y no pasa de las existencias', () => {
+    const anterior = venta({
+      lineas: [
+        { ...LINEA, id: 1, cantidad: 3, devuelto: 1, precio_unitario: 10 },
+        { ...LINEA, id: 2, producto_id: 6, producto_nombre: 'Shaker', cantidad: 4 },
+        { ...LINEA, id: 3, producto_id: 7, producto_nombre: 'Omega 3', cantidad: 1 },
+        { ...LINEA, id: 4, producto_id: 8, producto_nombre: 'Retirado', cantidad: 1 },
+      ],
+    })
+    const r = lineasParaRepetir(anterior, [
+      producto({}),
+      producto({ id: 6, nombre: 'Shaker', stock_actual: 1 }),
+      producto({ id: 7, nombre: 'Omega 3', stock_actual: 0 }),
+    ])
+    expect(r.lineas.map((l) => [l.producto_id, l.cantidad, l.precio_unitario])).toEqual([
+      [5, 2, 12],
+      [6, 1, 12],
+    ])
+    expect(r.avisos).toEqual([
+      'De «Shaker» solo se añaden 1: no hay más',
+      'No queda stock de «Omega 3»',
+      '«Retirado» ya no está en el almacén',
+    ])
   })
 })
