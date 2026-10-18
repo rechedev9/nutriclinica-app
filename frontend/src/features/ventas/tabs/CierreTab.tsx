@@ -88,22 +88,20 @@ function Resultado({ importe }: { importe: number }) {
   )
 }
 
-// El fondo arranca con el del último cierre: casi siempre se deja el mismo cambio en el cajón.
-function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fondoSugerido: number | null }) {
+// Sin fondo de caja: se compara solo lo cobrado hoy en efectivo, que es lo que la persona cuenta.
+function FormularioCierre({ resumen }: { resumen: ResumenCaja }) {
   const cerrar = useCerrarCaja()
   const confirm = useConfirm()
-  const [fondo, setFondo] = useState(() => (fondoSugerido === null ? '' : importeEditable(fondoSugerido)))
   const [contado, setContado] = useState('')
   const [notas, setNotas] = useState('')
-  const fondoInicial = leerImporte(fondo) ?? 0
-  const efectivoContado = leerImporte(contado)
-  const esperado = sumarImportes([fondoInicial, resumen.neto.efectivo])
-  const fondoValido = !Number.isNaN(fondoInicial) && fondoInicial >= 0
+  const esperado = resumen.neto.efectivo
+  // Un día sin cobros en efectivo se cierra sin tener que escribir 0.
+  const efectivoContado = leerImporte(contado) ?? (esperado === 0 ? 0 : null)
   const contadoValido = efectivoContado !== null && !Number.isNaN(efectivoContado) && efectivoContado >= 0
-  const diferencia = contadoValido ? sumarImportes([efectivoContado, -esperado]) : null
+  const diferencia = contadoValido && contado !== '' ? sumarImportes([efectivoContado, -esperado]) : null
 
   async function confirmar() {
-    if (!fondoValido || efectivoContado === null || !contadoValido) return
+    if (efectivoContado === null || !contadoValido) return
     const ok = await confirm({
       title: `¿Cerrar la caja del ${fmtFecha(resumen.fecha)}?`,
       message: 'Después no se podrán cobrar, anular ni devolver ventas ese día salvo que un administrador la reabra.',
@@ -113,7 +111,7 @@ function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fo
     await intentar(
       cerrar.mutateAsync({
         fecha: resumen.fecha,
-        fondo_inicial: fondoInicial,
+        fondo_inicial: 0,
         efectivo_contado: efectivoContado,
         notas: notas.trim() === '' ? null : notas.trim(),
       }),
@@ -123,33 +121,25 @@ function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fo
   return (
     <section className="flex flex-col gap-4 rounded-card bg-surface p-4 text-sm shadow-card">
       <div>
-        <h3 className="text-base font-bold">Cuadrar el cajón</h3>
+        <h3 className="text-base font-bold">Comprobar el efectivo</h3>
         <p className="text-ink-muted">
-          Solo se cuenta el efectivo. Lo cobrado con tarjeta o Bizum no está en el cajón.
+          Según las ventas, hoy has cobrado{' '}
+          <span className="font-bold text-ink tabular-nums">{fmtMoneda(esperado)}</span> en efectivo. Lo cobrado con
+          tarjeta o Bizum no se cuenta.
         </p>
       </div>
       <Field
-        label="1. ¿Cuánto cambio había en el cajón al empezar el día?"
-        error={fondoValido ? undefined : 'Escribe un importe válido'}
-      >
-        <Input inputMode="decimal" placeholder="0,00" value={fondo} onChange={(e) => setFondo(e.target.value)} />
-      </Field>
-      <Field
-        label="2. Cuenta los billetes y monedas que hay ahora"
+        label="¿Cuánto efectivo has cobrado hoy? (sin el cambio que ya tenías)"
         error={contado !== '' && !contadoValido ? 'Escribe un importe válido' : undefined}
       >
         <Input
           inputMode="decimal"
-          placeholder="0,00"
+          placeholder={importeEditable(esperado)}
           className="py-3 text-lg"
           value={contado}
           onChange={(e) => setContado(e.target.value)}
         />
       </Field>
-      <p className="rounded-lg bg-surface-2 px-3 py-2 text-ink-muted">
-        Debería haber <span className="font-bold text-ink tabular-nums">{fmtMoneda(esperado)}</span>:{' '}
-        {fmtMoneda(fondoInicial)} de cambio y {fmtMoneda(resumen.neto.efectivo)} cobrados en efectivo.
-      </p>
       {diferencia !== null && <Resultado importe={diferencia} />}
       {diferencia !== null && diferencia !== 0 && (
         <Field label="¿Sabes por qué? (opcional)">
@@ -159,7 +149,7 @@ function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fo
       <Button
         className="py-3 text-base"
         isLoading={cerrar.isPending}
-        disabled={!fondoValido || !contadoValido}
+        disabled={!contadoValido}
         onClick={() => void confirmar()}
       >
         Cerrar caja
@@ -191,7 +181,7 @@ function CierreHecho({ cierre }: { cierre: Cierre }) {
         {cierre.creado ? `${fmtFecha(cierre.creado)} ${cierre.creado.slice(11, 16)}` : ''}
         {cierre.usuario && ` · ${cierre.usuario}`}
       </p>
-      <Linea etiqueta="Fondo de caja" valor={cierre.fondo_inicial} />
+      {cierre.fondo_inicial !== 0 && <Linea etiqueta="Fondo de caja" valor={cierre.fondo_inicial} />}
       <Linea etiqueta="Efectivo esperado" valor={cierre.efectivo_esperado} />
       <Linea etiqueta="Efectivo contado" valor={cierre.efectivo_contado} fuerte />
       <div className="flex items-center justify-between py-1">
@@ -307,7 +297,7 @@ export function CierreTab() {
         <>
           <Vendido resumen={resumen} />
           {resumen.cierre === null ? (
-            <FormularioCierre key={fecha} resumen={resumen} fondoSugerido={cierres[0]?.fondo_inicial ?? null} />
+            <FormularioCierre key={fecha} resumen={resumen} />
           ) : (
             <CierreHecho cierre={resumen.cierre} />
           )}
