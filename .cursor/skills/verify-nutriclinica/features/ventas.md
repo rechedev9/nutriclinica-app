@@ -44,3 +44,4 @@ Preconditions:
 - The note is stored on the sale and is not printed on the ticket. The `cobrada` proof is the status line on the till. The note proof is the SQL row.
 - Closing the payment dialog without charging does not change the remembered method. A failed charge does not either.
 - Seeded counter sales already exist. Match the note, not "the latest sale" alone.
+- Below 640 px the cart line is a stack of product, quantity, and amount. The 520 px table stays from that width up. Quantity controls keep the same accessible names. This recipe runs in the default window and uses the table.
