@@ -16,7 +16,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Prefer the accessible name, `name`, `placeholder`, or `aria-label` that the recipe quotes. Keep those strings unchanged, including `…` and `« »`.
 - Run browser actions through `verificar browser`.
 - Run read-only database checks through `verificar sql`.
-- A client card is a button whose accessible name is the whole card. Match it with `--contains`.
+- A client card's main control is a button whose accessible name contains the client name. Match it with `--contains`. An overdue card also has a link named `Revisión` that opens Revisiones. That link does not include the client name.
 - When a dialog is open, `click` prefers the control inside the dialog.
 - Restore nothing in the disposable database. Do not remove proof artifacts during cleanup.
 

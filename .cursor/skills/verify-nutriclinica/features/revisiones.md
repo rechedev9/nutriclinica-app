@@ -12,6 +12,7 @@ Revisiones lists a client's measurements and records a new one. The seeded clien
 
 - Open a client from Clientes and choose the `Revisiones` tab.
 - The same tab is `/pacientes/<id>/revisiones`.
+- From the client list, choose `Revisión` on an overdue card. It opens `/pacientes/<id>/revisiones`.
 
 ## Driving it with verificar
 
@@ -31,7 +32,7 @@ Preconditions:
 
 ## Gotchas
 
-- The card button's accessible name is the whole card. Use `--contains "María García López"`.
+- The card button's accessible name contains the client name. Use `--contains "María García López"` to open the ficha. The link `Revisión` is separate, has no aria-label, and opens Revisiones. `--name "Revisión"` is exact, so it does not match the tab `Revisiones`.
 - The date defaults to today and the server accepts today. Do not type a future date; the API rejects it.
 - Folds and perimeters must be greater than 0 when present. Leave them empty.
 - `María García López` is a seeded fictional client. Do not replace her with anyone from a real database.

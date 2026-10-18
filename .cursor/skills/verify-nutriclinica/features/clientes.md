@@ -13,6 +13,7 @@ Clientes lets the professional see the seeded fictional clients, filter them by 
 
 - Sign in and choose `Clientes` in the main navigation.
 - From Inicio, choose `+ Nuevo cliente` to open the same creation dialog without visiting the list. This recipe uses the list entry.
+- On an overdue card, choose `Revisión` to open that client's Revisiones tab. The rest of the card still opens the ficha.
 
 ## Driving it with verificar
 
@@ -40,7 +41,7 @@ Preconditions:
 - `Revisión pendiente` is the list's own filter. Inicio says `revisión vencida` or `sin consentimiento RGPD`, so that string is the arrival check.
 - The search placeholder uses the ellipsis character `…`, and the empty state uses `« »`.
 - The filter is deferred one frame. Wait for the absent name instead of asserting immediately.
-- A client card's accessible name includes weight, goal, and review status. `--name` does not match it; use `--contains`.
+- A client card's main control is a button whose accessible name contains the client name. Match it with `--contains`. An overdue card also has a link named `Revisión`. The card button still opens the ficha.
 - The nav item `Clientes` is a link. On a ficha, the back control `Clientes` is a button.
 - `Crear cliente` exists only in the dialog. `+ Nuevo cliente` does not contain that string.
 - Leave consent unchecked. The ficha then shows `Consentimiento RGPD pendiente`.

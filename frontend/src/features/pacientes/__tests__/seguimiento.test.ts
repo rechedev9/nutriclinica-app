@@ -6,16 +6,16 @@ const hoy = new Date(2026, 9, 13, 12)
 describe('seguimiento', () => {
   test('sin revisiones es pendiente', () => {
     expect(seguimiento({ ultima_revision: null }, hoy)).toEqual({
+      estado: 'sin',
       texto: 'Sin revisiones',
-      pendiente: true,
       dias: null,
     })
   })
 
   test('el plazo es estricto: 45 días al día, 46 pendiente', () => {
     expect(DIAS_REVISION_PENDIENTE).toBe(45)
-    expect(seguimiento({ ultima_revision: '2026-08-29' }, hoy).pendiente).toBe(false)
-    expect(seguimiento({ ultima_revision: '2026-08-28' }, hoy).pendiente).toBe(true)
+    expect(seguimiento({ ultima_revision: '2026-08-29' }, hoy).estado).toBe('al_dia')
+    expect(seguimiento({ ultima_revision: '2026-08-28' }, hoy).estado).toBe('vencida')
   })
 
   test('el texto usa el tiempo transcurrido', () => {
