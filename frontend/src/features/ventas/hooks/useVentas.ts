@@ -93,6 +93,7 @@ export function useCerrarCaja() {
     mutationFn: (b: CierreInput) => pedir(servidor.caja.cierres.post(b)),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.caja.todo })
+      void qc.invalidateQueries({ queryKey: qk.inicio })
       toast.success('Caja cerrada')
     },
     onError: (e) => toast.error(mensajeError(e)),
@@ -105,6 +106,7 @@ export function useReabrirCaja() {
     mutationFn: (id: number) => pedir(servidor.caja.cierres({ id }).delete()),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.caja.todo })
+      void qc.invalidateQueries({ queryKey: qk.inicio })
       toast.success('Caja reabierta')
     },
     onError: (e) => toast.error(mensajeError(e)),

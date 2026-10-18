@@ -1,7 +1,6 @@
-import { and, eq, gte, isNotNull, lt, max, sql } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, max, sql } from 'drizzle-orm'
 import type { BD } from '../db/cliente'
 import {
-  caja_cierres,
   pacientes,
   stock_devoluciones,
   stock_devoluciones_lineas,
@@ -11,9 +10,8 @@ import {
 } from '../db/esquema'
 import { aEuros } from '../lib/dinero'
 import { fechaLocal, sumarDias } from '../lib/fechas'
+import { estadoCaja } from './dias-sin-cerrar'
 
-// Días hacia atrás en que se buscan cajas sin cerrar y hábitos de compra.
-const DIAS_CAJA_SIN_CERRAR = 30
 const DIAS_HABITOS = 365
 
 const completada = eq(stock_ventas.estado, 'completada')
@@ -64,40 +62,6 @@ function ventasPorDia(db: BD, desde: string) {
   }
   for (const d of devoluciones) dia(d.fecha).devoluciones = aEuros(d.centimos)
   return [...dias.values()].toSorted((a, b) => a.fecha.localeCompare(b.fecha))
-}
-
-// Días anteriores a hoy con movimiento y sin cierre. Solo se avisa si el negocio cierra la
-// caja (hay algún cierre) y a partir del primer cierre, para no señalar el historial previo.
-function cajaDeHoy(db: BD, hoy: string) {
-  const primero = db
-    .select({ fecha: sql<string | null>`min(${caja_cierres.fecha})` })
-    .from(caja_cierres)
-    .get()?.fecha
-  const cerrada = db.select({ id: caja_cierres.id }).from(caja_cierres).where(eq(caja_cierres.fecha, hoy)).get()
-  if (primero === null || primero === undefined) return { cerrada_hoy: cerrada !== undefined, sin_cerrar: [] }
-  const limite = sumarDias(hoy, -DIAS_CAJA_SIN_CERRAR)
-  const desde = primero > limite ? primero : limite
-  const cerrados = new Set(
-    db
-      .select({ fecha: caja_cierres.fecha })
-      .from(caja_cierres)
-      .where(gte(caja_cierres.fecha, desde))
-      .all()
-      .map((c) => c.fecha),
-  )
-  const conVentas = db
-    .selectDistinct({ fecha: stock_ventas.fecha })
-    .from(stock_ventas)
-    .where(and(completada, gte(stock_ventas.fecha, desde), lt(stock_ventas.fecha, hoy)))
-    .all()
-  const conDevoluciones = db
-    .selectDistinct({ fecha: stock_devoluciones.fecha })
-    .from(stock_devoluciones)
-    .where(and(gte(stock_devoluciones.fecha, desde), lt(stock_devoluciones.fecha, hoy)))
-    .all()
-  const conMovimiento = new Set([...conVentas, ...conDevoluciones].flatMap((f) => (f.fecha === null ? [] : [f.fecha])))
-  const sinCerrar = [...conMovimiento].filter((f) => !cerrados.has(f)).toSorted((a, b) => b.localeCompare(a))
-  return { cerrada_hoy: cerrada !== undefined, sin_cerrar: sinCerrar }
 }
 
 function ultimasComprasPorCliente(db: BD) {
@@ -170,7 +134,7 @@ export function resumenInicio(db: BD, ahora: Date) {
   return {
     hoy,
     dias: ventasPorDia(db, inicioDelPulso(hoy)),
-    caja: cajaDeHoy(db, hoy),
+    caja: estadoCaja(db, hoy),
     ultimas_compras: ultimasComprasPorCliente(db),
     ultimas_ventas_producto: ultimasVentasPorProducto(db),
     habitos: habitosDeCompra(db, hoy),

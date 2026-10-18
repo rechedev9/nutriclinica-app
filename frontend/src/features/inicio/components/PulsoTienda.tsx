@@ -55,13 +55,20 @@ function EstadoCaja({ caja }: { caja: ResumenInicio['caja'] }) {
   const ultimo = caja.sin_cerrar.at(0)
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
-      <span className="inline-flex items-center gap-1.5 font-semibold">
-        <span
-          className={cn('h-2 w-2 rounded-full', caja.cerrada_hoy ? 'bg-ink-muted' : 'bg-success')}
-          aria-hidden="true"
-        />
-        {caja.cerrada_hoy ? 'Caja de hoy cerrada' : 'Caja de hoy abierta'}
-      </span>
+      {caja.cerrada_hoy ? (
+        <span className="inline-flex items-center gap-1.5 font-semibold">
+          <span className="h-2 w-2 rounded-full bg-ink-muted" aria-hidden="true" />
+          Caja de hoy cerrada
+        </span>
+      ) : (
+        <Link
+          to="/ventas/cierre"
+          className="inline-flex items-center gap-1.5 font-semibold text-primary underline-offset-2 hover:underline"
+        >
+          <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
+          Caja de hoy abierta
+        </Link>
+      )}
       {ultimo !== undefined && (
         <span className="inline-flex flex-wrap items-center gap-x-2 rounded-lg bg-amber-500/15 px-2 py-1 font-semibold text-amber-700 dark:text-amber-300">
           {caja.sin_cerrar.length === 1

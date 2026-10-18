@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import type { Contexto } from '../contexto'
 import { cerrarCaja, guardarAjustes, leerAjustes, listarCierres, reabrirCaja } from '../datos/caja'
+import { estadoCaja } from '../datos/dias-sin-cerrar'
 import { estadisticasVentas } from '../datos/estadisticas-ventas'
 import {
   anularVenta,
@@ -15,7 +16,7 @@ import {
 import { diferencias } from '../lib/cambios'
 import { aCentimos, aEuros, euros } from '../lib/dinero'
 import { ErrorHttp } from '../lib/errores'
-import { fechaEs, parseFecha } from '../lib/fechas'
+import { fechaEs, fechaLocal, parseFecha } from '../lib/fechas'
 import {
   ajustesEntrada,
   anulacionEntrada,
@@ -174,7 +175,8 @@ export function moduloVentas(ctx: Contexto) {
       ({ params }) => {
         const dia = parseFecha(params.fecha)
         if (dia === null) throw new ErrorHttp(400, 'La fecha no es válida')
-        return resumenCaja(db, dia)
+        const hoy = fechaLocal(new Date())
+        return { ...resumenCaja(db, dia), sin_cerrar: estadoCaja(db, hoy).sin_cerrar }
       },
       { params: fechaParams },
     )

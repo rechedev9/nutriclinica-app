@@ -35,3 +35,4 @@ Preconditions:
 - Seeded clients can appear in the agenda because their reviews are old. That is the seeded state, not a new mutation.
 - `+ Nuevo cliente` on this screen opens the same dialog as the list. Creating the client belongs to the Clientes recipe.
 - A wrong password shows `Usuario o contraseña incorrectos`. The login allows 10 attempts per minute; after that the API returns 429.
+- `Caja de hoy abierta` is a link to `/ventas/cierre`. `Caja de hoy cerrada` is plain text. Days before the first close, and days older than 30, are not listed on this card or on the close screen.

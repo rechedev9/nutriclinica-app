@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 import { leerEscaneo, lineasParaRepetir, masVendidos, ultimaCompra } from '../caja-rapida'
-import { diasSinCerrar } from '../cierre'
 import { SIN_FILTRO, agruparPorDia, filtrarVentas, resumenVentas } from '../filtros'
 import { ventasNetas } from '../netas'
 import type { AlmacenRow, LineaVenta, Venta } from '@/types'
@@ -121,23 +120,6 @@ describe('agruparPorDia', () => {
       ['2026-10-17', [1]],
     ])
     expect(agruparPorDia([])).toEqual([])
-  })
-})
-
-describe('diasSinCerrar', () => {
-  test('días pasados con movimientos y sin cierre, del más reciente al más antiguo', () => {
-    const ventas = [
-      venta({ id: 5, fecha: '2026-10-18' }),
-      venta({ id: 4, fecha: '2026-10-16' }),
-      venta({ id: 3, fecha: '2026-10-15', estado: 'anulada', situacion: 'anulada' }),
-      venta({ id: 2, fecha: '2026-10-14' }),
-      venta({ id: 1, fecha: '2026-10-10', devoluciones: [{ ...devolucion, fecha: '2026-10-17' }] }),
-    ]
-    expect(diasSinCerrar({ ventas, cerrados: ['2026-10-14'], hoy: '2026-10-18' })).toEqual([
-      '2026-10-17',
-      '2026-10-16',
-      '2026-10-10',
-    ])
   })
 })
 
