@@ -4,6 +4,7 @@ const tabs = [
   { to: '/ventas/caja', label: 'Caja' },
   { to: '/ventas/historial', label: 'Historial' },
   { to: '/ventas/cierre', label: 'Cierre de caja' },
+  { to: '/ventas/estadisticas', label: 'Estadísticas' },
   { to: '/ventas/ticket', label: 'Datos del ticket' },
 ] as const
 

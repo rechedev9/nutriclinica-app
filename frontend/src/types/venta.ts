@@ -8,6 +8,8 @@ export type MetodoPago = Venta['pagos'][number]['metodo']
 export type ResumenCaja = Treaty.Data<ReturnType<typeof servidor.caja.dia>['get']>
 export type Cierre = Treaty.Data<typeof servidor.caja.cierres.get>[number]
 export type Tienda = Treaty.Data<typeof servidor.tienda.get>
+export type EstadisticasVentas = Treaty.Data<typeof servidor.ventas.estadisticas.get>
+export type ProductoEstadistica = EstadisticasVentas['productos'][number]
 
 export interface PagoInput {
   metodo: MetodoPago

@@ -109,6 +109,8 @@ export const ajustesEntrada = t.Object({
 
 export const fechaParams = t.Object({ fecha: t.String() })
 
+export const periodoQuery = t.Object({ desde: t.Optional(t.String()), hasta: t.Optional(t.String()) })
+
 export const mermaEntrada = t.Object({
   producto_id: t.Optional(t.Integer()),
   proveedor_id: idOpcional,

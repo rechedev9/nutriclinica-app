@@ -14,6 +14,7 @@ import type {
   mermaEntrada,
   pacienteEntrada,
   pagoEntrada,
+  periodoQuery,
   productoEntrada,
   proveedorEntrada,
   recuentoEntrada,
@@ -304,6 +305,16 @@ export function normalizarDevolucion(entrada: typeof devolucionEntrada.static) {
       return { venta_linea_id, cantidad, reingresa: linea.reingresa ?? true }
     }),
   }
+}
+
+// Periodo de las estadísticas: los dos extremos son obligatorios y se incluyen.
+export function normalizarPeriodo(entrada: typeof periodoQuery.static) {
+  const desde = parseFecha(entrada.desde ?? '')
+  const hasta = parseFecha(entrada.hasta ?? '')
+  if (desde === null) invalido('La fecha de inicio no es válida')
+  if (hasta === null) invalido('La fecha de fin no es válida')
+  if (desde > hasta) invalido('La fecha de inicio no puede ser posterior a la de fin')
+  return { desde, hasta }
 }
 
 export function normalizarCierre(entrada: typeof cierreEntrada.static, hoy: Date) {

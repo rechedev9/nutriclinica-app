@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import type { Contexto } from '../contexto'
 import { cerrarCaja, guardarAjustes, leerAjustes, listarCierres, reabrirCaja } from '../datos/caja'
+import { estadisticasVentas } from '../datos/estadisticas-ventas'
 import {
   anularVenta,
   corregirVenta,
@@ -23,6 +24,7 @@ import {
   devolucionEntrada,
   fechaParams,
   idParams,
+  periodoQuery,
   ventaEntrada,
 } from '../modelos'
 import {
@@ -31,6 +33,7 @@ import {
   normalizarCierre,
   normalizarCorreccionVenta,
   normalizarDevolucion,
+  normalizarPeriodo,
   normalizarVenta,
 } from '../validacion'
 import { anotarAuditoria, crearAcceso } from './acceso'
@@ -77,6 +80,9 @@ export function moduloVentas(ctx: Contexto) {
 
     .get('/api/ventas', ({ query }) => listarVentas(db, { pacienteId: query.paciente_id ?? null }), {
       query: t.Object({ paciente_id: t.Optional(t.Numeric()) }),
+    })
+    .get('/api/ventas/estadisticas', ({ query }) => estadisticasVentas(db, normalizarPeriodo(query)), {
+      query: periodoQuery,
     })
     .get(
       '/api/ventas/:id',

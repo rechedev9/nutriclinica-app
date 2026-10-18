@@ -22,6 +22,7 @@ export const qk = {
     todas: ['ventas'] as const,
     lista: (pacienteId: number | null) => ['ventas', 'lista', pacienteId] as const,
     una: (id: number) => ['ventas', 'una', id] as const,
+    estadisticas: (desde: string, hasta: string) => ['ventas', 'estadisticas', desde, hasta] as const,
   },
   caja: {
     todo: ['caja'] as const,
