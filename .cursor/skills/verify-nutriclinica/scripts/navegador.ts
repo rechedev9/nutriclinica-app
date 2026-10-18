@@ -165,6 +165,21 @@ async function ejecutar(nombre: string): Promise<void> {
     console.log(`desplazado ${texto}`)
     return
   }
+  if (nombre === 'viewport') {
+    const width = Number(obligatorio('width'))
+    const height = Number(obligatorio('height'))
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 200 || height < 200) {
+      throw new Error('viewport necesita --width y --height enteros de al menos 200')
+    }
+    await enviar('Emulation.setDeviceMetricsOverride', {
+      width,
+      height,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    console.log(`${width}x${height}`)
+    return
+  }
   if (nombre === 'screenshot') {
     const destino = rutaEvidencia(obligatorio('path'))
     const captura = await enviar('Page.captureScreenshot', { format: 'png' })

@@ -89,6 +89,10 @@ const pedidosStock = createRoute({
   getParentRoute: () => stock,
   path: 'pedidos',
   component: lazyRouteComponent(() => import('@/features/stock/tabs/PedidosTab'), 'PedidosTab'),
+  validateSearch: (busqueda: Record<string, unknown>): { reponer?: number } => {
+    const id = Number(busqueda.reponer)
+    return Number.isInteger(id) && id > 0 ? { reponer: id } : {}
+  },
 })
 const compras = createRoute({
   getParentRoute: () => stock,

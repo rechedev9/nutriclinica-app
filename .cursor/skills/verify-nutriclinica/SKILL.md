@@ -104,6 +104,7 @@ verificar browser click --role button --contains "Luna Queralto Ficticia"
 verificar browser wait --text "Pulso de la tienda" --absent "Carlos Martínez Ruiz" --timeout 15
 verificar browser scroll --text "Luna Queralto Ficticia"
 verificar browser location --matches "/pacientes/[0-9]+/ficha$"
+verificar browser viewport --width 1280 --height 800
 verificar browser screenshot --path clientes/ficha.png
 verificar browser text --out clientes/ficha.txt
 verificar browser fetch --path /api/pacientes --out clientes/pacientes.json

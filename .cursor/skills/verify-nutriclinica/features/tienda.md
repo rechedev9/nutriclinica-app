@@ -35,3 +35,4 @@ Preconditions:
 - `+ Nuevo producto` opens a dialog whose submit button is `Crear`, not `Crear producto`. This recipe does not create a product.
 - Stock is derived. A sale, purchase, loss, or recount in another recipe changes the number on this list.
 - Pedidos, mermas, and recuentos are on the tab bar. Do not treat the Almacén proof as proof of those tabs.
+- `/stock/pedidos?reponer=<supplier id>` opens the `Nuevo pedido a proveedor` dialog with that supplier and the suggested lines. The delivery note is unchanged. `+ Nuevo pedido` on that tab still opens an empty order.
