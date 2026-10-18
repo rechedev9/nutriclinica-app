@@ -11,6 +11,7 @@ import { usePacientes } from '@/features/pacientes/hooks/usePacientes'
 import { useAlmacen } from '@/features/stock/hooks/useStock'
 import { fmtFecha, hoyLocal } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
+import { cn } from '@/lib/cn'
 import { resumenLineas } from '@/lib/format/texto'
 import { lineasParaRepetir, masVendidos, ultimaCompra } from '../caja-rapida'
 import { anadirProducto, aVentaInput, errorCarrito, importeLinea, totalesCarrito } from '../carrito'
@@ -33,6 +34,39 @@ function haceDias(dias: number): string {
   const d = new Date()
   d.setDate(d.getDate() - dias)
   return hoyLocal(d)
+}
+
+function CantidadLinea({
+  linea,
+  onMenos,
+  onMas,
+  onCantidad,
+  className,
+}: {
+  linea: LineaCarrito
+  onMenos: () => void
+  onMas: () => void
+  onCantidad: (cantidad: number) => void
+  className?: string
+}) {
+  return (
+    <div className={cn('flex items-center gap-1', className)}>
+      <Button variant="outline" size="sm" aria-label={`Quitar una unidad de ${linea.nombre}`} onClick={onMenos}>
+        −
+      </Button>
+      <Input
+        aria-label={`Cantidad de ${linea.nombre}`}
+        type="number"
+        min="1"
+        className="w-14 px-1 py-1 text-center text-sm tabular-nums"
+        value={linea.cantidad}
+        onChange={(e) => onCantidad(Number(e.target.value) || 0)}
+      />
+      <Button variant="outline" size="sm" aria-label={`Añadir una unidad de ${linea.nombre}`} onClick={onMas}>
+        +
+      </Button>
+    </div>
+  )
 }
 
 export function CajaTab() {
@@ -205,77 +239,96 @@ export function CajaTab() {
           />
         )}
 
-        <div aria-label="Carrito" className="overflow-x-auto rounded-card bg-surface shadow-card">
-          <table className="w-full min-w-[520px] text-left text-sm">
-            <thead className="border-b border-border text-xs tracking-wide text-ink-muted uppercase">
-              <tr>
-                <th className="px-4 py-2.5 font-semibold">Producto</th>
-                <th className="px-2 py-2.5 text-right font-semibold">Precio</th>
-                <th className="px-2 py-2.5 text-center font-semibold">Cantidad</th>
-                <th className="px-2 py-2.5 text-right font-semibold">Importe</th>
-                <th className="w-12 px-2 py-2.5">
-                  <span className="sr-only">Quitar</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {lineas.length === 0 ? (
+        <div aria-label="Carrito" className="rounded-card bg-surface shadow-card">
+          <ul className="divide-y divide-border sm:hidden">
+            {lineas.length === 0 ? (
+              <li className="px-4 py-10 text-center text-sm text-ink-muted">
+                El carrito está vacío. Busca un producto arriba para añadirlo.
+              </li>
+            ) : (
+              lineas.map((l, i) => (
+                <li key={`${l.producto_id}-${i}`} className="flex flex-col gap-2 px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold">{l.nombre}</div>
+                      <div className="text-ink-muted tabular-nums">{fmtMoneda(l.precio_unitario)}</div>
+                    </div>
+                    <Button
+                      variant="dangerGhost"
+                      size="sm"
+                      className="shrink-0"
+                      aria-label={`Quitar ${l.nombre}`}
+                      onClick={() => quitarLinea(i)}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <CantidadLinea
+                      linea={l}
+                      onMenos={() => (l.cantidad <= 1 ? quitarLinea(i) : cambiarLinea(i, { cantidad: l.cantidad - 1 }))}
+                      onMas={() => cambiarLinea(i, { cantidad: l.cantidad + 1 })}
+                      onCantidad={(cantidad) => cambiarLinea(i, { cantidad })}
+                    />
+                    <span className="font-bold tabular-nums">{fmtMoneda(importeLinea(l))}</span>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <thead className="border-b border-border text-xs tracking-wide text-ink-muted uppercase">
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-ink-muted">
-                    El carrito está vacío. Busca un producto arriba para añadirlo.
-                  </td>
+                  <th className="px-4 py-2.5 font-semibold">Producto</th>
+                  <th className="px-2 py-2.5 text-right font-semibold">Precio</th>
+                  <th className="px-2 py-2.5 text-center font-semibold">Cantidad</th>
+                  <th className="px-2 py-2.5 text-right font-semibold">Importe</th>
+                  <th className="w-12 px-2 py-2.5">
+                    <span className="sr-only">Quitar</span>
+                  </th>
                 </tr>
-              ) : (
-                lineas.map((l, i) => (
-                  <tr key={`${l.producto_id}-${i}`}>
-                    <td className="px-4 py-2 font-semibold">{l.nombre}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtMoneda(l.precio_unitario)}</td>
-                    <td className="px-2 py-2">
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          aria-label={`Quitar una unidad de ${l.nombre}`}
-                          onClick={() =>
-                            l.cantidad <= 1 ? quitarLinea(i) : cambiarLinea(i, { cantidad: l.cantidad - 1 })
-                          }
-                        >
-                          −
-                        </Button>
-                        <Input
-                          aria-label={`Cantidad de ${l.nombre}`}
-                          type="number"
-                          min="1"
-                          className="w-14 px-1 py-1 text-center text-sm tabular-nums"
-                          value={l.cantidad}
-                          onChange={(e) => cambiarLinea(i, { cantidad: Number(e.target.value) || 0 })}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          aria-label={`Añadir una unidad de ${l.nombre}`}
-                          onClick={() => cambiarLinea(i, { cantidad: l.cantidad + 1 })}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 text-right font-bold tabular-nums">{fmtMoneda(importeLinea(l))}</td>
-                    <td className="px-2 py-2 text-right">
-                      <Button
-                        variant="dangerGhost"
-                        size="sm"
-                        aria-label={`Quitar ${l.nombre}`}
-                        onClick={() => quitarLinea(i)}
-                      >
-                        ✕
-                      </Button>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {lineas.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-ink-muted">
+                      El carrito está vacío. Busca un producto arriba para añadirlo.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  lineas.map((l, i) => (
+                    <tr key={`${l.producto_id}-${i}`}>
+                      <td className="px-4 py-2 font-semibold">{l.nombre}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{fmtMoneda(l.precio_unitario)}</td>
+                      <td className="px-2 py-2">
+                        <CantidadLinea
+                          linea={l}
+                          className="justify-center"
+                          onMenos={() =>
+                            l.cantidad <= 1 ? quitarLinea(i) : cambiarLinea(i, { cantidad: l.cantidad - 1 })
+                          }
+                          onMas={() => cambiarLinea(i, { cantidad: l.cantidad + 1 })}
+                          onCantidad={(cantidad) => cambiarLinea(i, { cantidad })}
+                        />
+                      </td>
+                      <td className="px-2 py-2 text-right font-bold tabular-nums">{fmtMoneda(importeLinea(l))}</td>
+                      <td className="px-2 py-2 text-right">
+                        <Button
+                          variant="dangerGhost"
+                          size="sm"
+                          aria-label={`Quitar ${l.nombre}`}
+                          onClick={() => quitarLinea(i)}
+                        >
+                          ✕
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
         {lineas.length > 0 && problema !== null && (
           <p role="alert" className="text-sm text-danger">
