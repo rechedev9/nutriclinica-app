@@ -138,10 +138,8 @@ export function AnalisisTab() {
   const [activas, setActivas] = useState<Set<string>>(new Set(PERIMETROS_SERIE_INICIAL))
 
   const grasaFn = useMemo(
-    () => (r: Revision) => {
-      const [bicipital, tricipital, subescapular, supracrestal] = PLIEGUES_GRASA
-      return calcGrasaDW(r[bicipital], r[tricipital], r[subescapular], r[supracrestal], edad, sexo)
-    },
+    () => (r: Revision) =>
+      calcGrasaDW(r.pl_bicipital, r.pl_tricipital, r.pl_subescapular, r.pl_supracrestal, edad, sexo),
     [edad, sexo],
   )
 

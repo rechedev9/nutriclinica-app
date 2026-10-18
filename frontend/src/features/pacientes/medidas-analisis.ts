@@ -1,7 +1,6 @@
 import { PERIMETROS, PLIEGUES } from '@/types'
 import type { ClaveMedida, Revision } from '@/types'
 
-// El cuarto pliegue de calcGrasaDW es el supracrestal. Supraespinal no entra en la fórmula.
 export const PLIEGUES_GRASA = ['pl_bicipital', 'pl_tricipital', 'pl_subescapular', 'pl_supracrestal'] as const
 
 export const PERIMETROS_SERIE_INICIAL = ['per_cintura', 'per_caderas', 'per_muslo', 'per_pecho'] as const
