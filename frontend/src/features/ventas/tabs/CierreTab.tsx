@@ -16,8 +16,6 @@ import { imprimirTicket } from '../components/Ticket'
 import { useCerrarCaja, useCierres, useReabrirCaja, useResumenCaja, useTienda, useVentas } from '../hooks/useVentas'
 import type { Cierre, ResumenCaja } from '@/types'
 
-const MAX_DIAS_AVISO = 7
-
 function Linea({ etiqueta, valor, fuerte }: { etiqueta: string; valor: number; fuerte?: boolean }) {
   return (
     <div className={cn('flex justify-between gap-3 py-1', fuerte && 'font-bold')}>
@@ -36,45 +34,57 @@ function Descuadre({ importe }: { importe: number }) {
   )
 }
 
-function Movimientos({ resumen }: { resumen: ResumenCaja }) {
+function Metodo({ etiqueta, valor, nota }: { etiqueta: string; valor: number; nota: string }) {
   return (
-    <section className="rounded-card bg-surface p-4 text-sm shadow-card">
-      <h3 className="mb-2 text-base font-bold">Movimientos del día</h3>
-      <div className="flex justify-between py-1">
-        <span className="text-ink-muted">Ventas</span>
-        <span className="tabular-nums">
-          {resumen.num_ventas} · {fmtMoneda(resumen.total_ventas)}
-        </span>
+    <div className="flex flex-col gap-0.5 rounded-lg bg-surface-2 px-3 py-2.5">
+      <span className="text-ink-muted">{etiqueta}</span>
+      <span className="text-lg font-bold tabular-nums">{fmtMoneda(valor)}</span>
+      <span className="text-xs text-ink-muted">{nota}</span>
+    </div>
+  )
+}
+
+function Vendido({ resumen }: { resumen: ResumenCaja }) {
+  const detalle = [
+    resumen.num_ventas === 1 ? '1 venta' : `${resumen.num_ventas} ventas`,
+    resumen.num_devoluciones > 0 &&
+      `${resumen.num_devoluciones} ${resumen.num_devoluciones === 1 ? 'devolución' : 'devoluciones'} (-${fmtMoneda(resumen.total_devoluciones)})`,
+    resumen.num_anuladas > 0 &&
+      `${resumen.num_anuladas} ${resumen.num_anuladas === 1 ? 'anulada' : 'anuladas'}, que no cuentan`,
+  ].filter((x) => typeof x === 'string')
+  return (
+    <section className="flex flex-col gap-3 self-start rounded-card bg-surface p-4 text-sm shadow-card">
+      <div>
+        <h3 className="text-base font-bold">Vendido</h3>
+        <p className="text-3xl font-extrabold tabular-nums">{fmtMoneda(resumen.total_neto)}</p>
+        <p className="text-ink-muted">{detalle.join(' · ')}</p>
       </div>
-      <div className="flex justify-between py-1">
-        <span className="text-ink-muted">Devoluciones</span>
-        <span className="tabular-nums">
-          {resumen.num_devoluciones} · {fmtMoneda(-resumen.total_devoluciones)}
-        </span>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <Metodo etiqueta="Efectivo" valor={resumen.neto.efectivo} nota="Está en el cajón" />
+        <Metodo etiqueta="Tarjeta" valor={resumen.neto.tarjeta} nota="Va al banco" />
+        <Metodo etiqueta="Bizum" valor={resumen.neto.bizum} nota="Va al banco" />
       </div>
-      {resumen.num_anuladas > 0 && (
-        <div className="flex justify-between py-1">
-          <span className="text-ink-muted">Anuladas (no cuentan)</span>
-          <span className="tabular-nums">
-            {resumen.num_anuladas} · {fmtMoneda(resumen.total_anuladas)}
-          </span>
-        </div>
-      )}
-      <div className="my-2 border-t border-border" />
-      <Linea etiqueta="Efectivo" valor={resumen.neto.efectivo} />
-      <Linea etiqueta="Tarjeta" valor={resumen.neto.tarjeta} />
-      <Linea etiqueta="Bizum" valor={resumen.neto.bizum} />
       {resumen.neto.sin_indicar !== 0 && (
         <Linea etiqueta="Sin indicar (ventas antiguas)" valor={resumen.neto.sin_indicar} />
       )}
-      <div className="my-2 border-t border-border" />
-      <Linea etiqueta="Total neto" valor={resumen.total_neto} fuerte />
-      {resumen.total_devoluciones > 0 && (
-        <p className="mt-2 text-xs text-ink-muted">
-          Cada método ya descuenta lo devuelto por ese medio. Las devoluciones cuentan el día en que se hacen.
-        </p>
-      )}
     </section>
+  )
+}
+
+function Resultado({ importe }: { importe: number }) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg px-3 py-3 text-center text-base font-bold tabular-nums',
+        importe === 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger',
+      )}
+    >
+      {importe === 0
+        ? 'La caja cuadra'
+        : importe > 0
+          ? `Sobran ${fmtMoneda(importe)}`
+          : `Faltan ${fmtMoneda(-importe)}`}
+    </div>
   )
 }
 
@@ -88,17 +98,12 @@ function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fo
   const fondoInicial = leerImporte(fondo) ?? 0
   const efectivoContado = leerImporte(contado)
   const esperado = sumarImportes([fondoInicial, resumen.neto.efectivo])
-  const error =
-    Number.isNaN(fondoInicial) || fondoInicial < 0
-      ? 'El fondo de caja no es válido'
-      : efectivoContado === null
-        ? 'Cuenta el efectivo del cajón y escríbelo'
-        : Number.isNaN(efectivoContado) || efectivoContado < 0
-          ? 'El efectivo contado no es válido'
-          : null
+  const fondoValido = !Number.isNaN(fondoInicial) && fondoInicial >= 0
+  const contadoValido = efectivoContado !== null && !Number.isNaN(efectivoContado) && efectivoContado >= 0
+  const diferencia = contadoValido ? sumarImportes([efectivoContado, -esperado]) : null
 
   async function confirmar() {
-    if (error !== null || efectivoContado === null) return
+    if (!fondoValido || efectivoContado === null || !contadoValido) return
     const ok = await confirm({
       title: `¿Cerrar la caja del ${fmtFecha(resumen.fecha)}?`,
       message: 'Después no se podrán cobrar, anular ni devolver ventas ese día salvo que un administrador la reabra.',
@@ -116,35 +121,47 @@ function FormularioCierre({ resumen, fondoSugerido }: { resumen: ResumenCaja; fo
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-card bg-surface p-4 text-sm shadow-card">
-      <h3 className="text-base font-bold">Arqueo del efectivo</h3>
-      <Field label="Fondo de caja al abrir (cambio)">
+    <section className="flex flex-col gap-4 rounded-card bg-surface p-4 text-sm shadow-card">
+      <div>
+        <h3 className="text-base font-bold">Cuadrar el cajón</h3>
+        <p className="text-ink-muted">
+          Solo se cuenta el efectivo. Lo cobrado con tarjeta o Bizum no está en el cajón.
+        </p>
+      </div>
+      <Field
+        label="1. ¿Cuánto cambio había en el cajón al empezar el día?"
+        error={fondoValido ? undefined : 'Escribe un importe válido'}
+      >
         <Input inputMode="decimal" placeholder="0,00" value={fondo} onChange={(e) => setFondo(e.target.value)} />
       </Field>
-      <Linea etiqueta="Efectivo que debería haber" valor={esperado} fuerte />
-      <Field label="Efectivo contado en el cajón">
-        <Input inputMode="decimal" placeholder="0,00" value={contado} onChange={(e) => setContado(e.target.value)} />
-      </Field>
-      {efectivoContado !== null && !Number.isNaN(efectivoContado) && (
-        <div className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2">
-          <span>Diferencia</span>
-          <Descuadre importe={sumarImportes([efectivoContado, -esperado])} />
-        </div>
-      )}
-      <Field label="Notas (opcional)">
-        <Textarea
-          value={notas}
-          onChange={(e) => setNotas(e.target.value)}
-          placeholder="Por ejemplo, por qué no cuadra"
-          className="min-h-[56px]"
+      <Field
+        label="2. Cuenta los billetes y monedas que hay ahora"
+        error={contado !== '' && !contadoValido ? 'Escribe un importe válido' : undefined}
+      >
+        <Input
+          inputMode="decimal"
+          placeholder="0,00"
+          className="py-3 text-lg"
+          value={contado}
+          onChange={(e) => setContado(e.target.value)}
         />
       </Field>
-      {error !== null && contado !== '' && (
-        <p role="alert" className="text-danger">
-          {error}
-        </p>
+      <p className="rounded-lg bg-surface-2 px-3 py-2 text-ink-muted">
+        Debería haber <span className="font-bold text-ink tabular-nums">{fmtMoneda(esperado)}</span>:{' '}
+        {fmtMoneda(fondoInicial)} de cambio y {fmtMoneda(resumen.neto.efectivo)} cobrados en efectivo.
+      </p>
+      {diferencia !== null && <Resultado importe={diferencia} />}
+      {diferencia !== null && diferencia !== 0 && (
+        <Field label="¿Sabes por qué? (opcional)">
+          <Textarea value={notas} onChange={(e) => setNotas(e.target.value)} className="min-h-[56px]" />
+        </Field>
       )}
-      <Button isLoading={cerrar.isPending} disabled={error !== null} onClick={() => void confirmar()}>
+      <Button
+        className="py-3 text-base"
+        isLoading={cerrar.isPending}
+        disabled={!fondoValido || !contadoValido}
+        onClick={() => void confirmar()}
+      >
         Cerrar caja
       </Button>
     </section>
@@ -198,25 +215,15 @@ function CierreHecho({ cierre }: { cierre: Cierre }) {
 }
 
 function DiasSinCerrar({ dias, onElegir }: { dias: string[]; onElegir: (fecha: string) => void }) {
-  if (dias.length === 0) return null
-  const resto = dias.length - MAX_DIAS_AVISO
+  const [primero] = dias
+  if (primero === undefined) return null
   return (
-    <div role="status" className="rounded-card border border-amber-500/30 bg-amber-500/10 p-4 text-sm lg:col-span-2">
-      <p>
-        <span className="font-semibold">
-          {dias.length === 1 ? 'Hay 1 día con ventas sin cerrar' : `Hay ${dias.length} días con ventas sin cerrar`}.
-        </span>{' '}
-        Elige uno para hacer su arqueo.
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {dias.slice(0, MAX_DIAS_AVISO).map((d) => (
-          <Button key={d} variant="outline" size="sm" onClick={() => onElegir(d)}>
-            {fmtFecha(d)}
-          </Button>
-        ))}
-        {resto > 0 && <span className="text-ink-muted">y {resto} más</span>}
-      </div>
-    </div>
+    <p role="status" className="flex flex-wrap items-center gap-x-2 text-sm text-ink-muted lg:col-span-2">
+      {dias.length === 1 ? 'Hay 1 día anterior sin cerrar.' : `Hay ${dias.length} días anteriores sin cerrar.`}
+      <button type="button" className="font-semibold text-primary hover:underline" onClick={() => onElegir(primero)}>
+        Ver el {fmtFecha(primero)}
+      </button>
+    </p>
   )
 }
 
@@ -271,7 +278,7 @@ export function CierreTab() {
   return (
     <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-2">
       <div className="flex flex-wrap items-center gap-3 lg:col-span-2">
-        <h3 className="text-lg font-bold">Cierre de caja</h3>
+        <h3 className="text-lg font-bold">{fecha === hoy ? 'Cierre de hoy' : `Cierre del ${fmtFecha(fecha)}`}</h3>
         <Input
           type="date"
           aria-label="Día"
@@ -298,7 +305,7 @@ export function CierreTab() {
         <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} recurso="la caja" />
       ) : (
         <>
-          <Movimientos resumen={resumen} />
+          <Vendido resumen={resumen} />
           {resumen.cierre === null ? (
             <FormularioCierre key={fecha} resumen={resumen} fondoSugerido={cierres[0]?.fondo_inicial ?? null} />
           ) : (
