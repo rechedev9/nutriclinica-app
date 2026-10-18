@@ -65,7 +65,8 @@ export function rangosPulso(hoy: Date): { hoy: Periodos; semana: Periodos; mes: 
   }
 }
 
-// Neto = ventas menos devoluciones, como en la caja; el ticket medio usa las ventas brutas.
+// Cobrado en caja = ventas menos devoluciones de cada día, como el cierre: una devolución resta el día en
+// que se hace. Estadísticas (ventas netas) la resta de la venta original. El ticket medio usa las brutas.
 function totales(dias: readonly DiaVentas[], rango: Rango) {
   let neto = 0
   let ventas = 0

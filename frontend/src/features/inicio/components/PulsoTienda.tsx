@@ -13,11 +13,16 @@ export function PulsoTienda({ hoy }: { hoy: Date }) {
   return (
     <Tarjeta
       titulo="Pulso de la tienda"
-      subtitulo="Ventas netas (menos devoluciones), como en la caja"
+      subtitulo="Cobrado en caja: lo vendido menos lo devuelto cada día, como en el cierre"
       enlace={
-        <Link to="/ventas/historial" className={enlaceSutil}>
-          Ver ventas
-        </Link>
+        <span className="flex gap-3">
+          <Link to="/ventas/estadisticas" search={{ periodo: 'mes' }} className={enlaceSutil}>
+            Ver estadísticas
+          </Link>
+          <Link to="/ventas/historial" className={enlaceSutil}>
+            Ver ventas
+          </Link>
+        </span>
       }
     >
       {resumen.data ? (
