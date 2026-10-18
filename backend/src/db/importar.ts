@@ -18,6 +18,8 @@ const TABLAS = [
   'stock_categorias',
   'stock_proveedores',
   'stock_productos',
+  'stock_pedidos',
+  'stock_pedidos_lineas',
   'stock_compras',
   'stock_compras_lineas',
   'stock_ventas',

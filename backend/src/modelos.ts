@@ -44,6 +44,24 @@ export const compraEntrada = t.Object({
   fecha: textoOpcional,
   proveedor_id: idOpcional,
   notas: textoOpcional,
+  albaran: textoOpcional,
+  lineas: t.Optional(t.Array(lineaEntrada)),
+})
+
+export const pedidoEntrada = t.Object({
+  fecha: textoOpcional,
+  proveedor_id: idOpcional,
+  fecha_prevista: textoOpcional,
+  notas: textoOpcional,
+  lineas: t.Optional(t.Array(lineaEntrada)),
+})
+
+export const recepcionEntrada = t.Object({
+  fecha: textoOpcional,
+  albaran: textoOpcional,
+  notas: textoOpcional,
+  // true cierra el pedido aunque falte mercancía: el proveedor ya no la enviará.
+  cerrar: t.Optional(t.Boolean()),
   lineas: t.Optional(t.Array(lineaEntrada)),
 })
 

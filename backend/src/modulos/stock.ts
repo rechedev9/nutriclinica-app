@@ -2,6 +2,14 @@ import { Elysia } from 'elysia'
 import type { Contexto } from '../contexto'
 import { crearRecuento, listarRecuentos, movimientosDeProducto } from '../datos/inventario'
 import {
+  actualizarPedido,
+  cambiarEstadoPedido,
+  crearPedido,
+  eliminarPedido,
+  listarPedidos,
+  recibirPedido,
+} from '../datos/pedidos'
+import {
   actualizarCategoria,
   actualizarCompra,
   actualizarProducto,
@@ -22,22 +30,27 @@ import {
   listarMermas,
   listarProductos,
   listarProveedores,
+  numeroPedido,
 } from '../datos/stock'
 import {
   categoriaEntrada,
   compraEntrada,
   idParams,
   mermaEntrada,
+  pedidoEntrada,
   productoEntrada,
   proveedorEntrada,
+  recepcionEntrada,
   recuentoEntrada,
 } from '../modelos'
 import {
   normalizarCategoria,
   normalizarCompra,
   normalizarMerma,
+  normalizarPedido,
   normalizarProducto,
   normalizarProveedor,
+  normalizarRecepcion,
   normalizarRecuento,
 } from '../validacion'
 import { anotarAuditoria, crearAcceso } from './acceso'
@@ -123,6 +136,66 @@ export function moduloStock(ctx: Contexto) {
         return HECHO
       },
       { params: idParams },
+    )
+
+    .get('/pedidos', () => listarPedidos(db))
+    .post(
+      '/pedidos',
+      ({ body, usuario, status }) => {
+        const ahora = new Date()
+        const id = crearPedido(db, { datos: normalizarPedido(body, ahora), usuario: usuario.usuario, ahora })
+        return status(201, { ...HECHO, id })
+      },
+      { body: pedidoEntrada },
+    )
+    .put(
+      '/pedidos/:id',
+      ({ params, body }) => {
+        actualizarPedido(db, { id: params.id, datos: normalizarPedido(body, new Date()) })
+        return HECHO
+      },
+      { params: idParams, body: pedidoEntrada },
+    )
+    .delete(
+      '/pedidos/:id',
+      ({ params }) => {
+        eliminarPedido(db, params.id)
+        return HECHO
+      },
+      { params: idParams },
+    )
+    .post(
+      '/pedidos/:id/cerrar',
+      ({ params }) => {
+        cambiarEstadoPedido(db, { id: params.id, estado: 'cerrado' })
+        return HECHO
+      },
+      { params: idParams },
+    )
+    .post(
+      '/pedidos/:id/reabrir',
+      ({ params }) => {
+        cambiarEstadoPedido(db, { id: params.id, estado: 'abierto' })
+        return HECHO
+      },
+      { params: idParams },
+    )
+    .post(
+      '/pedidos/:id/recepciones',
+      ({ request, params, body, status }) => {
+        const datos = normalizarRecepcion(body, new Date())
+        const id = recibirPedido(db, { id: params.id, datos })
+        anotarAuditoria(request, {
+          pacienteId: null,
+          detalle: {
+            cambios: [],
+            resumen: `Albarán ${datos.albaran ?? 'sin número'} del pedido ${numeroPedido(params.id)}${datos.cerrar ? ', pedido cerrado' : ''}`,
+            registro_id: id,
+          },
+        })
+        return status(201, { ...HECHO, id })
+      },
+      { params: idParams, body: recepcionEntrada },
     )
 
     .get('/mermas', () => listarMermas(db))

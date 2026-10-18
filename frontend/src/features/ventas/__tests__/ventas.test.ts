@@ -171,6 +171,7 @@ function producto(cambios: Partial<AlmacenRow>): AlmacenRow {
     codigo_barras: null,
     iva: 10,
     categoria: null,
+    proveedor_id: null,
     proveedor_nombre: null,
     stock_actual: 10,
     creado: null,

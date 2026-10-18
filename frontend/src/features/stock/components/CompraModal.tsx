@@ -30,6 +30,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
   const [fecha, setFecha] = useState('')
   const [proveedorId, setProveedorId] = useState('')
   const [notas, setNotas] = useState('')
+  const [albaran, setAlbaran] = useState('')
   const [lineas, setLineas] = useState<LineaInput[]>([])
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
       setFecha(fechaInit)
       setProveedorId(compra?.proveedor_id != null ? String(compra.proveedor_id) : '')
       setNotas(compra?.notas ?? '')
+      setAlbaran(compra?.albaran ?? '')
       setLineas(
         compra?.lineas.length
           ? compra.lineas.map((l) => ({
@@ -59,6 +61,7 @@ export function CompraModal({ open, onClose, compra }: Props) {
       fecha: fecha || null,
       proveedor_id: proveedorId ? Number(proveedorId) : null,
       notas: notas.trim() || null,
+      albaran: albaran.trim() || null,
       lineas: lineas.filter((l) => l.producto_id > 0),
     }
     const ok = await intentar(compra ? update.mutateAsync({ id: compra.id, body }) : create.mutateAsync(body))
@@ -76,12 +79,24 @@ export function CompraModal({ open, onClose, compra }: Props) {
       className="w-[min(640px,94vw)]"
     >
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
+        {compra?.pedido_numero && (
+          <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+            Albarán del pedido {compra.pedido_numero}: el proveedor es el del pedido.
+          </p>
+        )}
+        <div className="grid grid-cols-3 gap-3 max-md:grid-cols-1">
           <Field label="Fecha y hora">
             <Input type="datetime-local" value={fecha} onChange={(e) => setFecha(e.target.value)} />
           </Field>
+          <Field label="Nº de albarán (opcional)">
+            <Input value={albaran} onChange={(e) => setAlbaran(e.target.value)} />
+          </Field>
           <Field label="Proveedor">
-            <Select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)}>
+            <Select
+              value={proveedorId}
+              disabled={compra?.pedido_id != null}
+              onChange={(e) => setProveedorId(e.target.value)}
+            >
               <option value="">Sin proveedor</option>
               {proveedores.map((p) => (
                 <option key={p.id} value={p.id}>

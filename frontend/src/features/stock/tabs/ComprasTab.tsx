@@ -164,7 +164,9 @@ export function ComprasTab() {
                     )}
                   </div>
                   <div className="truncate text-[13px] text-ink-muted">
-                    {c.proveedor_nombre ?? 'Sin proveedor'} · {resumenLineas(c.lineas)}
+                    {c.proveedor_nombre ?? 'Sin proveedor'}
+                    {c.albaran && ` · Albarán ${c.albaran}`}
+                    {c.pedido_numero && ` · Pedido ${c.pedido_numero}`} · {resumenLineas(c.lineas)}
                   </div>
                 </div>
                 <div className="whitespace-nowrap font-bold tabular-nums">{fmtMoneda(c.total)}</div>

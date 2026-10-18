@@ -10,6 +10,7 @@ export const MOTIVOS_MERMA = ['caducidad', 'accidente_rotura', 'devolucion_clien
 export const ROLES = ['admin', 'user'] as const
 export const METODOS_PAGO = ['efectivo', 'tarjeta', 'bizum'] as const
 export const ESTADOS_VENTA = ['completada', 'anulada'] as const
+export const ESTADOS_PEDIDO = ['abierto', 'cerrado'] as const
 export const TIPOS_IVA = [0, 4, 10, 21] as const
 
 export const pacientes = sqliteTable('pacientes', {
@@ -118,6 +119,42 @@ export const stock_productos = sqliteTable(
   ],
 )
 
+// Pedido a un proveedor. No suma stock: lo suman las compras (albaranes) que lo reciben.
+export const stock_pedidos = sqliteTable(
+  'stock_pedidos',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    fecha: text().notNull(),
+    proveedor_id: integer()
+      .notNull()
+      .references(() => stock_proveedores.id),
+    fecha_prevista: text(),
+    // «cerrado» ya no espera mercancía aunque falte algo por llegar.
+    estado: text({ enum: ESTADOS_PEDIDO }).notNull().default('abierto'),
+    notas: text(),
+    creado: text().notNull(),
+    usuario: text(),
+  },
+  (t) => [index('idx_pedidos_proveedor').on(t.proveedor_id)],
+)
+
+export const stock_pedidos_lineas = sqliteTable(
+  'stock_pedidos_lineas',
+  {
+    id: integer().primaryKey({ autoIncrement: true }),
+    pedido_id: integer()
+      .notNull()
+      .references(() => stock_pedidos.id),
+    producto_id: integer()
+      .notNull()
+      .references(() => stock_productos.id),
+    cantidad: real().notNull(),
+    precio_unitario: real().notNull().default(0),
+  },
+  (t) => [index('idx_pedidos_lineas_pedido').on(t.pedido_id), index('idx_pedidos_lineas_producto').on(t.producto_id)],
+)
+
+// Una compra es la entrada de mercancía de un albarán; con pedido_id recibe ese pedido.
 export const stock_compras = sqliteTable(
   'stock_compras',
   {
@@ -126,8 +163,10 @@ export const stock_compras = sqliteTable(
     proveedor_id: integer().references(() => stock_proveedores.id),
     notas: text(),
     total: real().notNull().default(0),
+    albaran: text(),
+    pedido_id: integer().references(() => stock_pedidos.id),
   },
-  (t) => [index('idx_compras_proveedor').on(t.proveedor_id)],
+  (t) => [index('idx_compras_proveedor').on(t.proveedor_id), index('idx_compras_pedido').on(t.pedido_id)],
 )
 
 export const stock_compras_lineas = sqliteTable(
