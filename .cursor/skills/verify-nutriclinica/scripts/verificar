@@ -1,0 +1,476 @@
+#!/usr/bin/env bash
+# El doctor atribuye el puerto por el inodo del socket en /proc, y cleanup mata ese pid.
+# Matar por nombre de proceso cogería otro bun o el Chrome del escritorio.
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+REPO=$(cd "$SCRIPT_DIR/../../../.." && pwd)
+BASE=${NUTRICLINICA_VERIFY_BASE:-/tmp/nutriclinica-verify}
+EVIDENCE_ROOT=${NUTRICLINICA_VERIFY_EVIDENCE:-/tmp/nutriclinica-verify-evidence}
+
+RUN=""
+ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --run)
+      RUN=${2:-}
+      shift 2
+      ;;
+    *)
+      ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+if [[ ${#ARGS[@]} -gt 0 ]]; then
+  set -- "${ARGS[@]}"
+else
+  set --
+fi
+
+CMD=${1:-}
+if [[ $# -gt 0 ]]; then
+  shift
+fi
+
+if [[ -z "$CMD" ]]; then
+  echo "uso: verificar [--run ID] launch|doctor|paths|sql|browser|cleanup" >&2
+  exit 1
+fi
+
+if [[ "$CMD" != "launch" && -z "$RUN" && -f "$BASE/current" ]]; then
+  RUN=$(cat "$BASE/current")
+fi
+
+bun_bin() {
+  if command -v bun >/dev/null 2>&1; then
+    command -v bun
+    return
+  fi
+  if [[ -x "$HOME/.bun/bin/bun" ]]; then
+    echo "$HOME/.bun/bin/bun"
+    return
+  fi
+  echo "bun no está en PATH. Instálalo y vuelve a lanzar." >&2
+  return 1
+}
+
+chrome_bin() {
+  local candidato
+  for candidato in google-chrome google-chrome-stable chromium chromium-browser; do
+    if command -v "$candidato" >/dev/null 2>&1; then
+      command -v "$candidato"
+      return
+    fi
+  done
+  echo "No hay Chrome ni Chromium en PATH." >&2
+  return 1
+}
+
+puerto_libre() {
+  python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+}
+
+exigir_run() {
+  if [[ -z "$RUN" || "$RUN" == "." || "$RUN" == ".." || "$RUN" == */* ]]; then
+    echo "No hay instancia. Ejecuta: verificar launch" >&2
+    exit 1
+  fi
+}
+
+state_dir() {
+  echo "$BASE/$RUN"
+}
+
+evidence_dir() {
+  echo "$EVIDENCE_ROOT/$RUN"
+}
+
+meta_get() {
+  local clave=$1
+  awk -F= -v k="$clave" '$1==k { sub(/^[^=]*=/, ""); print; exit }' "$(state_dir)/meta"
+}
+
+escribir_meta() {
+  local estado=$1 puerto=$2 datos=$3
+  cat >"$estado/meta" <<EOF
+run=$RUN
+port=$puerto
+url=http://127.0.0.1:$puerto
+data=$datos
+pid=$(cat "$estado/server.pid")
+repo=$REPO
+evidence=$(evidence_dir)
+EOF
+}
+
+# Comprueba que el pid tiene un socket en escucha en el puerto. No usa el nombre del proceso.
+pid_escucha() {
+  local pid=$1 puerto=$2
+  local hex inodos candidato enlace
+  hex=$(printf '%04X' "$puerto")
+  inodos=$(awk -v p="$hex" 'NR>1 && $1 !~ /^sl$/ { split($2, a, ":"); if (toupper(a[2])==p && $4=="0A") print $10 }' /proc/net/tcp /proc/net/tcp6 2>/dev/null || true)
+  [[ -n "$inodos" ]] || return 1
+  for candidato in $inodos; do
+    for enlace in /proc/"$pid"/fd/*; do
+      case $(readlink "$enlace" 2>/dev/null || true) in
+        socket:\[$candidato\]) return 0 ;;
+      esac
+    done
+  done
+  return 1
+}
+
+arbol_escucha() {
+  local pid=$1 puerto=$2 hijo
+  if pid_escucha "$pid" "$puerto"; then
+    return 0
+  fi
+  for hijo in $(ps -o pid= --ppid "$pid" 2>/dev/null || true); do
+    if arbol_escucha "$hijo" "$puerto"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+matar_grupo() {
+  local pid=$1 marca=$2
+  [[ -n "$pid" && -d "/proc/$pid" ]] || return 0
+  local linea hijo
+  linea=$(tr '\0' ' ' <"/proc/$pid/cmdline")
+  case "$linea" in
+    *"$marca"*) ;;
+    *)
+      echo "no mato $pid: su comando no es de esta instancia" >&2
+      return 1
+      ;;
+  esac
+  # setsid deja a este pid como líder. Los hijos se recogen por ppid antes de matar, no por nombre.
+  local -a cola=("$pid") todos=()
+  local actual nieto
+  while [[ ${#cola[@]} -gt 0 ]]; do
+    actual=${cola[0]}
+    if [[ ${#cola[@]} -gt 1 ]]; then
+      cola=("${cola[@]:1}")
+    else
+      cola=()
+    fi
+    todos+=("$actual")
+    for nieto in $(ps -o pid= --ppid "$actual" 2>/dev/null || true); do
+      cola+=("$nieto")
+    done
+  done
+  for actual in "${todos[@]}"; do
+    kill -TERM "$actual" 2>/dev/null || true
+  done
+  local _i
+  for _i in 1 2 3 4 5 6 7 8 9 10; do
+    [[ -d "/proc/$pid" ]] || return 0
+    sleep 0.2
+  done
+  for actual in "${todos[@]}"; do
+    kill -KILL "$actual" 2>/dev/null || true
+  done
+}
+
+esperar_listo() {
+  local url=$1 estado=$2
+  local i codigo pacientes almacen html sesion=0
+  mkdir -p "$estado"
+  for i in $(seq 1 90); do
+    if ! curl -fsS "$url/api/estado" 2>/dev/null | grep -q '"abierto"'; then
+      sleep 1
+      continue
+    fi
+    if [[ "$sesion" -eq 0 ]]; then
+      codigo=$(curl -sS -o "$estado/login.json" -w '%{http_code}' -c "$estado/cookies" \
+        -H 'content-type: application/json' \
+        -d '{"usuario":"admin","password":"admin"}' \
+        "$url/api/login" || true)
+      if [[ "$codigo" != "200" ]]; then
+        sleep 1
+        continue
+      fi
+      sesion=1
+    fi
+    pacientes=$(curl -fsS -b "$estado/cookies" "$url/api/pacientes" || true)
+    almacen=$(curl -fsS -b "$estado/cookies" "$url/api/stock/almacen" || true)
+    html=$(curl -fsS "$url/" || true)
+    if [[ "$pacientes" == *"María García López"* && "$almacen" == *"Whey Protein Concentrada 1 kg"* && "$html" == *"<title>NutriClínica</title>"* ]]; then
+      rm -f "$estado/cookies" "$estado/login.json"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "la instancia no llegó a ser usable. Últimas líneas del servidor:" >&2
+  tail -n 40 "$estado/server.log" >&2 || true
+  return 1
+}
+
+cmd_launch() {
+  local BUN PORT DATA ESTADO
+  if [[ ! -d "$REPO/node_modules" ]]; then
+    echo "Falta node_modules. Desde la raíz del repo: bun install" >&2
+    exit 1
+  fi
+  BUN=$(bun_bin)
+  if [[ -z "$RUN" ]]; then
+    RUN=$(python3 -c 'import secrets; print(secrets.token_hex(4))')
+  fi
+  exigir_run
+  if [[ -d "$(state_dir)" ]]; then
+    echo "ya existe la instancia $RUN" >&2
+    exit 1
+  fi
+  PORT=$(puerto_libre)
+  DATA="$(state_dir)/data"
+  ESTADO="$(state_dir)"
+  mkdir -p "$DATA" "$(evidence_dir)"
+  case "$DATA" in
+    "$REPO"|"$REPO"/*)
+      echo "rechazo: el directorio de datos no puede estar dentro del repo" >&2
+      exit 1
+      ;;
+  esac
+  if [[ ! -f "$REPO/frontend/dist/index.html" ]]; then
+    echo "bun run build"
+    (cd "$REPO" && "$BUN" run build)
+  fi
+  (cd "$REPO/backend" && "$BUN" src/db/sembrar-demo.ts --data-dir "$DATA")
+  (
+    cd "$REPO/backend"
+    env -u NUTRICLINICA_DATA setsid "$BUN" src/index.ts --no-browser --host 127.0.0.1 --data-dir "$DATA" --port "$PORT" \
+      >"$ESTADO/server.log" 2>&1 < /dev/null &
+    echo $! >"$ESTADO/server.pid"
+  )
+  escribir_meta "$ESTADO" "$PORT" "$DATA"
+  if ! esperar_listo "http://127.0.0.1:$PORT" "$ESTADO"; then
+    echo "launch falló. Revisa $(state_dir)/server.log y ejecuta: verificar --run $RUN cleanup" >&2
+    exit 1
+  fi
+  echo "$RUN" >"$BASE/current"
+  echo "run=$RUN"
+  echo "url=http://127.0.0.1:$PORT"
+  echo "data=$DATA"
+  echo "evidence=$(evidence_dir)"
+  echo "pid=$(cat "$ESTADO/server.pid")"
+}
+
+cmd_paths() {
+  exigir_run
+  [[ -f "$(state_dir)/meta" ]] || {
+    echo "no hay meta de $RUN" >&2
+    exit 1
+  }
+  cat "$(state_dir)/meta"
+}
+
+cmd_doctor() {
+  local pid puerto url data db linea tags admin semilla producto html
+  exigir_run
+  [[ -f "$(state_dir)/meta" ]] || {
+    echo "no hay meta de $RUN" >&2
+    exit 1
+  }
+  pid=$(meta_get pid)
+  puerto=$(meta_get port)
+  url=$(meta_get url)
+  data=$(meta_get data)
+  db="$data/bbdd/nutriclinica.db"
+  if [[ ! -d "/proc/$pid" ]]; then
+    echo "doctor: el proceso $pid no existe" >&2
+    exit 1
+  fi
+  linea=$(tr '\0' ' ' <"/proc/$pid/cmdline")
+  case "$linea" in
+    *src/index.ts*"$data"*) ;;
+    *)
+      echo "doctor: el pid $pid no es el servidor de $data" >&2
+      exit 1
+      ;;
+  esac
+  if ! arbol_escucha "$pid" "$puerto"; then
+    echo "doctor: $pid no escucha en $puerto" >&2
+    exit 1
+  fi
+  curl -fsS "$url/api/estado" | grep -q '"abierto"'
+  local codigo
+  codigo=$(curl -sS -o /dev/null -w '%{http_code}' "$url/api/me")
+  if [[ "$codigo" != "401" ]]; then
+    echo "doctor: GET /api/me sin cookie respondió $codigo, se esperaba 401" >&2
+    exit 1
+  fi
+  html=$(curl -fsS "$url/")
+  if [[ "$html" != *"<title>NutriClínica</title>"* ]]; then
+    echo "doctor: la raíz no sirve la SPA" >&2
+    exit 1
+  fi
+  local BUN
+  BUN=$(bun_bin)
+  tags=$("$BUN" "$SCRIPT_DIR/consultar.ts" "$db" "SELECT tag FROM __migraciones ORDER BY tag")
+  admin=$("$BUN" "$SCRIPT_DIR/consultar.ts" "$db" "SELECT usuario, rol FROM usuarios WHERE usuario = 'admin'")
+  semilla=$("$BUN" "$SCRIPT_DIR/consultar.ts" "$db" "SELECT COUNT(*) AS n FROM pacientes WHERE nombre = 'María García López'")
+  producto=$("$BUN" "$SCRIPT_DIR/consultar.ts" "$db" "SELECT COUNT(*) AS n FROM stock_productos WHERE nombre = 'Whey Protein Concentrada 1 kg'")
+  python3 - "$tags" "$admin" "$semilla" "$producto" <<'PY'
+import json, sys
+tags, admin, semilla, producto = (json.loads(x) for x in sys.argv[1:])
+esperadas = {"0000_inicial", "0001_first_ikaris", "0002_seccion_ventas", "0003_control_stock", "0004_pedidos_proveedor"}
+presentes = {fila["tag"] for fila in tags}
+faltan = esperadas - presentes
+if faltan:
+    raise SystemExit(f"doctor: faltan migraciones {sorted(faltan)}")
+if not any(fila.get("usuario") == "admin" and fila.get("rol") == "admin" for fila in admin):
+    raise SystemExit("doctor: no está el usuario admin de desarrollo")
+if not semilla or semilla[0].get("n") != 1:
+    raise SystemExit("doctor: no está la clienta de semilla María García López")
+if not producto or producto[0].get("n") != 1:
+    raise SystemExit("doctor: no está el producto de semilla")
+PY
+  echo "ok"
+  echo "url=$url"
+  echo "data=$data"
+  echo "pid=$pid owns :$puerto"
+  echo "estado=abierto"
+  echo "me=401"
+  echo "spa=NutriClínica"
+  echo "admin=admin"
+  echo "paciente_semilla=María García López"
+  echo "producto_semilla=Whey Protein Concentrada 1 kg"
+}
+
+ruta_evidencia() {
+  local pedido=$1 destino raiz real
+  if [[ "$pedido" == /* ]]; then
+    destino=$pedido
+  else
+    destino="$(evidence_dir)/$pedido"
+  fi
+  mkdir -p "$(dirname "$destino")"
+  real=$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$(dirname "$destino")")
+  raiz=$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$(evidence_dir)")
+  case "$real" in
+    "$raiz"|"$raiz"/*) ;;
+    *)
+      echo "ruta fuera de la evidencia: $pedido" >&2
+      exit 1
+      ;;
+  esac
+  echo "$destino"
+}
+
+cmd_sql() {
+  local salida="" consulta BUN destino
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --out)
+        salida=${2:-}
+        shift 2
+        ;;
+      *)
+        consulta=$1
+        shift
+        ;;
+    esac
+  done
+  if [[ -z "${consulta:-}" ]]; then
+    echo "uso: verificar sql [--out ruta] \"SELECT ...\"" >&2
+    exit 1
+  fi
+  exigir_run
+  BUN=$(bun_bin)
+  local json
+  json=$("$BUN" "$SCRIPT_DIR/consultar.ts" "$(meta_get data)/bbdd/nutriclinica.db" "$consulta")
+  printf '%s\n' "$json"
+  if [[ -n "$salida" ]]; then
+    destino=$(ruta_evidencia "$salida")
+    printf '%s\n' "$json" >"$destino"
+  fi
+}
+
+asegurar_chrome() {
+  local pid puerto bin
+  if [[ -f "$(state_dir)/chrome.pid" ]]; then
+    pid=$(cat "$(state_dir)/chrome.pid")
+    puerto=$(cat "$(state_dir)/chrome.port" 2>/dev/null || true)
+    if [[ -n "$puerto" ]] && arbol_escucha "$pid" "$puerto"; then
+      return 0
+    fi
+  fi
+  bin=$(chrome_bin)
+  puerto=$(puerto_libre)
+  mkdir -p "$(state_dir)/chrome"
+  # remote-allow-origins: el cliente CDP no es el propio Chrome y, sin esto, el socket rechaza la conexión.
+  setsid "$bin" \
+    --headless=new \
+    --disable-gpu \
+    --no-sandbox \
+    --disable-dev-shm-usage \
+    --disable-extensions \
+    --no-first-run \
+    --no-default-browser-check \
+    --window-size=1440,900 \
+    --force-device-scale-factor=1 \
+    --remote-debugging-port="$puerto" \
+    --user-data-dir="$(state_dir)/chrome" \
+    --remote-allow-origins='*' \
+    about:blank \
+    >"$(state_dir)/chrome.log" 2>&1 < /dev/null &
+  echo $! >"$(state_dir)/chrome.pid"
+  echo "$puerto" >"$(state_dir)/chrome.port"
+  local _i
+  for _i in $(seq 1 40); do
+    if curl -fsS "http://127.0.0.1:$puerto/json/version" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.25
+  done
+  echo "Chrome no abrió el puerto de depuración. Log:" >&2
+  tail -n 30 "$(state_dir)/chrome.log" >&2 || true
+  return 1
+}
+
+cmd_browser() {
+  local BUN
+  exigir_run
+  [[ -f "$(state_dir)/meta" ]] || {
+    echo "no hay instancia $RUN" >&2
+    exit 1
+  }
+  asegurar_chrome
+  BUN=$(bun_bin)
+  "$BUN" "$SCRIPT_DIR/navegador.ts" "$(state_dir)" "$(meta_get url)" "$(evidence_dir)" "$@"
+}
+
+cmd_cleanup() {
+  local servidor chrome
+  exigir_run
+  if [[ ! -d "$(state_dir)" ]]; then
+    echo "no hay instancia $RUN"
+    echo "evidence=$(evidence_dir)"
+    return 0
+  fi
+  servidor=$(cat "$(state_dir)/server.pid" 2>/dev/null || true)
+  chrome=$(cat "$(state_dir)/chrome.pid" 2>/dev/null || true)
+  matar_grupo "$chrome" "$(state_dir)/chrome" || true
+  matar_grupo "$servidor" "$(state_dir)/data" || true
+  rm -rf "$(state_dir)"
+  if [[ -f "$BASE/current" && "$(cat "$BASE/current")" == "$RUN" ]]; then
+    rm -f "$BASE/current"
+  fi
+  echo "cerrada $RUN"
+  echo "evidence=$(evidence_dir)"
+}
+
+case "$CMD" in
+  launch) cmd_launch ;;
+  doctor) cmd_doctor ;;
+  paths) cmd_paths ;;
+  sql) cmd_sql "$@" ;;
+  browser) cmd_browser "$@" ;;
+  cleanup) cmd_cleanup ;;
+  *)
+    echo "comando desconocido: $CMD" >&2
+    exit 1
+    ;;
+esac

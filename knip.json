@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["diseño/**"],
+  "ignore": ["diseño/**", ".cursor/**"],
   "workspaces": {
     "backend": {
       "entry": ["src/spa.ts"]
