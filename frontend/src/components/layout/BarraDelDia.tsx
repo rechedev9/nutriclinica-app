@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
+import { Chevron } from '@/components/ui/Chevron'
 import { cn } from '@/lib/cn'
-import { delDia, elResto } from './barra-del-dia'
+import { delDia, elResto, etiquetaMas } from './barra-del-dia'
 import type { Pestana } from './barra-del-dia'
 
 const enlace = 'whitespace-nowrap border-b-2 px-4 py-3.5 text-[15px] font-semibold transition-colors'
@@ -23,6 +24,8 @@ function Enlaces({ pestanas }: { pestanas: readonly Pestana[] }) {
 }
 
 function Mas({ resto, activo, ruta }: { resto: readonly Pestana[]; activo: boolean; ruta: string }) {
+  const raiz = useRef<HTMLDivElement>(null)
+  const boton = useRef<HTMLButtonElement>(null)
   const [abierto, setAbierto] = useState(false)
   const [vista, setVista] = useState(ruta)
   if (vista !== ruta) {
@@ -30,18 +33,47 @@ function Mas({ resto, activo, ruta }: { resto: readonly Pestana[]; activo: boole
     setAbierto(false)
   }
 
+  useEffect(() => {
+    if (!abierto) return
+    function alPulsarFuera(e: PointerEvent) {
+      const nodo = e.target
+      if (!(nodo instanceof Node) || raiz.current?.contains(nodo)) return
+      setAbierto(false)
+    }
+    function alPulsarEscape(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setAbierto(false)
+      boton.current?.focus()
+    }
+    document.addEventListener('pointerdown', alPulsarFuera)
+    document.addEventListener('keydown', alPulsarEscape)
+    return () => {
+      document.removeEventListener('pointerdown', alPulsarFuera)
+      document.removeEventListener('keydown', alPulsarEscape)
+    }
+  }, [abierto])
+
+  const etiqueta = etiquetaMas(resto, ruta)
+
   return (
-    <div className="relative ml-auto">
+    <div ref={raiz} className="relative ml-auto">
       <button
+        ref={boton}
         type="button"
-        className={cn(enlace, activo ? activa : inactiva)}
+        className={cn(enlace, 'inline-flex items-center gap-1', activo ? activa : inactiva)}
         aria-expanded={abierto}
+        aria-controls="mas-pestanas"
         onClick={() => setAbierto((v) => !v)}
       >
-        Más
+        {etiqueta}
+        <Chevron abierto={abierto} />
       </button>
       {abierto && (
-        <div className="absolute top-full right-0 z-50 mt-1 flex min-w-44 flex-col rounded-card border border-border bg-surface p-1 shadow-md">
+        <div
+          id="mas-pestanas"
+          className="absolute top-full right-0 z-50 mt-1 flex min-w-44 flex-col rounded-card border border-border bg-surface p-1 shadow-md"
+        >
           {resto.map((t) => (
             <Link
               key={t.label}
@@ -77,7 +109,7 @@ export function BarraDelDia({
       <div className={cn('hidden gap-1 border-b border-border bg-surface px-6 md:flex', impresion)}>
         <Enlaces pestanas={pestanas} />
       </div>
-      <div className={cn('flex gap-1 border-b border-border bg-surface px-3 md:hidden', impresion)}>
+      <div className={cn('flex flex-wrap gap-1 border-b border-border bg-surface px-3 md:hidden', impresion)}>
         <Enlaces pestanas={dia} />
         {resto.length > 0 && <Mas resto={resto} activo={restoActivo} ruta={ruta} />}
       </div>

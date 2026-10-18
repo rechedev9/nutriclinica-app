@@ -34,3 +34,7 @@ export function delDia<T extends { grupo: GrupoPestana }>(pestanas: readonly T[]
 export function elResto<T extends { grupo: GrupoPestana }>(pestanas: readonly T[]): T[] {
   return pestanas.filter((p) => p.grupo === 'resto')
 }
+
+export function etiquetaMas(resto: readonly { to: string; label: string }[], ruta: string): string {
+  return resto.find((p) => p.to === ruta)?.label ?? 'Más'
+}

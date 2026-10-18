@@ -36,6 +36,6 @@ Preconditions:
 - Stock is derived. A sale, purchase, loss, or recount in another recipe changes the number on this list.
 - Pedidos, mermas, and recuentos are on the tab bar. Do not treat the Almacén proof as proof of those tabs.
 - At the default window every Tienda tab is on one row, in this order: Almacén, Pedidos, Categorías, Proveedores, Compras, Mermas, Recuentos, Análisis.
-- Below 768 px the row shows Almacén, Pedidos, and Compras. Categorías, Proveedores, Mermas, Recuentos, and Análisis are links inside the `Más` button. There is no hidden horizontal scroll.
+- Below 768 px the row shows Almacén, Pedidos, and Compras. Categorías, Proveedores, Mermas, Recuentos, and Análisis are links inside the disclosure button. That button reads `Más` unless the open tab is one of those, in which case it reads that tab's name (for example `Categorías`) plus a chevron. Tapping outside or pressing Escape closes it; Escape returns focus to the button. There is no hidden horizontal scroll.
 - `/stock/pedidos?reponer=<supplier id>` opens the `Nuevo pedido a proveedor` dialog with that supplier and the suggested lines. The delivery note is unchanged. `+ Nuevo pedido` on that tab still opens an empty order.
 - After a delivery note completes an order, that order stays on `Por recibir` for the rest of the visit, expanded, with badge `Recibido` and the receipt date. Older received orders stay under `Recibidos y cerrados`.
