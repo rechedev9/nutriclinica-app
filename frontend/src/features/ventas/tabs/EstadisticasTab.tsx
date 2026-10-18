@@ -254,7 +254,7 @@ function KpisVentas({ actual, anterior }: { actual: EstadisticasVentas; anterior
         etiqueta="Ventas netas"
         valor={fmtMoneda(a.neto)}
         cambio={comparar((r) => r.neto)}
-        detalle="sin anuladas y descontando lo devuelto"
+        detalle="por día de venta: sin anuladas, y lo devuelto se resta de la venta original, no de la caja del día"
       />
       <Kpi
         etiqueta="Tickets"

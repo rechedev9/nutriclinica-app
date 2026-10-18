@@ -77,6 +77,11 @@ describe('pulsoTienda', () => {
     // (30,10 + 40 + 20,10 + 50,20) / 6 = 23,40; septiembre: 100 / 2 = 50.
     expect(pulso.ticket).toEqual({ actual: 23.4, anterior: 50, variacion: -53 })
   })
+  test('cobrado en caja: devolver hoy una venta de septiembre rebaja este mes, no septiembre', () => {
+    const conDevolucion = pulsoTienda([dia('2026-09-10', 100, 1), dia('2026-10-18', 0, 0, 30)], HOY)
+    expect(conDevolucion.hoy.actual).toBe(-30)
+    expect(conDevolucion.mes).toEqual({ actual: -30, anterior: 100, variacion: -130, num_ventas: 0 })
+  })
   test('sin ventas', () => {
     const vacio = pulsoTienda([], HOY)
     expect(vacio.hoy).toEqual({ actual: 0, anterior: 0, variacion: null, num_ventas: 0 })
