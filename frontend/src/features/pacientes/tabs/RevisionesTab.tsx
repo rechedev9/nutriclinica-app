@@ -206,7 +206,13 @@ export function RevisionesTab() {
         ))
       )}
 
-      <RevisionModal open={modalOpen} onClose={() => setModalOpen(false)} pid={p.id} revision={editing} />
+      <RevisionModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        pid={p.id}
+        revision={editing}
+        anterior={editing ? undefined : revs?.[0]}
+      />
     </div>
   )
 }

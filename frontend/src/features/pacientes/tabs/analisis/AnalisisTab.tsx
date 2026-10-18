@@ -13,6 +13,7 @@ import { calcIMC, calcGrasaDW, clasificarGrasa, pesoGraso, pesoMagro, calcTMB } 
 import { buildMonthMultiData } from '@/lib/chart/buildMonthData'
 import { ALL_MEDIDAS, PLIEGUES } from '@/types'
 import type { Revision } from '@/types'
+import { PERIMETROS_SERIE_INICIAL, PLIEGUES_GRASA } from '../../medidas-analisis'
 import { ChartPesoGrasa } from './charts/ChartPesoGrasa'
 import { ChartPerimetros, type Serie } from './charts/ChartPerimetros'
 import { ChartPliegues } from './charts/ChartPliegues'
@@ -134,7 +135,7 @@ export function AnalisisTab() {
   const { data: revs, isLoading, isError, error, refetch, isFetching } = useRevisiones(p.id)
   const edad = calcEdad(p.fecha_nac)
   const sexo = p.sexo
-  const [activas, setActivas] = useState<Set<string>>(new Set(['per_cintura', 'per_caderas', 'per_muslo', 'per_pecho']))
+  const [activas, setActivas] = useState<Set<string>>(new Set(PERIMETROS_SERIE_INICIAL))
 
   const grasaFn = useMemo(
     () => (r: Revision) =>
@@ -219,9 +220,7 @@ export function AnalisisTab() {
   })
   const clase = clasificarGrasa(grasaD?.valor ?? null, sexo)
 
-  const hayPliegues = asc.some(
-    (r) => r.pl_bicipital != null && r.pl_tricipital != null && r.pl_subescapular != null && r.pl_supracrestal != null,
-  )
+  const hayPliegues = asc.some((r) => PLIEGUES_GRASA.every((clave) => r[clave] != null))
   const vacioPeso = 'Sin peso registrado'
   const vacioGrasa = hayPliegues ? 'Requiere sexo y edad' : 'Sin pliegues registrados'
   // Con peso y % de grasa en revisiones distintas no se puede repartir el peso.

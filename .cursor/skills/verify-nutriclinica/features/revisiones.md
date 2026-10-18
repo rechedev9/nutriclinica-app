@@ -34,6 +34,8 @@ Preconditions:
 - The card button's accessible name is the whole card. Use `--contains "María García López"`.
 - The date defaults to today and the server accepts today. Do not type a future date; the API rejects it.
 - Folds and perimeters must be greater than 0 when present. Leave them empty.
+- The dialog shows the date, the weight, the four fat skinfolds (bicipital, tricipital, subescapular, supracrestal), and the four perimeters the measures chart opens with (pecho, cintura, caderas, muslo). The other numbers sit under the `Más medidas` button. That section starts open when the review being edited already stored one of them, or, on a new review, when the client's latest review did.
+- The dialog does not ask for height. Saving an edit sends the stored `talla` back, so the row keeps it.
 - `María García López` is a seeded fictional client. Do not replace her with anyone from a real database.
 - If `Sin revisiones` appears, the seed did not load her measurements. Stop and report that precondition. Do not switch to a client who has no history just to make the empty-state check pass.
 - Creating the review changes her "last review" and can change whether she shows as pending on Inicio and on the client list.
