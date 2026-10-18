@@ -10,10 +10,9 @@ import { fmtFecha, hoyLocal } from '@/lib/format/fecha'
 import { fmtMoneda } from '@/lib/format/moneda'
 import { cn } from '@/lib/cn'
 import { importeEditable, leerImporte, sumarImportes } from '../carrito'
-import { diasSinCerrar } from '../cierre'
 import { InformeCajaImprimible } from '../components/InformeCaja'
 import { imprimirTicket } from '../components/Ticket'
-import { useCerrarCaja, useCierres, useReabrirCaja, useResumenCaja, useTienda, useVentas } from '../hooks/useVentas'
+import { useCerrarCaja, useCierres, useReabrirCaja, useResumenCaja, useTienda } from '../hooks/useVentas'
 import type { Cierre, ResumenCaja } from '@/types'
 
 function Linea({ etiqueta, valor, fuerte }: { etiqueta: string; valor: number; fuerte?: boolean }) {
@@ -92,10 +91,9 @@ function Resultado({ importe }: { importe: number }) {
 function FormularioCierre({ resumen }: { resumen: ResumenCaja }) {
   const cerrar = useCerrarCaja()
   const confirm = useConfirm()
-  const [contado, setContado] = useState('')
-  const [notas, setNotas] = useState('')
   const esperado = resumen.neto.efectivo
-  // Un día sin cobros en efectivo se cierra sin tener que escribir 0.
+  const [contado, setContado] = useState(() => importeEditable(esperado))
+  const [notas, setNotas] = useState('')
   const efectivoContado = leerImporte(contado) ?? (esperado === 0 ? 0 : null)
   const contadoValido = efectivoContado !== null && !Number.isNaN(efectivoContado) && efectivoContado >= 0
   const diferencia = contadoValido && contado !== '' ? sumarImportes([efectivoContado, -esperado]) : null
@@ -261,9 +259,8 @@ export function CierreTab() {
   const [fecha, setFecha] = useState(hoy)
   const { data: resumen, isLoading, isError, error, refetch, isFetching } = useResumenCaja(fecha)
   const { data: cierres = [], isLoading: cargandoCierres } = useCierres()
-  const { data: ventas = [] } = useVentas()
   const { data: tienda } = useTienda()
-  const pendientes = diasSinCerrar({ ventas, cerrados: cierres.map((c) => c.fecha), hoy })
+  const pendientes = (resumen?.sin_cerrar ?? []).filter((dia) => dia !== fecha)
 
   return (
     <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-2">

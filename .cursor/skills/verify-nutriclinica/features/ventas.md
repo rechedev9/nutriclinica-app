@@ -43,3 +43,4 @@ Preconditions:
 - F2 focuses the search and F9 opens payment. This recipe uses the visible controls.
 - The note is stored on the sale and is not printed on the ticket. The ticket proof is the `cobrada` dialog; the note proof is the SQL row.
 - Seeded counter sales already exist. Match the note, not "the latest sale" alone.
+- `Cierre de caja` opens on today. The counted-cash field starts with the expected cash. Confirming still warns that the day will be locked. The pending-days line is the same list as Inicio, so the seeded sales from months ago are not offered as a jump away from today.
