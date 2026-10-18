@@ -24,13 +24,15 @@ diseño/     Maquetas de referencia. No forman parte de la aplicación.
 bbdd/       nutriclinica.db (SQLite). En .gitignore.
 fotos/      Fotos de progreso en disco. En .gitignore.
 dist/       Binarios y carpetas listas para distribuir. En .gitignore.
+.cursor/    Reglas y skills de los agentes. No forma parte de la aplicación.
 ```
 
 Es un workspace de Bun (`backend` y `frontend`) con un único `bun.lock` en la raíz.
+En `.cursor/rules/pstack-models.mdc` (regla siempre activa) cada rol de pstack usa `inherit-parent`, el modelo del chat. El skill `.cursor/skills/verify-nutriclinica/` lanza la aplicación con datos ficticios y recorre la interfaz.
 
 ## Comandos
 
-Todos desde la raíz, con Bun (`bun install` la primera vez):
+Todos desde la raíz, con Bun (`bun install` la primera vez). En una máquina nueva puede no haber Bun: instálalo con el instalador oficial (`curl -fsSL https://bun.sh/install | bash`) antes de `bun install`.
 
 - `bun run dev`: arranca el backend (:5001, con recarga) y Vite (:5173) a la vez. Abre http://localhost:5173. El backend usa `bbdd/` y `fotos/` de la raíz (`--data-dir ..`).
 - `bun run build`: typecheck y build de la SPA en `frontend/dist`.
@@ -46,6 +48,25 @@ Opciones del servidor (`bun run start --port 5002`, o directamente en el binario
 La carpeta de datos se resuelve así: `--data-dir`, luego `NUTRICLINICA_DATA`, luego la carpeta del ejecutable (instalación portable) y, si no se puede escribir en ella, la carpeta de configuración del usuario. Dentro se crean `bbdd/nutriclinica.db` y `fotos/`.
 
 En el primer arranque se crean los usuarios iniciales de `USUARIOS_INICIALES` (`backend/src/db/semilla.ts`); son valores de desarrollo y el servidor avisa por consola mientras conserven la contraseña inicial.
+
+## Verificación
+
+Antes de dar un cambio por terminado, pruébalo con el skill `verify-nutriclinica` (`.cursor/skills/verify-nutriclinica/SKILL.md`). Los datos son ficticios y viven en el directorio aislado que crea el lanzamiento. No apuntes esa instancia a `bbdd/` ni a `fotos/` del repositorio, y no uses `bun run dev` para esto: ese comando pasa `--data-dir ..` y escribe en el checkout.
+
+Desde la raíz, deja el ejecutable en el `PATH`:
+
+```bash
+chmod +x .cursor/skills/verify-nutriclinica/scripts/verificar
+export PATH="$PWD/.cursor/skills/verify-nutriclinica/scripts:$PATH"
+```
+
+- `verificar launch` construye la SPA si falta `frontend/dist`, siembra clientes ficticios y arranca el servidor en un puerto libre con su propio directorio de datos. Imprime `run`, `url`, `data`, `evidence` y `pid`.
+- `verificar doctor` comprueba esa instancia en solo lectura. Sale 0 e imprime `ok`.
+- Recorre la interfaz con `verificar browser` (por ejemplo `verificar browser goto --path /login`) y lee la base con `verificar sql`, que solo acepta un `SELECT`. El mapa de pantallas está en `.cursor/skills/verify-nutriclinica/features/`.
+- La prueba queda en el directorio `evidence` que imprime el launch (`/tmp/nutriclinica-verify-evidence/<run>/`): captura de pantalla, texto visible y el efecto en los datos.
+- `verificar cleanup` para el servidor y Chrome de esa ejecución y borra su estado. La evidencia se conserva.
+
+Si la interfaz cambia, mantén el mapa al día con `/maintain-verification-skill`.
 
 ## Arquitectura del backend (`backend/src/`)
 
@@ -64,7 +85,7 @@ El orden de trabajo es esquema tipado, luego datos, luego rutas: el frontend rec
 - Inventario (`datos/inventario.ts`, rutas en `modulos/stock.ts`): `POST /api/stock/recuentos` registra lo contado de uno o varios productos activos con motivo obligatorio; cada línea guarda lo esperado (el stock calculado en ese momento), lo contado y la diferencia, que es el ajuste, así que tras el recuento el stock es lo contado. La fecha es siempre la del día y queda el usuario; los recuentos no se editan ni se borran (un error se corrige con otro recuento). Se anota en la auditoría con un cambio «producto»: esperado → contado por cada diferencia. `GET /api/stock/recuentos` los lista con sus líneas. `GET /api/stock/productos/:id/movimientos` es el kardex: compras, ventas, anulaciones, devoluciones (las que no reingresan con cantidad 0), mermas y recuentos del más antiguo al más reciente, ordenados por día y hora dentro del día, con el saldo tras cada uno; el último saldo es el stock actual.
 - Inicio (`datos/inicio.ts`, `modulos/inicio.ts`): `GET /api/inicio/resumen` (con sesión) devuelve lo que Inicio necesita ya agregado, sin bajar todas las ventas: ventas completadas y devoluciones por día desde el día 1 del mes pasado (en euros, sumadas en céntimos; la devolución cuenta el día en que se hace, como en la caja), si la caja de hoy está cerrada y los días anteriores con movimiento sin cierre (solo a partir del primer cierre y en los últimos 30 días), la última compra de cada cliente y de cada producto y los hábitos de compra (días en que un cliente compró un producto activo en el último año, sin líneas devueltas enteras y con dos días o más).
 - Usuarios: no se puede borrar la propia cuenta (400) ni borrar o degradar al último administrador (409).
-- `lib/naming.ts` es el port de `nombre_a_prefijo` y `nombre_a_carpeta` (quita acentos con NFKD). **No cambies su salida**: las carpetas de fotos ya existen en disco con ese nombre y los tests fijan los valores reales.
+- `lib/naming.ts` exporta `prefijo` y `carpeta`, el port de `nombre_a_prefijo` y `nombre_a_carpeta` de la app original (quita acentos con NFKD). **No cambies su salida**: las carpetas de fotos ya existen en disco con ese nombre y los tests fijan los valores reales.
 - Fotos: se guardan en `fotos/<carpeta del paciente>/` y solo se aceptan y se sirven extensiones de imagen (`lib/imagen.ts`); las rutas se resuelven con `lib/rutas.ts` para impedir salir de la carpeta.
 - La exportación a Excel usa `exceljs` (`modulos/exportar.ts`).
 - Los tests (`backend/tests/`) montan la app sobre una base en memoria y una carpeta de fotos temporal (`apoyo.ts`) y la llaman con un cliente Eden, sin red.
@@ -95,7 +116,7 @@ Organizado por funcionalidad (`features/{arranque,auth,inicio,pacientes,stock,ve
 
 - Los datos personales de los pacientes están en `bbdd/nutriclinica.db` y en `fotos/`, ambos fuera de git. La copia de seguridad consiste en copiar esas dos carpetas con la aplicación cerrada.
 - Remotos de git: `origin` es `rechedev9/nutriclinica-app` (repositorio privado, aquí se hace push). `upstream` apunta al repositorio original `granrafael/nutriclinica` y `no-mistakes` es un remoto local de respaldo.
-- No hay CI en pull requests: ejecuta lint, formato, knip, typecheck y tests en local antes de un commit.
+- No hay CI en pull requests: ejecuta lint, formato, knip, typecheck y tests en local antes de un commit. Un cambio de interfaz o de comportamiento se demuestra además con el skill `verify-nutriclinica` (sección Verificación).
 - Escribe el código nuevo en español (identificadores, textos de la interfaz y comentarios).
 - Backend: una ruta nueva va en el `modulos/*.ts` que corresponda, su consulta en `datos/*.ts` y su validación en `validacion.ts`. Frontend: añade el hook o el componente junto a los existentes de su funcionalidad.
 
