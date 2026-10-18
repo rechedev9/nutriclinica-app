@@ -35,10 +35,29 @@ export function retrasado(p: ConSituacion & { fecha_prevista: string | null }, h
   return porRecibir(p) && p.fecha_prevista !== null && p.fecha_prevista < hoy
 }
 
-export function filtrarPedidos<T extends ConSituacion>(pedidos: readonly T[], filtro: FiltroPedidos): T[] {
+interface PedidoFiltrable extends ConSituacion {
+  id: number
+}
+
+// `conservarRecibidos` son pedidos que en esta visita acaban de quedar recibidos y siguen en «Por recibir».
+export function filtrarPedidos<T extends PedidoFiltrable>(
+  pedidos: readonly T[],
+  filtro: FiltroPedidos,
+  conservarRecibidos: ReadonlySet<number> = new Set(),
+): T[] {
   if (filtro === 'todos') return [...pedidos]
-  if (filtro === 'por_recibir') return pedidos.filter(porRecibir)
+  if (filtro === 'por_recibir') {
+    return pedidos.filter((p) => porRecibir(p) || (p.situacion === 'recibido' && conservarRecibidos.has(p.id)))
+  }
   return pedidos.filter((p) => !porRecibir(p))
+}
+
+export function fechaUltimaRecepcion(fechas: readonly string[]): string | null {
+  let ultima: string | null = null
+  for (const fecha of fechas) {
+    if (ultima === null || fecha > ultima) ultima = fecha
+  }
+  return ultima
 }
 
 // Unidades que aún deben llegar de cada producto en los pedidos por recibir.

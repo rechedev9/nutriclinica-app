@@ -4,7 +4,7 @@ import { useCambiarEstadoPedido, useDeletePedido, usePedidos } from '../hooks/us
 import { PedidoModal } from '../components/PedidoModal'
 import { RecepcionModal } from '../components/RecepcionModal'
 import { CompraModal } from '../components/CompraModal'
-import { SITUACION, filtrarPedidos, pendienteDe, porRecibir, retrasado } from '../pedidos'
+import { SITUACION, fechaUltimaRecepcion, filtrarPedidos, pendienteDe, porRecibir, retrasado } from '../pedidos'
 import type { FiltroPedidos } from '../pedidos'
 import { Button } from '@/components/ui/Button'
 import { CenteredSpinner } from '@/components/ui/Spinner'
@@ -116,6 +116,7 @@ export function PedidosTab() {
   const estado = useCambiarEstadoPedido()
   const confirm = useConfirm()
   const [filtro, setFiltro] = useState<FiltroPedidos>('por_recibir')
+  const [recibidosAhora, setRecibidosAhora] = useState<ReadonlySet<number>>(() => new Set())
   const [expanded, setExpanded] = useState<number | null>(null)
   const [apertura, setApertura] = useState<AperturaPedido>(() =>
     reponer != null ? { tipo: 'reponer', proveedorId: reponer } : { tipo: 'cerrado' },
@@ -134,7 +135,7 @@ export function PedidosTab() {
 
   const hoy = hoyLocal()
   const todos = pedidos ?? []
-  const filas = filtrarPedidos(todos, filtro)
+  const filas = filtrarPedidos(todos, filtro, recibidosAhora)
   const abiertos = todos.filter(porRecibir)
   const retrasados = abiertos.filter((p) => retrasado(p, hoy)).length
   const importePendiente = abiertos.reduce(
@@ -230,6 +231,10 @@ export function PedidosTab() {
           const abierto = expanded === p.id
           const puedeRecibir = porRecibir(p)
           const tarde = retrasado(p, hoy)
+          const llegada =
+            p.situacion === 'recibido'
+              ? fechaUltimaRecepcion(p.recepciones.flatMap((r) => (r.fecha === null ? [] : [r.fecha])))
+              : null
           return (
             <div key={p.id} className="rounded-card bg-surface shadow-card">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-4">
@@ -249,9 +254,12 @@ export function PedidosTab() {
                       )}
                     </div>
                     <div className="truncate text-[13px] text-ink-muted">
-                      {p.numero} · {fmtFecha(p.fecha)}
-                      {p.fecha_prevista && ` · entrega prevista ${fmtFecha(p.fecha_prevista)}`} ·{' '}
-                      {resumenLineas(p.lineas)}
+                      {p.numero}
+                      {llegada !== null ? ` · recibido el ${fmtFecha(llegada)}` : ` · ${fmtFecha(p.fecha)}`}
+                      {llegada === null && p.fecha_prevista
+                        ? ` · entrega prevista ${fmtFecha(p.fecha_prevista)}`
+                        : ''}{' '}
+                      · {resumenLineas(p.lineas)}
                     </div>
                   </div>
                   <div className="whitespace-nowrap font-bold tabular-nums">{fmtMoneda(p.total)}</div>
@@ -305,7 +313,14 @@ export function PedidosTab() {
         pedido={apertura.tipo === 'editar' ? apertura.pedido : undefined}
         reponer={apertura.tipo === 'reponer' ? apertura.proveedorId : undefined}
       />
-      <RecepcionModal pedido={recibiendo} onClose={() => setRecibiendo(null)} />
+      <RecepcionModal
+        pedido={recibiendo}
+        onClose={() => setRecibiendo(null)}
+        onRecibido={(id) => {
+          setRecibidosAhora((actual) => new Set(actual).add(id))
+          setExpanded(id)
+        }}
+      />
       <CompraModal open={compraSuelta} onClose={() => setCompraSuelta(false)} />
     </div>
   )
