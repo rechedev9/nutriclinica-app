@@ -14,10 +14,11 @@ import type { Pedido } from '@/types'
 interface Props {
   pedido: Pedido | null
   onClose: () => void
+  onRecibido?: (id: number) => void
 }
 
 // Entrar el albarán de un pedido: se propone todo lo pendiente y se corrige lo que no llegó.
-export function RecepcionModal({ pedido, onClose }: Props) {
+export function RecepcionModal({ pedido, onClose, onRecibido }: Props) {
   const recibir = useRecibirPedido()
   const [albaran, setAlbaran] = useState('')
   const [fecha, setFecha] = useState('')
@@ -45,14 +46,16 @@ export function RecepcionModal({ pedido, onClose }: Props) {
 
   async function entrar() {
     if (pedido === null || problema !== null) return
+    const id = pedido.id
+    const completo = faltan.length === 0
     const ok = await intentar(
       recibir.mutateAsync({
-        id: pedido.id,
+        id,
         body: {
           fecha: fecha || null,
           albaran: albaran.trim() || null,
           notas: notas.trim() || null,
-          cerrar: faltan.length > 0 && cerrar,
+          cerrar: !completo && cerrar,
           lineas: llegan.map((l) => ({
             producto_id: l.producto_id,
             cantidad: l.llega,
@@ -61,7 +64,9 @@ export function RecepcionModal({ pedido, onClose }: Props) {
         },
       }),
     )
-    if (ok) onClose()
+    if (!ok) return
+    if (completo) onRecibido?.(id)
+    onClose()
   }
 
   return (

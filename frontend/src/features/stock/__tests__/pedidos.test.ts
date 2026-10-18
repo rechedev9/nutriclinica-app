@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   enCamino,
   errorRecepcion,
+  fechaUltimaRecepcion,
   filtrarPedidos,
   lineasRecepcion,
   pendienteDe,
@@ -58,6 +59,18 @@ describe('filtros y retrasos', () => {
     expect(filtrarPedidos(pedidos, 'por_recibir').map((p) => p.id)).toEqual([1, 2])
     expect(filtrarPedidos(pedidos, 'cerrados').map((p) => p.id)).toEqual([3, 4])
     expect(filtrarPedidos(pedidos, 'todos')).toHaveLength(4)
+  })
+
+  test('un pedido recién recibido sigue en Por recibir y uno anterior no', () => {
+    expect(filtrarPedidos(pedidos, 'por_recibir', new Set([3])).map((p) => p.id)).toEqual([1, 2, 3])
+    expect(filtrarPedidos(pedidos, 'por_recibir', new Set()).map((p) => p.id)).toEqual([1, 2])
+    expect(filtrarPedidos(pedidos, 'por_recibir', new Set([4])).map((p) => p.id)).toEqual([1, 2])
+    expect(filtrarPedidos(pedidos, 'cerrados', new Set([3])).map((p) => p.id)).toEqual([3, 4])
+  })
+
+  test('la fecha de llegada es la del último albarán', () => {
+    expect(fechaUltimaRecepcion(['2026-10-01', '2026-10-18', '2026-10-10'])).toBe('2026-10-18')
+    expect(fechaUltimaRecepcion([])).toBeNull()
   })
 
   test('solo se retrasa un pedido por recibir con la fecha prevista pasada', () => {
