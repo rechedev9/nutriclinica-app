@@ -6,7 +6,6 @@ import { useTienda, useVenta } from '../hooks/useVentas'
 import { cambio, efectivoDe } from '../carrito'
 import { Ticket, TicketImprimible, imprimirTicket } from './Ticket'
 
-// Lo que ve el dependiente justo después de cobrar: cambio a devolver y ticket para imprimir.
 export function TicketModal({ ventaId, onClose }: { ventaId: number; onClose: () => void }) {
   const { data: venta } = useVenta(ventaId)
   const { data: tienda } = useTienda()
@@ -35,7 +34,7 @@ export function TicketModal({ ventaId, onClose }: { ventaId: number; onClose: ()
               Imprimir ticket
             </Button>
             <Button autoFocus onClick={onClose}>
-              Nueva venta
+              Cerrar
             </Button>
           </div>
         </div>
