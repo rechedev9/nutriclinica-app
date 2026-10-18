@@ -92,7 +92,7 @@ function FormularioCierre({ resumen }: { resumen: ResumenCaja }) {
   const cerrar = useCerrarCaja()
   const confirm = useConfirm()
   const esperado = resumen.neto.efectivo
-  const [contado, setContado] = useState(() => importeEditable(esperado))
+  const [contado, setContado] = useState('')
   const [notas, setNotas] = useState('')
   const efectivoContado = leerImporte(contado) ?? (esperado === 0 ? 0 : null)
   const contadoValido = efectivoContado !== null && !Number.isNaN(efectivoContado) && efectivoContado >= 0
