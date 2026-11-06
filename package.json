@@ -26,6 +26,7 @@
     "oxlint": "^1.87.0"
   },
   "overrides": {
-    "seroval": "1.6.11"
+    "seroval": "1.7.7",
+    "seroval-plugins": "1.7.7"
   }
 }
