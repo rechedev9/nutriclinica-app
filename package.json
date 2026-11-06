@@ -24,5 +24,9 @@
     "knip": "^6.41.0",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0"
+  },
+  "overrides": {
+    "seroval": "1.7.7",
+    "seroval-plugins": "1.7.7"
   }
 }
